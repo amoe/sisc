@@ -661,7 +661,7 @@
   </target> 
 
   <!-- Installation target -->
-  <target name="debian-install" depends="prepare-install">
+  <target name="install" depends="prepare-install">
     <mkdir dir="${instlibdir}"/>
     <mkdir dir="${instdocdir}"/>
     <mkdir dir="${instmandir}"/>
@@ -698,9 +698,7 @@
     </exec>
     <chmod file="${instbindir}/srfi-22.sh" perm="0755"/>
     <chmod file="${instbindir}/build-heapjar.scm" perm="0755"/>
-  </target>
 
-  <target name="install" depends="debian-install">
     <copy todir="${instdocdir}">
       <fileset dir="${basedir}">
         <include name="COPYING"/>
