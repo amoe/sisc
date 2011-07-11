@@ -1,0 +1,229 @@
+<chapter>
+  <title>
+    Introduction
+  </title>
+  <para>
+    &SISC;
+    <footnote> 
+      <para>
+	The pronunciation is written as <literal>sIsk</literal> in
+	the International Phonetic Alphabet.  This is similar to the
+	English word 'whisk'.
+      </para>
+    </footnote>
+    is a lightweight, platform independent
+    Scheme system whose primary goals are rapid execution of the
+    complete &R5RS; and future Scheme
+    standards, plus a useful superset for real-world application
+    development. 
+  </para>
+  <para>
+    &SISC;'s development progresses in two
+    directions, to improve the core interpreter to be simpler,
+    more elegant, and more efficient; and to add necessary
+    functionality through extensions that do not complicate the
+    core.
+  </para>
+  <para>
+    &SISC; as a project began as the successor to the Lightweight
+    Interpreter of Scheme Code (<emphasis>LISC</emphasis>).
+    <emphasis>LISC</emphasis> was a small, stack-based almost R4RS compliant Scheme.
+    &SISC; was born out of the desire to create an interpreter that
+    was of a similar footprint to <emphasis>LISC</emphasis>, but which
+    executed Scheme code much faster, complied fully to the &R5RS;
+    standard, and which wasn't limited by the stack-based model.
+    &SISC; met these goals very quickly, and has since progressed in
+    active development to be a competitive Scheme system.  As a
+    successor to <emphasis>LISC</emphasis> the interpreter was named the Second
+    Interpreter of Scheme Code. 
+  </para>
+  <sect1 id="Features">
+    <title>
+      Features
+    </title>
+    <itemizedlist>
+      <listitem>
+	<para>
+	  Full &R5RS; compliance
+	</para>
+      </listitem>
+      <listitem>
+	<para>
+	  Efficient number tower, with support for integers, floating-point numbers, rationals, and complex numbers of arbitrary precision
+	</para>
+      </listitem>
+      <listitem>
+	<para>
+	  Lightweight Scheme engine, implementing all &R5RS; functionality
+	  in approximately 10,000 lines of native code plus
+	  approximately 5,000 lines of Scheme code.
+	</para>
+      </listitem>
+      <listitem>
+	<para>
+	  Flexible runtime extensibility through a scopeable module
+	  system, which may add arbitrary bindings and new first-class types.
+	</para>
+      </listitem>
+    </itemizedlist>
+  </sect1>
+  <sect1 id="About">
+    <title>
+      About this document
+    </title>
+    <para>
+      This document explains the &SISC; Scheme system. It assumes
+      knowledge of the Scheme language. As such, when discussing the
+      Scheme language, we will focus primarily on differences
+      between the Scheme standard and the language implemented by
+      &SISC;.
+    </para>
+    <para>
+      Secondly, &SISC; implements the &R5RS; standard. As such, any
+      code written to that standard should run without reading any
+      further.
+    </para>
+    <sect2 id="AboutProcedures">
+      <title>
+	About procedure documentation
+      </title>
+      <para>
+	Throughout this document, procedures will be defined using
+	the following syntax:
+      </para>
+      <para>
+	<blockquote>
+	  <para>
+	    &procedure; 
+            <methodsynopsis language="scheme">
+	      <type>return value</type>
+	      <methodname>function-name</methodname>
+	      <methodparam>
+		<parameter>required-argument</parameter>
+	      </methodparam>
+	      <methodparam choice="opt">
+		<parameter>optional-argument</parameter>
+	      </methodparam>
+	      <methodparam choice="opt" rep="repeat">
+		<parameter>rest-argument</parameter>
+	      </methodparam>
+	    </methodsynopsis>
+	    <blockquote>
+	      <para>
+		Description of the procedure's semantics.
+	      </para>
+	    </blockquote>
+	  </para>
+	</blockquote>
+	A procedure is any function that takes zero or more arguments
+	and returns a value.
+      </para>
+      <para>
+	<blockquote>
+	  <para>
+	    &parameter; <methodsynopsis language="scheme">
+	      <methodname>parameter-name</methodname>
+	      <methodparam choice="opt">
+		<parameter>new-parameter-value</parameter>
+	      </methodparam>
+	    </methodsynopsis>
+	    <blockquote>
+	      <para>
+		Description of the parameter. 
+	      </para>
+	    </blockquote>
+	  </para>
+	</blockquote>
+	A Parameter is a special function that is used to store a
+	value in the dynamic-environment.  When given no arguments, a
+	parameter will return its current value.  When provided an
+	argument, the value of the parameter is set to the value of
+	that argument.
+      </para>
+      <para>
+	<blockquote>
+	  <para>
+	    &syntax; <methodsynopsis language="scheme">
+	      <methodname>syntactic-keyword</methodname>
+	      <methodparam rep="repeat">
+		<parameter>structure</parameter>
+	      </methodparam>
+	    </methodsynopsis>
+	    <blockquote>
+	      <para>
+		Description of the syntactic transform.
+	      </para>
+	    </blockquote>
+	  </para>
+	</blockquote>
+	Syntax refers to a syntactic keyword that when 
+	compiled will be transformed into some expression composed
+	only of basic Scheme forms.  <function>let</function>,
+	<function>cond</function>, and <function>or</function> are all
+	examples of syntactic forms.
+      </para>
+      <para>
+	Procedures, parameters, and syntax may take one or more
+	arguments.  The name of an argument in a description summarizes
+        the semantics of the expected argument.  The type of an argument, 
+        when not clear, should be described in the procedure summary
+	paragraph that follows the prototype.  If the argument is
+	enclosed in square brackets ([]), that argument is optional,
+	and may be omitted.  If an argument is optional and is followed by 
+	ellipses (...), then the argument is a
+	<emphasis>rest</emphasis> argument, and may be satisfied by
+	zero or more values.
+      </para>
+      <para>
+	Finally, some of the functions described in this document are
+	encapsulated in <emphasis>modules</emphasis> (see <xref
+	linkend="Modules"/>).  Sections that describe functions in
+	modules will have a <emphasis>requires</emphasis> statement
+	indicating the expression that must be evaluated to make those
+	functions available in the Scheme environment.  The requires
+	statement will appear as follows:
+      </para>
+      <para>
+	&requires; 
+	<emphasis role="bold">
+	  (import <emphasis>module-name</emphasis>)
+	</emphasis>
+      </para>
+      <para>
+	<emphasis>module-name</emphasis> is will be a name uniquely
+	identifying the name of the module that contains the
+	functions.
+      </para>
+    </sect2>
+  </sect1>
+  <sect1>
+    <title>Where to obtain this document</title>
+    <para>
+      This document is produced from DocBook sources and is made available in
+      HTML, Adobe Acrobat (PDF), and PostScript forms.  Other formats, and
+      up-to-date versions of this document should be available from the
+      &SISC; website, 
+      <ulink url="http://sisc.sourceforge.net">
+	<citetitle>http://sisc.sourceforge.net</citetitle>
+      </ulink>.
+    </para>
+    <para>
+      The DocBook sources are available from the same site, packaged in 
+      the source distribution of &SISC;, and available from the project's CVS
+      tree.  Details for accessing both are linked off the project site.
+    </para>
+    <para>
+      Starting with &SISC; version 1.8.4, the HTML render of this
+      manual is included in the full binary distributions of &SISC;.
+    </para>
+  </sect1>
+  <sect1 id="Applicability">
+    <title>Version Applicability</title>
+    &version;
+  </sect1>
+</chapter>
+<!-- Keep this comment at the end of the file
+Local variables:
+sgml-parent-document:("sss.xml" "chapter")
+End:
+-->

@@ -1,0 +1,320 @@
+<chapter id="Modules">
+  <title>
+    Modules and Libraries
+  </title>
+  <sect1 id="SchemeModules">
+    <title>
+      Modules
+    </title>
+    <para>
+      Modules provide an additional level of scoping control, allowing
+      symbolic and syntactic bindings to be bundled in a named or
+      anonymous package.  The package can then be imported into any
+      scope, making the bindings contained in the module visible in
+      only that scope.
+    </para>
+    <para>
+      &SISC;'s modules are provided by the portable syntax-case macro
+      expander by R. Kent Dybvig and Oscar Waddell.  A comprehensive
+      explanation of the provided module system is best found in the
+      <ulink url="http://www.scheme.com/csug.html">
+        <citetitle>Chez Scheme Users Guide</citetitle>
+      </ulink>, specifically 
+      <ulink url="http://www.scheme.com/csug/syntax.html#g2187">
+        <citetitle>Section 9.3, Modules</citetitle>
+      </ulink>.  What follows is an informal introduction to that module 
+      system.
+    </para>
+    <sect2 id="ModuleOverview">
+      <title>Overview</title>
+      <para>
+        The basic unit of modularization in &SISC; is a module.
+        A typical module definition has this appearance:
+      </para>
+        <programlisting id="typicalmodule">
+(module foo
+    (bar baz)
+  (import boo1)
+  (import boo2)
+  (include "file.scm")
+  (define (bar x) ...)
+  (define-syntax baz ...)
+  (define (something-else ...) ...)
+  (do-something)
+  (do-something-else))
+        </programlisting>
+      <para>
+        A module definition consists of a name
+        (<literal>foo</literal>), a list of exports
+        (<literal>bar</literal> and <literal>baz</literal>) and a
+        body.
+        Expressions which can appear in the body of a module are the
+        same as those which can appear in a
+        <function>lambda</function> body.  The
+        <function>import</function> form imports bindings from a named
+        module (in this case <literal>boo1</literal> and
+        <literal>boo2</literal>) into the current lexical scope.  The
+        <function>include</function> form performs a textual inclusion
+        of the source code found in the named file
+        (<literal>file.scm</literal>).  In other words, it works as if
+        the contents of the file had appeared literally in place of
+        the <function>include</function> statement.
+     </para> 
+     <para>
+       All identifiers appearing in the export list must be
+       <function>define</function>d or
+       <function>define-syntax</function>ed in the body of the module,
+       or <function>import</function>ed from another module.
+     </para>
+    </sect2>
+    <sect2 id="ModuleStyle">
+      <title>Style</title>
+      <para>
+        It is recommended to clearly separate modularization from
+        actual code.  The best way to accomplish this is to
+        <itemizedlist>
+          <listitem>
+            <para>List all imports in the module body rather than in
+            included files</para>
+          </listitem>
+          <listitem>
+            <para>Include all files directly from the module body,
+            avoiding nested includes</para>
+          </listitem>
+          <listitem>
+            <para>Place all definitions and expressions in included
+            files, avoiding them in the module body</para>
+          </listitem>
+        </itemizedlist>
+      </para>            
+      <para>
+        There are several reasons for this.  First, it makes
+        refactoring easier, as one can move relevant code from module
+        to module merely by rewriting the module definitions, leaving
+        the implementation code unchanged.  Second, it makes debugging
+        easier, as one can load the implementation code directly into
+        the Scheme system to have access to all bindings, or load the
+        module definition to view the finished, encapsulated
+        exports. Finally, it stylistically separates interface (the
+        modules) from implementation (the included Scheme source).
+      </para>
+    </sect2>
+    <sect2 id="ModularizingCode">
+      <title>Modularizing Existing Code</title>
+      <para>
+        Since module bodies are treated like the bodies of
+        <function>lambda</function>s, the &R5RS; rules of how internal
+        definitions are treated apply to all the definitions in the
+        module body (both ordinary and syntax), including all code
+        <function>include</function>d from files.  This is often a source
+        of errors when moving code from the top-level into a module
+        because:
+      <itemizedlist>
+          <listitem><para><emphasis>All</emphasis> definitions must
+        appear <emphasis>before all</emphasis> expressions,</para>
+          </listitem>
+          <listitem>
+            <para>The list of definitions is translated into
+          <function>letrec</function>/<function>letrec-syntax</function>,
+          which means it must be possible to evaluate each right-hand
+          side without assigning or referring to the value of any of
+          the variables being defined.</para>
+          </listitem>
+        </itemizedlist>
+      </para>
+      <para>
+        This often necessitates re-arranging the code and the
+        introduction of <function>set!</function> expressions.  Here
+        is an example of a sequence of top-level
+        definitions/expressions and how they need to be rewritten so
+        that they may appear in a module body: 
+      </para>
+        <programlisting>
+(define (foo) 1)
+(define bar (foo))
+(do-some-stuff)
+(define (baz) (bar))
+==>
+(define (foo) 1)
+(define bar)
+(define (baz) (bar))
+(set! bar (foo))
+(do-some-stuff)
+        </programlisting>
+      <para>
+       The general strategy is to go through the list of
+       expressions/definitions from top to bottom and build two lists
+       - one of definitions and one of expressions - as follows:
+      <itemizedlist>
+          <listitem><para>If a non-definition is encountered, append it
+        to the expression list</para>
+          </listitem>
+          <listitem><para>If a "naked" definition (i.e. a definition
+          whose right-hand side is not a function) that refers to a
+          binding defined within the module is encountered, append an
+          empty definition to the definition list and append a
+          <function>set!</function> with the right-hand side
+          expression to the expression list</para>
+          </listitem>
+          <listitem><para>Otherwise, i.e. for an ordinary definition,
+          append it to the definition list</para>
+          </listitem>
+        </itemizedlist>
+      </para>
+      <para>
+        The concatenation of the resulting definition list with the
+        expression list makes a suitable module body.
+      </para>
+    </sect2>
+    <sect2 id="ModuleEvaluation">
+      <title>Evaluation</title>
+      <para>
+        Modules are lexically scoped.  It is possible to define
+        modules inside <function>lambda</function>s and inside other
+        modules and to export modules from modules.  Example:
+      </para>
+      <programlisting>
+(define (f c)
+  (module foo
+      (bar)
+    (module bar
+        (baz)
+      (define (baz x y) (- x y))
+      (display "defining baz\n")))
+  (if (> c 0)
+      (let ((a 1))
+         (import foo)
+         (let loop ((b c))
+            (import bar)
+            (if (> b 0) (loop (baz b a)) (f (- c 1)))))))
+      </programlisting>
+      <para>
+        The expressions in a module body get executed at the time and
+        in the context of module definition. So, in the above example,
+        the body of bar containing the display statement is executed
+        once for every call to <function>f</function> rather than once
+        for every iteration of the inner loop containing the import of
+        the <literal>bar</literal> module.
+      </para>
+      <para>
+        There are quite a few more things you can do with modules. For
+        instance one can define anonymous modules, which are a short
+        cut for defining a named module and then importing it, import
+        selected bindings from a module and renaming them rather then
+        importing all bindings as is etc etc. For more details again
+        refer to the Chez Scheme user manual.
+      </para>
+    </sect2>
+  </sect1>
+  <sect1> 
+    <title>Libraries</title>
+    <para>
+      Libraries provide a means of encapsulating code that can be
+      shared by many, independently developed applications.
+    </para>
+    <para>
+      Libraries are simply bundles of Scheme code, usually precompiled, which
+      are packaged so that they may be resolved relative to a library path.
+      Libraries are typically compiled using the meachanism from <xref
+     linkend="CreatingLibraries"/>.
+     Loading the resulting library makes the library available 
+     to the loading code.  To create a compiled library from a module,
+      compile a source file which contains any necessary
+      <function>require-library</function> calls, followed by the
+      module definition.  When loaded, this will cause the necessary
+      libraries to be loaded, and then define the module
+      into the environment.  For example, the source file may resemble:
+    </para>
+    <programlisting>
+(require-library 'sisc/libs/srfi/srfi-1)
+(require-library 'com/foo/lib2)
+
+(module lib3
+    (a-function)
+  (import srfi-1)
+  (import com/foo/lib2)
+  (define (a-function) 
+    (do-something (another-function)))
+  (define (another-function) 
+    (something-else))
+    </programlisting>
+    <para>
+     Libraries should not depend on any top-level definitions outside
+     the standard &SISC; top-level, except the definition of other library
+     modules. Otherwise it is not possible to use the libraries portably.
+    </para>
+    <para>
+     Libraries can be packaged with supporting code (e.g. ordinary Java
+     code and native modules) and other libraries into jar files. A typical
+     structure for such a jar file would be
+    </para>
+    <programlisting>
+com/foo/lib1.scc
+com/foo/lib1/Class1.class
+com/foo/lib1/Class2.class
+com/foo/lib2.scc
+com/foo/lib2/Class1.class
+com/foo/lib2/Class2.class
+com/foo/lib3.scc
+com/foo/lib3/Class1.class
+com/foo/lib3/Class2.class
+    </programlisting>
+    <para>
+     It is usually a good idea to name a module after the
+     path names in the jar, for example
+     <literal>com/foo/lib{1,2,3}</literal> in the above example.
+    </para> 
+    <sect2 id="SRFI55">
+      <title><function>require-extension</function></title>
+      <indexterm><primary>require-extension</primary></indexterm>
+      <para>          
+       	&SISC; supports <ulink url="http://srfi.schemers.org/srfi-55/srfi-55.html">SRFI-55</ulink> for loading libraries and extensions as well.
+      	SRFI-55 provides <function>require-extension</function>, which in &SISC; 
+      	simultaneously loads a library, then imports its module definition into the
+      	current interaction environment.  This may be more convenient than the
+      	combination of <function>require-library</function> and <function>import</function>,
+      	when one is loading dependent top-level libraries for a program.  
+      	It is less flexible, though, since you cannot import into a lexical scope.
+     </para>
+     <para>
+       SRFI-55 is supported in the initial &SISC; environment, no
+       <function>require-library</function> or
+       <function>import</function> is needed to use
+       <function>require-extension</function>.
+     </para>
+     <para>
+       At the time of this writing, &SISC; supports two extension
+       identifier schemes, the <literal>srfi</literal> scheme as
+       required by SRFI-55 itself, and a &SISC; specific
+       <literal>lib</literal> scheme for loading a &SISC; library.
+       Some examples:
+     </para>
+     <example>
+       <title>Loading and importing with <function>require-extension</function></title>
+       <programlisting>
+; Load and import SRFI 1
+(require-extension (srfi 1))
+
+; Load and import SISC library com/foo/lib1
+(require-extension (lib com/foo/lib1))
+
+; Load and import SRFIs 13 and 14,
+; and SISC libraries com/foo/lib2 and com/foo/lib3
+(require-extension (srfi 13 14) (lib com/foo/lib2 com/foo/lib3))
+       </programlisting>
+     </example>
+     <para>
+       &SISC; modules loaded using the <literal>lib</literal>
+       extension scheme must use the full path and file as the module
+       name. For example, in the above example,
+       <literal>com/foo/lib1</literal>'s module name must be
+       <literal>com/foo/lib1</literal>.
+     </para>
+   </sect2>
+  </sect1>
+</chapter>
+<!-- Keep this comment at the end of the file
+Local variables:
+sgml-parent-document:("sss.xml" "chapter")
+End:
+-->

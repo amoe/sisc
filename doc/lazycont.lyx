@@ -1,0 +1,361 @@
+#LyX 1.2 created this file. For more info see http://www.lyx.org/
+\lyxformat 220
+\textclass esub2acm
+\language english
+\inputencoding auto
+\fontscheme default
+\graphics default
+\paperfontsize default
+\spacing single 
+\papersize Default
+\paperpackage a4
+\use_geometry 0
+\use_amsmath 0
+\use_natbib 0
+\use_numerical_citations 0
+\paperorientation portrait
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\quotes_times 2
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+
+\layout Title
+
+Title Here
+\layout Author
+
+Scott G.
+ Miller and Matthias Radestock
+\layout Abstract
+
+We discuss a mechanism for continuation capture in a heap-based Scheme interpret
+er which minimizes effort required by the interpreter for capturing the
+ continuation, delaying the protection of call-frames until an operation
+ in the interpreter threatens the isolation of the captured continuation.
+\layout Section*
+
+Introduction
+\layout Subsection*
+
+Continuations are Great
+\layout Standard
+
+A quick intro to continuations - what they are - why they are useful
+\layout Subsection*
+
+Continuations are Hard
+\layout Standard
+
+Key implementation issues (brief description of implementation issues and
+ techniques for different types of continuations) - escape-only: easy -
+ one-shot: harder - full: where the fun really begins
+\layout Standard
+
+This should set the scene, i.e.
+ define the problem we are trying to address.
+ 
+\layout Subsection*
+
+Outline of Our Approach
+\layout Standard
+
+Setting: briefly describe the kind of system in which our technique is applicabl
+e Contrast: Briefly describe the naive approach Technique: briefly describe
+ the key aspects of our technique 
+\layout Section*
+
+<Technique Name>
+\layout Subsection*
+
+Interpreter Architecture
+\layout Standard
+
+The 
+\emph on 
+SISC
+\emph default 
+ Scheme interpreter, on which the technique was developed, is a heap-based
+ interpreter, that is, it uses the system heap rather than stack to manage
+ control context.
+ The decision to use a heap-based model was driven primarily by the Java
+ Virtual Machine's lack of stack-manipulation operations.
+ Without them, it is impossible to implement full continuations with control
+ context managed by the JVM stack.
+ 
+\begin_inset Foot
+collapsed true
+
+\layout Standard
+
+Continuations could be implemented by performing a CPS transformation on
+ Scheme source code and running that on a stack based system, however.
+\end_inset 
+
+ In addition, proper tail recursion comes naturally as a side-effect of
+ this model, requiring no tail-recursion creating mechanisms like trampolining.
+\layout Standard
+
+The heap-based model consists of an engine with at least five registers
+ and a datastructure called a Call Frame.
+ The five registers contain all the execution state of a running Scheme
+ program:
+\layout List
+\labelwidthstring 00.00.0000
+
+
+\noun on 
+acc
+\noun default 
+ The Accumulator register.
+ This register holds the results of a previous expression for consumption
+ by the next expression.
+\layout List
+\labelwidthstring 00.00.0000
+
+
+\noun on 
+nxp
+\noun default 
+ The Next Expression register.
+ If the register is not empty, the 
+\begin_inset Formula $\mu $
+\end_inset 
+
+-expression it contains is executed next.
+\layout List
+\labelwidthstring 00.00.0000
+
+
+\noun on 
+env
+\noun default 
+ The Lexical Environment register.
+ This points to the topmost rib in a ribcage of lexical bindings.
+\layout List
+\labelwidthstring 00.00.0000
+
+
+\noun on 
+vlr
+\noun default 
+ The Value Rib register.
+ This register contains the values of operands to a function application.
+\layout List
+\labelwidthstring 00.00.0000
+
+
+\noun on 
+stk
+\noun default 
+ The Stack register.
+ This register points to the topmost call-frame.
+\layout Standard
+
+A Call Frame simply contains fields for each of the five registers except
+ 
+\noun on 
+acc
+\noun default 
+.
+ 
+\layout Standard
+
+A heap-based interpreter first simplifies a Scheme program (through syntax-expan
+sion) into several 
+\emph on 
+core forms
+\emph default 
+: Applications, Lexical Variable References/Stores, Free Variable References/Bin
+dings/Stores, and the primitive special expressions: 
+\noun on 
+lambda, begin, if
+\noun default 
+.
+ It then translates the simplified Scheme program into an abstract syntax
+ tree and then finally into an executable micro-expression (
+\begin_inset Formula $\mu $
+\end_inset 
+
+-expression).
+ 
+\layout Standard
+
+To evaluate the 
+\begin_inset Formula $\mu $
+\end_inset 
+
+-expression, it stores the 
+\begin_inset Formula $\mu $
+\end_inset 
+
+-expression in the 
+\noun on 
+nxp, 
+\noun default 
+clears the other registers if necessary, and begins the following pseudocode
+ loop:
+\layout Quote
+
+Loop: If 
+\noun on 
+nxp 
+\noun default 
+contains no 
+\begin_inset Formula $\mu $
+\end_inset 
+
+-expression
+\layout Quote
+
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+If 
+\noun on 
+stk 
+\noun default 
+is non-empty
+\layout Quote
+
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+
+\noun on 
+stk
+\begin_inset Formula $\rightarrow $
+\end_inset 
+
+
+\noun default 
+ Registers
+\layout Quote
+
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+Loop
+\layout Quote
+
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+Else
+\layout Quote
+
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+Return 
+\noun on 
+acc
+\layout Quote
+
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+Else
+\layout Quote
+
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+Execute 
+\noun on 
+nxp
+\layout Quote
+
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+\SpecialChar ~
+Loop
+\layout Standard
+
+- briefly describe enough about the SISC interpreter in order to understand
+ our technique - Rationale behind a heap-based interpreter - try to generalize
+ to other interpreters / languages - describe how the interpreter executes
+ non-k code - representation of a k in SISC: it's basically a stack of call
+ frames 
+\layout Subsection*
+
+Continuation Capture
+\layout Standard
+
+- what we do when a continuation is captured - special callframe fields
+\layout Subsection*
+
+Continuation Invocation
+\layout Standard
+
+- what we do when a continuation is invoked 
+\layout Section*
+
+Performance
+\layout Standard
+
+- best case, worst case, typical case scenarios - measurements of the above
+ - comparison with other Schemes
+\layout Section*
+
+Related Work
+\layout Standard
+
+- mostly in other Schemes but for ICFP we need to look at others languages
+ too 
+\layout Section*
+
+Conclusion
+\layout Bibliography
+\bibitem {key-3}
+
+Dybvig, R.
+ Kent, Three Implementation Models for Scheme
+\the_end

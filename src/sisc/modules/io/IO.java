@@ -1,0 +1,754 @@
+package sisc.modules.io;
+
+import java.io.*;
+import java.net.*;
+
+import sisc.interpreter.*;
+import sisc.nativefun.*;
+import sisc.data.*;
+import sisc.io.*;
+import sisc.reader.SourceReader;
+import sisc.util.Util;
+import sisc.exprs.AnnotatedExpr;
+
+public class IO extends IndexedProcedure {
+
+    public static Symbol IOB =
+        Symbol.intern("sisc.modules.io.Messages");
+
+    protected static final int
+        //NEXT = 37,
+
+        ABSPATHQ            = 0,
+        CHARREADY           = 3,
+        CLOSEINPUTPORT      = 4,
+        CLOSEOUTPUTPORT     = 5,
+        DISPLAY             = 8,
+        FILEEXISTSQ         = 9,
+        FINDRESOURCE        = 6,
+        FINDRESOURCES       = 2,
+        FLUSHOUTPUTPORT     = 10,
+        INPORTQ             = 12,
+        INPORTLOCATION      = 13,
+        LOAD                = 14,
+        LOADEXPANDED        = 24,
+        MAKEPATH            = 15,
+        NORMALIZEURL        = 16,
+        OPENAUTOFLUSHSTREAM = 35,
+        OPENAUTOFLUSHWRITER = 36,
+        OPENBUFFEREDCHARINPORT = 32,
+        OPENBUFFEREDCHAROUTPORT = 33,
+        OPENCHARINPUTPORT   = 31,
+        OPENCHAROUTPUTPORT   = 34,
+        OPENINPUTFILE       = 17,
+        OPENOUTPUTFILE      = 19,
+        OPENSOURCEINPUTFILE = 20,
+        OUTPORTQ            = 22,
+        PEEKBYTE            = 30,
+        PEEKCHAR            = 23,
+        PORTQ               = 27,
+        READ                = 21,
+        READBYTE            = 29,
+        READCHAR            = 18,
+        READSTRING          = 25,
+        READCODE            = 11,
+        WRITE               = 1,
+        WRITEBYTE           = 28,
+        WRITECHAR           = 7,
+        WRITESTRING         = 26;
+        
+
+    public static class Index extends IndexedLibraryAdapter { 
+        
+        public Value construct(Object context, int id) {
+            return new IO(id);
+        }
+        
+     public Index() {
+            define("absolute-path?"     , ABSPATHQ);
+            define("char-ready?"        , CHARREADY);
+            define("close-input-port"   , CLOSEINPUTPORT);
+            define("close-output-port"  , CLOSEOUTPUTPORT);
+            define("display"            , DISPLAY);
+            define("file-exists?"       , FILEEXISTSQ);
+            define("find-resource"      , FINDRESOURCE);
+            define("find-resources"     , FINDRESOURCES);
+            define("flush-output-port"  , FLUSHOUTPUTPORT);
+            define("input-port?"        , INPORTQ);
+            define("input-port-location", INPORTLOCATION);
+            define("load"               , LOAD);
+            define("load-expanded"               , LOADEXPANDED);
+            define("normalize-url"      , NORMALIZEURL);
+            define("open-autoflush-binary-output-port", OPENAUTOFLUSHSTREAM);
+            define("open-autoflush-character-output-port", OPENAUTOFLUSHWRITER);
+            define("open-buffered-character-input-port", OPENBUFFEREDCHARINPORT);
+            define("open-buffered-character-output-port", OPENBUFFEREDCHAROUTPORT);
+            define("open-character-input-port", OPENCHARINPUTPORT);
+            define("open-character-output-port", OPENCHAROUTPUTPORT);
+            define("open-input-file"    , OPENINPUTFILE);
+            define("open-output-file"   , OPENOUTPUTFILE);
+            define("open-source-input-file", OPENSOURCEINPUTFILE);
+            define("output-port?"       , OUTPORTQ);
+            define("peek-byte"          , PEEKBYTE);
+            define("peek-char"          , PEEKCHAR);
+            define("port?"              , PORTQ);
+            define("read"               , READ);
+            define("read-byte"          , READBYTE);
+            define("read-char"          , READCHAR);
+            define("read-code"          , READCODE);
+            define("read-string"        , READSTRING);
+            define("write"              , WRITE);
+            define("write-byte"         , WRITEBYTE);
+            define("write-char"         , WRITECHAR);
+            define("write-string"       , WRITESTRING);
+        }
+    }
+    
+    public IO(int id) {
+        super(id);
+    }
+    
+    public IO() {}
+    
+    public static void throwIOException(Interpreter f, String message, IOException e) 
+        throws ContinuationException {
+        if (f.acc == null) {
+            error(f, message, list(new Pair(JEXCEPTION, javaWrap(e))));
+        } else {
+            if (f.acc.getName() != null) {
+               error(f, f.acc.getName(), message, list(new Pair(JEXCEPTION, javaWrap(e))));
+            } else {
+               error(f, message, list(new Pair(JEXCEPTION, javaWrap(e))));
+            }
+        }
+    }
+
+    private static void maybeThrowErrorWithExprLocation(SchemeException se, Value v) {
+        if (!(v instanceof AnnotatedExpr)) return;
+        AnnotatedExpr aexp = (AnnotatedExpr)v;
+        if (!(aexp.annotation instanceof Pair)) return;
+        Pair anns = (Pair)aexp.annotation;
+        Value sourceFile = assq(SOURCE_FILE, anns);
+        Value sourceLine = assq(SOURCE_LINE, anns);
+        Value sourceColumn = assq(SOURCE_COLUMN, anns);
+        if (sourceFile == FALSE ||
+            sourceLine == FALSE ||
+            sourceColumn == FALSE)
+            return;
+        throwNestedPrimException(liMessage(IOB, "evalat",
+                                           string(pair(sourceFile).cdr()),
+                                           num(pair(sourceLine).cdr()).intValue(),
+                                           num(pair(sourceColumn).cdr()).intValue()),
+                                 se);
+    }
+
+    private static Value readChar(Interpreter f, SchemeCharacterInputPort i) 
+        throws ContinuationException {
+        try {
+            int c=i.getReader().read();
+            if (c==-1) return EOF;
+            return new SchemeCharacter((char)c);
+        } catch (IOException e2) {
+            throwIOException(f, liMessage(IOB, "errorreading", i.toString(),
+                                          e2.getMessage()), e2);
+        }
+        return null; //Should never happen
+    }
+
+    private static Value peekChar(Interpreter f, SchemeCharacterInputPort i) 
+    	throws ContinuationException {
+    	try {
+    		PushbackReader pbr=(PushbackReader)i.getReader();
+
+    		Value v=readChar(f, i);
+    		if (v instanceof SchemeCharacter) {
+    			try {                    
+    				pbr.unread(((SchemeCharacter)v).c);
+    			} catch (IOException e) {
+    				throwIOException(f, liMessage(IOB, "errorreading", 
+    						i.toString()), e);
+    			}	
+    		}
+
+            return v;
+    	} catch (ClassCastException cce) {
+        	throwPrimException(liMessage(IOB, "peeknotsupported",
+                     i.toString()));
+        	return VOID;
+    	}
+    }
+    
+    private static Value readByte(Interpreter f, SchemeBinaryInputPort i) throws ContinuationException {
+        try {
+            int c=i.getInputStream().read();
+            if (c==-1) return EOF;
+            return Quantity.valueOf(c);
+        } catch (IOException e2) {
+            throwIOException(f, liMessage(IOB, "errorreading", i.toString(),
+                                          e2.getMessage()), e2);
+        }
+        return null; //Should never happen
+    }
+    
+    private static Value peekByte(Interpreter f, SchemeBinaryInputPort i) throws ContinuationException {
+    	try {
+    		PushbackInputStream pbi=(PushbackInputStream)i.getInputStream();
+            Value v=readByte(f, i);
+            if (v instanceof Quantity) {
+                try {
+                    pbi.unread(((Quantity)v).indexValue());
+                } catch (IOException e) {
+                    throwIOException(f, liMessage(IOB, "errorreading", 
+                                                  i.toString()), e);
+                }
+            }
+            return v;
+        } catch (ClassCastException cce) {
+        	throwPrimException(liMessage(IOB, "peeknotsupported",
+        			                     i.toString()));
+        	return VOID;
+        }
+    }
+
+    private static Value read(Interpreter r, SchemeCharacterInputPort i, int flags) 
+        throws ContinuationException {
+        try {
+            return r.dynenv.parser.nextExpression((PushbackReader)i.getReader(), flags, r.dynenv.sourceAnnotations);
+        } catch (EOFException e) {
+            return EOF;
+        } catch (IOException e2) {
+            throwIOException(r, liMessage(IOB, "errorreading", i.toString(),
+                                          e2.getMessage()), e2);
+        } catch (ClassCastException cce) {
+        	throwPrimException(liMessage(IOB, "peeknotsupported",
+                    i.toString()));        	
+        }
+        return null; //Should never happen
+
+    }
+    
+    public static Value read(Interpreter r, SchemeCharacterInputPort i) 
+        throws ContinuationException {
+        return read(r, i,
+                    (r.dynenv.caseSensitive ? 
+                    sisc.reader.Parser.CASE_SENSITIVE : 0) |
+                    (r.dynenv.permissiveParsing ? 
+                     sisc.reader.Parser.PERMISSIVE_PARSING : 0));
+    }
+
+    public static Value readCode(Interpreter r, SchemeCharacterInputPort i) 
+        throws ContinuationException {
+        return read(r, i,
+                    sisc.reader.Parser.PRODUCE_ANNOTATIONS |
+                    sisc.reader.Parser.PRODUCE_IMMUTABLES |
+                    (r.dynenv.caseSensitive ? 
+                     sisc.reader.Parser.CASE_SENSITIVE : 0) |
+                    (r.dynenv.permissiveParsing ? 
+                     sisc.reader.Parser.PERMISSIVE_PARSING : 0));
+    }
+
+    public Value displayOrWrite(Interpreter r,
+                                SchemeCharacterOutputPort port,
+                                Value v,
+                                boolean display) 
+        throws ContinuationException {
+        try {
+            ValueWriter w = r.dynenv.printShared ?
+                new SharedValueWriter(port.getWriter(), r.dynenv.vectorLengthPrefixing,
+                                      r.dynenv.caseSensitive):
+                new PortValueWriter(port.getWriter(), r.dynenv.vectorLengthPrefixing,
+                                    r.dynenv.caseSensitive);
+            if (r.dynenv.customPrinting)
+            	w=new CustomValueWriter(w,r.dynenv);
+            	
+            if (display) w.display(v);
+            else w.write(v);
+        } catch (IOException e) {
+            throwIOException(r, liMessage(IOB, "errorwriting", 
+                                          port.toString(),
+                                          e.getMessage()), e);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return VOID;
+    }
+
+    public static URL urlClean(URL u) {
+        if (u.getProtocol().equals("file") &&
+            (u.getRef()!=null || u.getQuery()!=null)) {
+            StringBuffer b=new StringBuffer(u.getProtocol());
+            b.append(':');
+            b.append(u.getPath());
+            if (u.getRef()!=null) {
+                b.append("%23");
+                b.append(URLEncoder.encode(u.getRef()));
+            }
+            if (u.getQuery()!=null) {
+                b.append("%3F");
+                b.append(URLEncoder.encode(u.getQuery()));
+            }
+            try {
+                u=new URL(b.toString());
+            } catch (Exception e2) {
+                e2.printStackTrace();
+            }
+        } 
+        return u;
+    }
+
+    public static SchemeCharacterInputPort openCharInFile(Interpreter f,
+                                                 URL u,
+                                                 Charset encoding) 
+        throws ContinuationException {    
+        try {
+            return new SchemeCharacterInputPort(
+                    new SourceReader(new BufferedReader(encoding.newInputStreamReader(getURLInputStream(u))),
+                                       u.toString()));
+        } catch (IOException e) {
+            throwIOException(f, liMessage(IOB, "erroropening", 
+                                          u.toString()), e);
+        }
+        return null;
+    }
+
+    public static SchemeCharacterOutputPort openCharOutFile(Interpreter f, 
+                                                   URL url,
+                                                   Charset encoding,
+                                                   boolean aflush) 
+        throws ContinuationException {
+        try {
+            Writer w=new OutputStreamWriter(getURLOutputStream(url), encoding.getCharsetName());           
+            if (aflush) {
+            	System.err.println(warn("autoflushdeprecated"));
+            	w=new AutoflushWriter(w);
+            }
+            return new SchemeCharacterOutputPort(w);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throwIOException(f, liMessage(IOB, "erroropening",
+                                          url.toString()), e);
+        }
+        return null;
+    }
+    
+    public static InputStream getURLInputStream(URL u) throws IOException {
+        URLConnection conn = u.openConnection();
+        conn.setDoInput(true);
+        conn.setDoOutput(false);
+        return conn.getInputStream();
+    }
+ 
+    public static OutputStream getURLOutputStream(URL u) throws IOException {
+        if (u.getProtocol().equals("file")) {
+            //the JDK does not permit write access to file URLs
+            return new FileOutputStream(u.getPath());
+        }        
+        URLConnection conn = u.openConnection();
+        conn.setDoInput(false);
+        conn.setDoOutput(true);
+        return conn.getOutputStream();
+    }
+        
+    public static void load(Interpreter f, URL u, boolean expanded)
+        throws ContinuationException {
+
+        SchemeCharacterInputPort p = null;
+        SourceReader sr = null;
+        try {
+            URLConnection conn = u.openConnection();
+            conn.setDoInput(true);
+            conn.setDoOutput(false);
+            // XXX possibly use conn.guessContentTypeFromStream(),
+            // to get the stream's content-encoding
+            sr=new SourceReader(new InputStreamReader(conn.getInputStream(),
+                    Util.charsetFromString
+                    (conn.getContentEncoding()).getCharsetName()), u.toString());
+            p = new SchemeCharacterInputPort(sr);
+        } catch (IOException e) {
+            throwIOException(f, liMessage(IOB, "erroropening",
+                                          u.toString()),
+                             e);
+        }
+
+        Interpreter r = Context.enter(f.dynenv);
+
+        try {
+            Value v = null;
+            do {
+                int startLine = sr.line;
+                int startColumn = sr.column;
+                v = readCode(f, p);
+
+                if (v != EOF) {
+                    try {
+                        if (expanded) {
+                            r.interpret(r.compile(v));
+                        } else {
+                            r.eval(v, f.tpl);
+                        }
+                    } catch (SchemeException se) {
+                        maybeThrowErrorWithExprLocation(se, v);
+                        throwNestedPrimException(liMessage(IOB, "evalat", sr.sourceFile, startLine, startColumn), se);
+                    }
+                }
+            } while (v != EOF);
+        } finally {
+            Context.exit();
+        }
+    }
+
+    public Value doApply(Interpreter f)
+        throws ContinuationException {
+        switch (f.vlr.length) {
+        case 0:
+            switch (id) {
+            case CHARREADY:
+                try {
+                    return truth(f.dynenv.getCurrentInReader().ready());
+                } catch (IOException e) {
+                    return FALSE;
+                }
+            case FLUSHOUTPUTPORT:
+                try {
+                    f.dynenv.getCurrentOutWriter().flush();
+                } catch (IOException e) {
+                    throwIOException(f, liMessage(IOB, "errorflushing", 
+                                                  f.dynenv.out.toString()), e);
+                }
+                return VOID;
+            case PEEKCHAR:
+            	return peekChar(f, charinport(f.dynenv.getCurrentInPort()));
+            case PEEKBYTE:
+            	return peekByte(f, bininport(f.dynenv.getCurrentInPort()));
+            case READ:
+                return read(f, charinport(f.dynenv.getCurrentInPort()));
+            case READBYTE:
+                return readByte(f, bininport(f.dynenv.getCurrentInPort()));
+            case READCHAR:
+                return readChar(f, charinport(f.dynenv.getCurrentInPort()));
+            case READCODE:
+                return readCode(f, charinport(f.dynenv.getCurrentInPort()));
+            default:
+                throwArgSizeException();
+            }
+        case 1:
+            switch (id) {
+            case PORTQ: return truth(f.vlr[0] instanceof Port);
+            case INPORTQ: return truth(f.vlr[0] instanceof InputPort);
+            case OUTPORTQ: return truth(f.vlr[0] instanceof OutputPort);
+            case CHARREADY:
+                InputPort inport=charinport(f.vlr[0]);
+                try {
+                    return truth(inport.ready());
+                } catch (IOException e) {
+                    return FALSE;
+                }
+            case DISPLAY:
+                return displayOrWrite(f, charoutport(f.dynenv.getCurrentOutPort()), f.vlr[0], true);
+            case WRITE:
+                return displayOrWrite(f, charoutport(f.dynenv.getCurrentOutPort()), f.vlr[0], false);
+            case PEEKBYTE:
+                return peekByte(f, bininport(f.vlr[0]));
+            case PEEKCHAR:
+            	return peekChar(f, charinport(f.vlr[0]));
+            case READ:
+                SchemeCharacterInputPort cinport=charinport(f.vlr[0]);
+                return read(f, cinport);
+            case READBYTE:
+                SchemeBinaryInputPort binport=bininport(f.vlr[0]);
+                return readByte(f, binport);
+            case READCHAR:
+                cinport=charinport(f.vlr[0]);
+                return readChar(f, cinport);
+            case READCODE:
+                cinport=charinport(f.vlr[0]);
+                return readCode(f, cinport);
+            case OPENAUTOFLUSHSTREAM:
+                System.err.println(warn("autoflushdeprecated"));
+                return new SchemeBinaryOutputPort(new AutoflushOutputStream(binoutstream(f.vlr[0])));
+            case OPENAUTOFLUSHWRITER:
+                System.err.println(warn("autoflushdeprecated"));
+                return new SchemeCharacterOutputPort(new AutoflushWriter(charoutwriter(f.vlr[0])));
+            case OPENCHARINPUTPORT:
+            	return new SchemeCharacterInputPort(new PushbackReader(new BufferedReader(
+            			f.dynenv.getCharacterSet().newInputStreamReader(bininstream(f.vlr[0])))));
+            case OPENCHAROUTPUTPORT:
+                return new SchemeCharacterOutputPort(new BufferedWriter(
+                        f.dynenv.getCharacterSet().newOutputStreamWriter(binoutstream(f.vlr[0]))));
+            case OPENSOURCEINPUTFILE:
+                URL url = url(f.vlr[0]);
+                return openCharInFile(f, url, f.dynenv.characterSet);
+            case OPENINPUTFILE:
+                url = url(f.vlr[0]);
+                return openCharInFile(f, url, f.dynenv.characterSet);
+            case OPENOUTPUTFILE:
+                url = url(f.vlr[0]);
+                return openCharOutFile(f, url, f.dynenv.characterSet, false);
+            case OPENBUFFEREDCHARINPORT: 
+            	return new SchemeCharacterInputPort(new BufferedReader(charinreader(f.vlr[0])));
+            case OPENBUFFEREDCHAROUTPORT: 
+            	return new SchemeCharacterOutputPort(new BufferedWriter(charoutwriter(f.vlr[0])));
+            case FLUSHOUTPUTPORT:
+                OutputPort op=outport(f.vlr[0]);
+                try {
+                    op.flush();
+                } catch (IOException e) {
+                    throwIOException(f, liMessage(IOB, "errorflushing", 
+                                                  op.toString()), e);
+                }
+                return VOID;
+            case CLOSEINPUTPORT:
+                InputPort inp=inport(f.vlr[0]);
+                try {
+                    if (inp!=f.dynenv.in) inp.close();
+                } catch (IOException e) {
+                    throwIOException(f, liMessage(IOB, "errorclosing",
+                                                  inp.toString()),
+                                     e);
+                }
+                return VOID;
+            case CLOSEOUTPUTPORT:
+                OutputPort outp=outport(f.vlr[0]);
+                try {
+                    if (outp!=f.dynenv.out) outp.close();
+                } catch (IOException e) {
+                    throwIOException(f, liMessage(IOB, "errorclosing",
+                                                  outp.toString()),
+                                     e);
+                }
+                return VOID;
+            case INPORTLOCATION:
+                Reader in = charinreader(f.vlr[0]);
+                if (in instanceof SourceReader) {
+                    SourceReader sinp = (SourceReader)in;
+                    return sourceAnnotations(sinp.sourceFile,
+                                             sinp.line,
+                                             sinp.column,
+                                             f.dynenv.sourceAnnotations);
+                } else
+                    return FALSE;
+            case LOAD:
+                load(f, url(f.vlr[0]), false);
+                return VOID;
+            case LOADEXPANDED:
+                load(f, url(f.vlr[0]), true);
+                return VOID;
+            case WRITECHAR:
+                try {
+                    f.dynenv.getCurrentOutWriter().write(character(f.vlr[0]));
+                } catch (IOException e) {
+                    throwIOException(f, liMessage(IOB, "errorwriting",
+                                                  f.dynenv.out.toString(),
+                                                  e.getMessage()), e);
+                }
+                return VOID;
+            case WRITEBYTE:
+                try {
+                   binoutstream(f.dynenv.getCurrentOutPort()).write(num(f.vlr[0]).indexValue());
+                } catch (IOException e) {
+                    throwIOException(f, liMessage(IOB, "errorwriting",
+                                                  f.dynenv.out.toString(),
+                                                  e.getMessage()), e);
+                }
+                return VOID;
+            case FILEEXISTSQ:
+                try {
+                    url(f.vlr[0]).openConnection().getInputStream().close();
+                    return TRUE;
+                } catch (IOException e) {
+                    return FALSE;
+                }
+            case FINDRESOURCE:
+                url = Util.currentClassLoader().getResource(string(f.vlr[0]));
+                if (url == null) 
+                    return FALSE;
+                else return new SchemeString(url.toString());
+            case FINDRESOURCES:
+                java.util.Enumeration e;
+                try {
+                    e = Util.currentClassLoader().getResources(string(f.vlr[0]));
+                } catch (IOException ex) {
+                    return EMPTYLIST;
+                }
+                if (!e.hasMoreElements()) return EMPTYLIST;
+                Pair pa = new Pair();
+                while(true) {
+                    pa.setCar(new SchemeString((String)e.nextElement()));
+                    if (!e.hasMoreElements()) break;
+                    pa.setCdr(new Pair());
+                    pa = (Pair)pa.cdr();
+                }
+                return pa;
+            case ABSPATHQ:
+                String f1=string(f.vlr[0]);
+                if (f1.startsWith("file:"))
+                    f1=f1.substring(5);
+                File fn=new File(f1);
+                return truth(fn.isAbsolute());
+            case NORMALIZEURL:
+                URL u=urlClean(url(f.vlr[0]));
+                return new SchemeString(u.toString());
+            default:
+                throwArgSizeException();
+            }
+        case 2:
+            switch (id) {
+            case WRITECHAR:
+                Writer port=charoutwriter(f.vlr[1]);
+                try {
+                    port.write(character(f.vlr[0]));
+                } catch (IOException e) {
+                    throwIOException(f, liMessage(IOB, "errorwriting",
+                                                  port.toString(),
+                                                  e.getMessage()), e);
+                }
+                return VOID;
+            case WRITEBYTE:
+                OutputStream bport=binoutstream(f.vlr[1]);
+                try {
+                    bport.write(num(f.vlr[0]).indexValue());
+                } catch (IOException e) {
+                    throwIOException(f, liMessage(IOB, "errorwriting",
+                                                  bport.toString(),
+                                                  e.getMessage()), e);
+                }
+                return VOID;
+            case DISPLAY:
+                return displayOrWrite(f, charoutport(f.vlr[1]), f.vlr[0], true);
+            case WRITE:
+                return displayOrWrite(f, charoutport(f.vlr[1]), f.vlr[0], false);
+            case OPENCHARINPUTPORT:
+                try {
+                    return new SchemeCharacterInputPort(new PushbackReader(new BufferedReader(
+                            Charset.forName(string(f.vlr[1])).newInputStreamReader(bininstream(f.vlr[0])))));
+                } catch (UnsupportedEncodingException use) {
+                    throwIOException(f, liMessage(IOB, "unsupencoding", string(f.vlr[1])), 
+                            new IOException(use.getMessage())); 
+                }
+            case OPENCHAROUTPUTPORT:
+                try {
+                    return new SchemeCharacterOutputPort(new BufferedWriter(
+                            Charset.forName(string(f.vlr[1])).newOutputStreamWriter(binoutstream(f.vlr[0]))));
+                } catch (UnsupportedEncodingException use) {
+                    throwIOException(f, liMessage(IOB, "unsupencoding", string(f.vlr[1])), 
+                            new IOException(use.getMessage())); 
+                }
+            case OPENINPUTFILE:
+                URL url = url(f.vlr[0]);
+                return openCharInFile(f, url,
+                                      Util.charsetFromString(string(f.vlr[1])));
+            case OPENOUTPUTFILE:
+                url = url(f.vlr[0]);
+                boolean aflush=false;
+                Charset encoding=f.dynenv.characterSet;
+                if (f.vlr[1] instanceof SchemeString)
+                    encoding=Util.charsetFromString(string(f.vlr[1]));
+                else
+                    aflush=truth(f.vlr[1]);
+                return openCharOutFile(f, url, encoding, aflush);
+            case OPENBUFFEREDCHARINPORT: 
+            	return new SchemeCharacterInputPort(new BufferedReader(charinreader(f.vlr[0]),
+            			num(f.vlr[1]).indexValue()));
+            case OPENBUFFEREDCHAROUTPORT: 
+            	return new SchemeCharacterOutputPort(new BufferedWriter(charoutwriter(f.vlr[0]),
+            			num(f.vlr[1]).indexValue()));
+            case NORMALIZEURL:
+                return new SchemeString(urlClean(url(f.vlr[0], 
+                                                     f.vlr[1])).toString());
+            default:
+                throwArgSizeException();
+            }
+        case 3:
+            switch (id) {
+            case READSTRING:
+                try {
+                	int charsRead=str(f.vlr[0]).readFromReader(f.dynenv.getCurrentInReader(),
+                            num(f.vlr[1]).intValue(),
+                            num(f.vlr[2]).intValue());
+                    if (charsRead < 0) return EOF;
+                    else return Quantity.valueOf(charsRead);
+                } catch (IOException e) {
+                    throwIOException(f, e.getMessage(), e);
+                }
+                return VOID;
+            case WRITESTRING:
+                try {
+                    str(f.vlr[0]).writeToWriter(f.dynenv.getCurrentOutWriter(),
+                                                num(f.vlr[1]).intValue(),
+                                                num(f.vlr[2]).intValue());
+                } catch (IOException e) {
+                    throwIOException(f, e.getMessage(), e);
+                }
+                return VOID;
+            case OPENOUTPUTFILE:
+                URL url = url(f.vlr[0]);
+                return openCharOutFile(f, url,
+                                       Util.charsetFromString(string(f.vlr[1])),
+                                       truth(f.vlr[2]));
+            default:
+                throwArgSizeException();
+            }
+        case 4:
+            switch (id) {
+            case READSTRING:
+                try {
+                	int charsRead=str(f.vlr[0]).readFromReader(charinreader(f.vlr[3]),
+                            num(f.vlr[1]).intValue(),
+                            num(f.vlr[2]).intValue());
+                	if (charsRead<0) return EOF;
+                	else return Quantity.valueOf(charsRead);
+                } catch (IOException e) {
+                    throwIOException(f, e.getMessage(), e);
+                }
+                return VOID;
+            case WRITESTRING:
+                try {
+                    str(f.vlr[0]).writeToWriter(charoutwriter(f.vlr[3]),
+                                                num(f.vlr[1]).intValue(),
+                                                num(f.vlr[2]).intValue());
+                } catch (IOException e) {
+                    throwIOException(f, e.getMessage(), e);
+                }
+                return VOID;
+            default:
+                throwArgSizeException();
+            }
+        default:
+            throwArgSizeException();
+        }
+        return VOID;
+    }
+
+}
+/*
+ * The contents of this file are subject to the Mozilla Public
+ * License Version 1.1 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of
+ * the License at http://www.mozilla.org/MPL/
+ * 
+ * Software distributed under the License is distributed on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ * 
+ * The Original Code is the Second Interpreter of Scheme Code (SISC).
+ * 
+ * The Initial Developer of the Original Code is Scott G. Miller.
+ * Portions created by Scott G. Miller are Copyright (C) 2000-2007
+ * Scott G. Miller.  All Rights Reserved.
+ * 
+ * Contributor(s):
+ * Matthias Radestock 
+ * 
+ * Alternatively, the contents of this file may be used under the
+ * terms of the GNU General Public License Version 2 or later (the
+ * "GPL"), in which case the provisions of the GPL are applicable 
+ * instead of those above.  If you wish to allow use of your 
+ * version of this file only under the terms of the GPL and not to
+ * allow others to use your version of this file under the MPL,
+ * indicate your decision by deleting the provisions above and
+ * replace them with the notice and other provisions required by
+ * the GPL.  If you do not delete the provisions above, a recipient
+ * may use your version of this file under either the MPL or the
+ * GPL.
+ */

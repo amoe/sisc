@@ -1,0 +1,2177 @@
+<chapter id="SchemeLanguage">
+  <title>
+    Scheme Language
+  </title>
+  <para>
+    In this chapter we will examine the language that &SISC;
+    interprets, which is a superset of the
+    &R5RS; Scheme Standard.
+  </para>
+  <sect1 id="Types">
+    <title>
+      Types
+    </title>
+    <sect2 id="Numbers">
+      <title>
+	Numbers
+      </title>
+      <para>
+	The full Scheme number tower is supported:
+      </para>
+      <itemizedlist>
+	<listitem>
+	  <para>
+	    Integers
+	  </para>
+	</listitem>
+	<listitem>
+	  <para>
+	    Floating Point numbers 
+	  </para>
+	</listitem>
+	<listitem>
+	  <para>
+	    Rational numbers
+	  </para>
+	</listitem>
+	<listitem>
+	  <para>
+	    Complex numbers
+	  </para>
+	</listitem>
+      </itemizedlist>
+      <para>
+	Depending on the numeric library compiled into &SISC;,
+	floating point numbers have either 32 or 64 bit IEEE
+	precision, or arbitrary
+        <footnote>
+          <para>
+            Essentially arbitrary, see <xref linkend="Limits"/> for a
+            discussion of the physical limits of number representation
+          </para>
+        </footnote>
+        precision. Regardless, &SISC;'s
+	complex numbers have floating point components of the same
+	precision as the reals. Integers have arbitrary precision in
+	all numeric libraries, and rational numbers are built with
+	arbitrary precision components.
+      </para>
+      <sect3 id="NumericConstants">
+	<title>
+	  Numeric constants
+	</title>
+	<para>
+	  The precision specifying exponents (<computeroutput>S, F, L,
+	  </computeroutput>and <computeroutput>D</computeroutput>) are
+	  ignored in &SISC;, all inexact numbers are kept in the precision
+	  of the numeric library. The exponents are read and used to scale
+	  the real number as expected.  In the case of arbitrary precision
+	  floats, specific precision constraints are maintained to prevent
+	  a runaway increase of precision. The constraints can be set by
+	  <envar>minFloatPrecision</envar> and
+	  <envar>maxFloatPrecision</envar> configuration parameters on
+	  startup. See <xref linkend="config-parameters"/>.
+	</para>
+	<para>
+	  All four base specifiers (<computeroutput>&num;x, &num;o,
+	    &num;d, &num;b</computeroutput>) are supported for
+	  integers and rationals. Only decimal 
+	  (<computeroutput>&num;d</computeroutput>), the
+	  default, is supported for floating point and complex
+	  numbers.
+	</para>
+        <para>
+          &SISC; will produce infinite or not-a-number quantities from
+          some operations.  Those quantities are represented and
+          can be used in Scheme programs as 
+          <literal>#!+inf</literal> (positive infinity),
+          <literal>#!-inf</literal> (negative infinity), and
+          <literal>#!nan</literal> (not-a-number).
+        </para>
+      </sect3>
+      <sect3 id="Exactness">
+	<title>
+	  Exactness
+	</title>
+	<para>
+	  Exactness and inexactness contagion behaves as
+	  expected. Rational's are made inexact through
+	  division. Floats are made exact by conversion to a
+	  rational number. &SISC; attempts as accurate a conversion as
+	  possible, by converting the decimal portion of the number
+	  to a ratio with a denominator of the form 10^n, where n is
+	  the scale of the floating point number. Then the fraction
+	  is reduced as usual.
+	</para>
+	<para>
+	  Since complex numbers must have floating point components
+	  currently, conversion to an exact merely rounds the
+	  components to integers. 
+	</para>
+      </sect3>
+    </sect2>
+    <sect2 id="Characters">
+      <title>
+	Characters
+      </title>
+      <para>
+	&SISC;'s characters are double-byte wide.  This means that they
+	are capable of representing the full range of unicode characters. 
+        Unicode characters can be created with
+	<function>number-&gt;character</function>;
+	<literal>&num;&bsol;nnnnnn</literal>, where
+	<literal>nnnnnn</literal> is an octal number in the range
+	000000 -&gt; 177777; or <literal>&num;&bsol;uxxxx</literal>,
+	where <literal>xxxx</literal> is a hexadecimal number in the
+	range 0000 -&gt; ffff.  At least two zeros must be specified
+	to distinguish from the '0' character when using an octal
+	character literal.  At least one zero must be specified to
+	distinguish a hexadecimal character from the 'u' character.  
+      </para>
+      <para>
+        &SISC; also provides additional named characters, to add to
+        the Scheme standard's <literal>space</literal> and
+        <literal>newline</literal>:
+      </para>
+      <table id="named-characters">
+        <title>Named character literals</title>
+        <tgroup cols='2' align='left' colsep='1' rowsep='1'>
+          <colspec colname='Character Name'/>
+          <colspec colname='Unicode value (hex)'/>
+          <thead>
+            <row>
+              <entry>Character Name</entry>
+              <entry>Unicode Value (hex)</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><literal>backspace</literal></entry>
+              <entry><literal>0008</literal></entry>
+            </row>
+            <row>
+              <entry><literal>newline</literal></entry>
+              <entry><literal>000a</literal></entry>
+            </row>
+            <row>
+              <entry><literal>nul</literal></entry>
+              <entry><literal>0000</literal></entry>
+            </row>
+            <row>
+              <entry><literal>page</literal></entry>
+              <entry><literal>000c</literal></entry>
+            </row>
+            <row>
+              <entry><literal>return</literal></entry>
+              <entry><literal>000d</literal></entry>
+            </row>
+            <row>
+              <entry><literal>rubout</literal></entry>
+              <entry><literal>007f</literal></entry>
+            </row>
+            <row>
+              <entry><literal>space</literal></entry>
+              <entry><literal>0020</literal></entry>
+            </row>
+            <row>
+              <entry><literal>tab</literal></entry>
+              <entry><literal>0009</literal></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
+      <para>
+        Formally, &SISC;'s lexer modifies the &R5RS; grammar with the
+        following productions for character literals:
+      </para>
+      <programlisting>
+&lt;character&gt; --&gt; &num;&bsol; &lt;any character&gt; 
+     | &num;&bsol;u &lt;uinteger 16&gt; 
+     | &num;&bsol; &lt;uinteger 8&gt;
+     | &num;&bsol; &lt;character name&gt;
+&lt;character name&gt; --&gt; backspace | newline | nul 
+     | page | return | rubout | space | tab
+      </programlisting>
+      <para>
+	Characters are <emphasis>not</emphasis> compared with respect to the
+        locale of the running system.  Character comparison is equivalent
+        to numeric comparison of the character value as returned by
+        <function>char->integer</function>.
+      </para>
+      <para>
+        There are a number of reasons why a full Unicode system is
+        non-trivial, especially within the framework of the &R5RS;
+        string and character functions.  Such a discussion is outside
+        the scope of this document.  Unicode compliant processing
+        may be made available in the future as a library, however.
+      </para>
+    </sect2>
+    <sect2 id="Symbols">
+      <title>
+	Symbols
+      </title>
+      <para>
+	&SISC;'s symbols are ordinarily case-insensitive. &SISC;
+	maintains true pointer equality between symbols with like
+	contents, unless the symbol is created
+	<emphasis>uninterned</emphasis>. An uninterned symbol is one
+	which is guaranteed to be pointer distinct from any other
+	symbol in the Scheme system, even another with the same
+	contents. Uninterned symbols can be generated with:
+      </para>
+      <para>
+	<blockquote>
+	  <para>
+            <indexterm><primary>string->uninterned-symbol</primary>
+            </indexterm>
+	    &procedure;
+	    <methodsynopsis language="scheme" id="string2uninterned-symbol">
+	      <type>symbol</type>
+	      <methodname>string-&gt;uninterned-symbol</methodname>
+	      <methodparam>
+		<parameter>string</parameter>
+	      </methodparam>
+	    </methodsynopsis>
+	    <blockquote>
+	      <para>
+		Converts the provided string into an uninterned, pointer
+		distinct symbol.
+	      </para>
+	    </blockquote>
+	  </para>
+	</blockquote>
+      </para>
+      <para>
+        Uninterned symbols, while always pointer-distinct, may still
+        be <function>equal?</function> to another symbol if its
+        representation matches another.
+      </para>
+      <sect3>
+        <title>Case Sensitivity</title>
+        <para>
+          &SISC; also allows symbols to be created that
+          <emphasis>are</emphasis> case-sensitive. This can be done
+          one of two ways. The first is by setting the
+          <envar>caseSensitive</envar> configuration parameter (see
+          <xref linkend="config-parameters"/>. The second method is
+          via a non-standard symbol syntax. If a symbol is enclosed in
+          pipe ('|') characters, the reader will treat that individual
+          symbol as cased.  The syntax extends the &R5RS; grammar with
+          the following production:
+        </para>
+        <programlisting>
+&lt;cased symbol&gt; --&gt; |&lt;identifier&gt;|
+        </programlisting>
+        <example>
+          <title>Case sensitive Symbol literals</title>
+          <programlisting>
+(eq? 'a '|A|) ; =&gt; #f
+(eq? 'a '|a|) ; =&gt; #t
+(eq? '|A| '|a|) ; =&gt; #f
+          </programlisting>
+        </example>
+      </sect3>
+      <sect3>
+        <title>Printed Representation</title>
+        <para>
+          Symbols may contain characters that are disallowed by &R5RS;
+          using <function>symbol->string</function>.  In such a case, 
+          the printed representation of that symbol will contain those
+          characters, prefaced with the escape ('\') character.
+          Likewise, such symbols may be created without
+          <function>symbol->string</function> by escaping non-standard
+          characters.
+        </para>
+        <para>
+          Symbols which contain characters that could only be present
+          in a case-sensitive environment will be printed in one of
+          two ways, depending on the value of the
+          <function>case-sensitive</function> parameter.  If true, the
+          symbols will be printed as is, containing the upper and
+          lower case letters.  If false, the symbol will be printed
+          surrounded by pipe characters.  
+        </para>
+      </sect3>
+    </sect2>
+    <sect2 id="Strings">
+      <title>
+	Strings
+      </title>
+      <para>
+	Strings are built from Unicode characters, and are compared
+        lexicographically in a manner derived from character
+        comparison.  In addition to using backslash to escape the
+        double-quote (") character and the backspace character itself,
+        &SISC; provides several escape codes to ease string literal
+        construction.
+      </para>
+      <table id="string-escapes">
+        <title>String escape codes</title>
+        <tgroup cols='2' align='left' colsep='1' rowsep='1'>
+          <colspec colname='Character Name'/>
+          <colspec colname='Unicode value (hex)'/>
+          <thead>
+            <row>
+              <entry>Escape</entry>
+              <entry>Value</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><literal>&bsol;f</literal></entry>
+              <entry>Inserts the formfeed character (unicode 000c)</entry>
+            </row>
+            <row>
+              <entry><literal>&bsol;n</literal></entry>
+              <entry>Inserts the newline character (unicode 000a)</entry>
+            </row>
+            <row>
+              <entry><literal>&bsol;r</literal></entry>
+              <entry>Inserts the rubout character (unicode 007f)</entry>
+            </row>
+            <row>
+              <entry><literal>&bsol;t</literal></entry>
+              <entry>Inserts the tab character (unicode 0009)</entry>
+            </row>
+            <row>
+              <entry><literal>&bsol;uxxxx</literal></entry>
+              <entry>Inserts the unicode character described by the
+              hex number 'xxxx'.  All four hex digits must be specified.
+              </entry>
+            </row>
+            <row>
+              <entry><literal>&bsol;&bsol;</literal></entry>
+              <entry>Inserts the backslash ('&bsol;')
+              character</entry>
+            </row>
+            <row>
+              <entry><literal>&bsol;"</literal></entry>
+              <entry>Inserts the double quote ('"')
+              character</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
+    </sect2>
+    <sect2 id="Lists">
+      <title>
+        Pairs and Lists
+      </title>
+      <para>
+	A function is provided to determine if a given pair is a <emphasis>proper list</emphasis>.
+      </para>
+      <para>
+	<blockquote>
+	  <para>
+            <indexterm><primary>proper-list?</primary>
+            </indexterm>
+	    &procedure;
+	    <methodsynopsis language="scheme" id="proper-list-q">
+	      <type>#t/#f</type>
+	      <methodname>proper-list?</methodname>
+	      <methodparam>
+		<parameter>datum</parameter>
+	      </methodparam>
+	    </methodsynopsis>
+	    <blockquote>
+	      <para>        
+                Returns <literal>#t</literal> if the given argument is
+                a <emphasis>proper-list</emphasis>.  That is, if the
+                argument is a pair, whose <literal>cdr</literal> is
+                either the empty-list or also a proper-list, and which
+                contains no references to itself (is not circular).
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+    </sect2>
+    <sect2 id="Vectors">
+      <title>
+	Vectors
+      </title>
+      <para>
+	&SISC; supports the length prefix method of creating Vector
+	constants. For example, '<literal>&num;5(x)</literal>
+	creates a vector constant containing five identical
+	symbols.  In addition, the length-prefix form is used when
+	printing vectors, and if elements repeat at the end of a
+	Vector, only the last unique element is printed.  This form
+	is referred to as the <emphasis>compact</emphasis> vector 
+	representation.  The unprefixed form with all elements
+	displayed is called the <emphasis>verbose</emphasis> representation.
+      </para>
+      <para>
+	Vectors are displayed differently depending on the call
+	used.  When called with
+	<function>display</function>, in addition to the
+	ordinary &R5RS; rules regarding the output of values
+	displayed with <function>display</function>,
+	the verbose representation is displayed. Using 
+	<function>write</function>, on the other hand
+	produces the compact representation.
+      </para>
+      <para>
+        Displaying a vector with <function>pretty-print</function> may
+        output either the verbose or compact representation of a
+        vector.  The behavior in this regard is controlled by the
+        <envar>vectorLengthPrefixing</envar> configuration parameter
+        (see <xref linkend="config-parameters"/>).  If set to &num;t,
+        <function>pretty-print</function> will emit the compact
+        representation. If &num;f, the verbose representation is
+        produced.
+      </para>
+    </sect2>
+    <sect2 id="Boxing">
+      <title>
+	Boxes
+      </title>
+      <para>
+	&SISC; supports boxes, a container for a
+	Scheme value. Boxing is often used to implement
+	call-by-reference semantics. Boxes are created and accessed
+	using the following three functions:
+      </para>
+      <para>
+	<blockquote>
+	  <para>
+            <indexterm><primary>box</primary>
+            </indexterm>
+	    &procedure;
+	    <methodsynopsis language="scheme" id="box">
+	      <type>box</type>
+	      <methodname>box</methodname>
+	      <methodparam>
+		<parameter>value</parameter>
+	      </methodparam>
+	    </methodsynopsis>
+	    <blockquote>
+	      <para>
+		Creates a box filled with the given value.
+	      </para>
+	    </blockquote>
+	  </para>
+	  <para>
+            <indexterm><primary>unbox</primary>
+            </indexterm>
+	    &procedure;
+	    <methodsynopsis language="scheme" id="unbox">
+	      <type>value</type>
+	      <methodname>unbox</methodname>
+	      <methodparam>
+		<parameter>box</parameter>
+	      </methodparam>
+	    </methodsynopsis>
+	    <blockquote>
+	      <para>
+		Returns the value contained in the given box.
+	      </para>
+	    </blockquote>
+	  </para>
+	  <para>
+            <indexterm><primary>set-box!</primary>
+            </indexterm>
+	    &procedure;
+	    <methodsynopsis language="scheme" id="set-box-bang">
+	      <type>undefined</type>
+	      <methodname>set-box!</methodname>
+	      <methodparam>
+		<parameter>box</parameter>
+	      </methodparam>
+	      <methodparam>
+		<parameter>value</parameter>
+	      </methodparam>
+	    </methodsynopsis>
+	    <blockquote>
+	      <para>
+		Replaces the value contained in the given box with the
+		value provided.
+	      </para>
+	    </blockquote>
+	  </para>
+	</blockquote>
+      </para>
+      <para>
+	In addition to the <function>box</function> function for
+	creating boxes, &SISC; provides an external representation for
+	boxes and boxed values. It extends the &R5RS; grammar with the 
+	following:
+      </para>
+      <programlisting>
+&lt;boxed value&gt; --&gt; &num;&amp;&lt;datum&gt;
+      </programlisting>
+      <para>
+	This syntax denotes a boxed value, with
+	<literal>&lt;datum&gt;</literal> as the contained
+	value.
+      </para>
+      <para>
+	Boxes are a distinct first class type.  The
+	<function>box?</function> predicate tests a value to see if is
+	a box.
+      </para>
+      <para>
+	<blockquote>
+	  <para>
+            <indexterm><primary>box?</primary>
+            </indexterm>
+	    &procedure;
+	    <methodsynopsis language="scheme" id="box-q">
+	      <type>#t/#f</type>
+	      <methodname>box?</methodname>
+	      <methodparam>
+		<parameter>value</parameter>
+	      </methodparam>
+	    </methodsynopsis>
+	    <blockquote>
+	      <para>
+		Returns <literal>#t</literal> only if the given value
+		is a box.
+	      </para>
+	    </blockquote>
+	  </para>
+	</blockquote>
+      </para>
+      <para>
+        Boxes, like pairs, are only equal in the sense of
+        <function>eq?</function> and <function>eqv?</function> when a
+        box is compared with itself.  A box is equal to another in the
+        sense of <function>equal?</function> if the value contained
+        within the box is <function>equal?</function> to the value
+        contained in the other.
+      </para>
+    </sect2>
+    <sect2 id="Parameters">
+      <title>
+        Parameters
+      </title>
+      <para>
+        A parameter is a named dynamic variable that is accessed through
+        a function.  The function, when given no arguments, returns
+        the current value of the parameter.  When given an argument,
+        the value of the parameter is set to the provided value.  
+      </para>
+      <para>
+        &SISC;'s parameters are fully compatible with those specified 
+	by SRFI-39.  Consult the SRFI-39 specification at 
+	<ulink url="http://srfi.schemers.org">srfi.schemers.org</ulink> 
+	for documentation on how to construct and use parameters.
+	SRFI-39 does not specify the semantics for parameters in the
+	presence of threads.  SISC's parameters bind into the dynamic
+	environment, which means their semantics are defined based on the
+	semantics of dynamic environments' interactions with threads,
+	specified in <xref linkend="threadsemantics"/>.
+      </para>
+    </sect2>
+    <sect2 id="ImmutableTypes">
+      <title>
+	Immutable types
+      </title>
+      <para>
+	&SISC; follows the &R5RS;
+	recommendation of immutable list, string, and vector
+	constants. Quoted lists and vectors are
+	immutable. Attempting to modify elements in these constants
+	will raise an error. String constants are immutable as well
+	when created with
+	<function>symbol-&gt;string</function>.
+      </para>
+    </sect2>
+  </sect1>
+  <sect1 id="Equivalence">
+    <title>
+      Equivalence
+    </title>
+    <para>
+      &SISC;'s storage model maintains true pointer equality between
+      symbols, booleans, the end-of-file object, void, and the empty
+      list.  Thus two instances of any of those types is guaranteed to
+      return <literal>#t</literal> from <function>eq?</function> if they
+      would have produced <literal>#t</literal> from
+      <function>equal?</function>.  
+    </para>
+    <para>
+      Numbers and characters are not pointer equal ordinarily (unless actually
+      occupying the same storage).  &SISC; will return 
+      <literal>#t</literal> from <function>eqv?</function>
+      if two numbers are both exact, or both 
+      inexact, and are numerically equal.  Two characters are
+      equivalent from <function>eqv?</function> if they occupy the
+      same code-point in the unicode character set.  This is the behavior
+      specified by &R5RS;.  
+    </para>
+    <para>
+      Strings, vectors, lists, and boxes are containers for other
+      Scheme types.  As such they are not pointer equal unless they
+      are referenced by two variables that point to the same storage
+      location (i.e. they are actually pointer equal).  &SISC; holds
+      that only <function>equal?</function> will return
+      <literal>#t</literal> if two objects are the
+      same type and their contents contain equivalent values with respect to
+      <function>equal?</function>.  
+    </para>
+  </sect1>
+  <sect1 id="syntax">
+    <title>
+      Syntax and Lexical Structure
+    </title>
+    <sect2 id="comments">
+      <title>Comments</title>
+      <para>
+        In addition to the single line comments of the Scheme
+        standard, &SISC; supports both <emphasis>s-expression
+        commenting</emphasis> and <emphasis>nested, multiline comments</emphasis>.  An s-expression comment is used to
+        comment out an entire s-expression.  To do this, the sharp
+        sequence <literal>#;</literal> is used.  It extends the &R5RS;
+        grammar with the following production:
+        <programlisting>
+&lt;expression-comment&gt; --&gt; #;&lt;datum&gt;
+        </programlisting>
+      </para>
+      <para>
+        The reader, upon encountering this sharp sequence, will read
+        and discard the next datum.  The expression commented out must still
+        be a valid s-expression, however.
+      </para>
+      <para>
+        Nested, multiline comments are as defined in SRFI-30.
+        Briefly, a multiline comment begins with the sharp sequence
+        <literal>#|</literal> and ends with the sequence
+        <literal>|#</literal>.  The comment may contain nested
+        comments as well.  Unfortunately, this extension cannot be
+        represented in a stateless grammar for the lexical structure.
+      </para>
+    </sect2>
+    <sect2 id="SharedStructures">
+      <title>
+	Shared Structures
+      </title>
+      <sect3 id="ReaderSyntax">
+        <title>
+          Reader Syntax
+        </title>
+        <para>
+          &SISC; provides a parse-time syntax for 
+          creating data (primarily vectors and lists) that contain
+          references to themselves or data which contains several 
+          pointer-equal elements.  This can be useful to create streams,
+          graphs, and other self-referencing structures while
+          maintaining readability and avoiding complex construction
+          code.
+        </para>
+        <para> 
+          The reader syntax has two parts, defining a pointer, and
+          later referencing the pointer to create the circular
+          reference.
+        </para>
+        <para>
+          Below is an additional production in the &R5RS;
+          formal syntax (specifically section 7.1.2, external
+          representations) to support circular structures:
+        </para>
+        <programlisting>
+&lt;pointer definition&gt; --> #&lt;uinteger 10&gt;=&lt;datum&gt;
+&lt;pointer reference&gt; --> #&lt;uinteger 10&gt;#
+        </programlisting>
+        <para>
+          The first form instructs the reader to create a pointer
+          identified by the specified integer, which maps to the datum
+          that follows, and is active during the reading of the datum
+          on the right-hand side of the definition.  
+        </para>
+        <para>
+          If a second definition occurs during the reading of the
+          datum with the same integral identifier, the previous
+          definition is overwritten for the duration of the read.  The
+          definitions are <emphasis>not</emphasis> scoped in any way.
+          The pointer identifiers should be kept unique by the
+          programmer to prevent any unintended effects of identifier
+          collisions. 
+        </para>
+        <para>
+          The second form references a previously created pointer 
+          definition.  It is an error to reference an undefined
+          pointer.  The reader will handle a valid reference by
+          placing a pointer at the current read position back to the
+          location of the definition. 
+        </para>
+        <para>
+          At this point some examples might be helpful:
+        </para>
+        <example>
+          <title>Circular Structures</title>
+          <programlisting>
+(define x '#0=(1 2 . #0#))
+(caddr x)        ; =&gt; 1
+(list-ref x 15)  ; =&gt; 2
+
+(define y '(1 2 #1=#(3 4) . #1#))
+(eq? (caddr y) (cdddr y)) ; =&gt; #t
+          </programlisting>
+        </example>
+      </sect3>
+      <sect3 id="Writing">
+        <title>Writing</title>
+        <para>
+          Ordinarily, the display of cyclical data would cause a
+          problem for a Read-Eval-Print-Loop.  For this reason, the
+          REPL will attempt to check the structure it is about to
+          print for circularities before printing.  If a cycle is
+          found in the structure, the REPL will refuse to print if the
+          <envar>printShared</envar> configuration parameter,
+          described below, is <literal>false</literal>.  In that case
+          the REPL will issue a warning to the user that the structure
+          contains a cycle.  If a circular structure is printed with
+          <function>display</function>, <function>write</function>,
+          etc, and the <envar>printShared</envar> parameter is set to
+          <literal>false</literal>, the environment may enter an
+          infinite loop which may or may not cause the Scheme system
+          to exit with an error.
+        </para>
+        <para>
+          The <envar>printShared</envar> configuration parameter (see
+          <xref linkend="config-parameters"/>), if set to
+          <literal>true</literal> enables &SISC; to scan data for
+          circularity and data sharing before writing values. If such
+          sharing is found, an alternate printer is invoked which will
+          emit a representation compatible with the circular structure
+          representation described in the previous section.
+        </para>
+        <para>
+          Alternately, &SISC; also supports SRFI-38, which describes
+          the functions <function>write-showing-shared</function> and
+          <function>read-with-shared-structure</function>.  
+        </para>
+      </sect3>
+    </sect2>   
+    <sect2 id="ControlFeatures">
+      <title>
+        Control Features
+      </title>
+      <para>
+        In addition to the &R5RS; standard control features, two
+        additional forms, 
+        <function>when</function> and <function>unless</function>, are
+        supported by &SISC;.
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>when</primary>
+            </indexterm>
+            &syntax;
+            <methodsynopsis language="scheme" id="when">
+              <type>value</type>
+              <methodname>when</methodname>
+              <methodparam>
+                <parameter>condition</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>expression</parameter>
+              </methodparam>
+              <methodparam choice="opt" rep="repeat">
+                <parameter>expressions</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Evaluates <parameter>condition</parameter>, an
+                expression.  If true, the expressions that follow are
+                evaluated, in order, the value of the last being
+                returned.  If not true, the result is unspecified.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>unless</primary>
+            </indexterm>
+            &syntax;
+            <methodsynopsis language="scheme" id="unless">
+              <type>value</type>
+              <methodname>unless</methodname>
+              <methodparam>
+                <parameter>condition</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>expression</parameter>
+              </methodparam>
+              <methodparam choice="opt" rep="repeat">
+                <parameter>expressions</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Evaluates <parameter>condition</parameter>, an
+                expression.  If false, the expressions that follow are
+                evaluated, in order, the value of the last being
+                returned.  If true, the result is unspecified.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+    </sect2>
+    <sect2>
+      <title>
+        Syntactic Extension
+      </title>
+      <para>
+        &SISC; provides a hygienic macro system that fully conforms to
+        the &R5RS; standard.  The macro system is provided by the
+        portable syntax-case macro expander.  In addition to &R5RS;
+        macros, the expander provides a more flexible 
+        macro definition tool called
+        <function>syntax-case</function>.  A full description of the
+        capabilities of the expander is best found in the 
+        <ulink url="http://www.scheme.com/csug.html">
+  	<citetitle>Chez Scheme Users Guide</citetitle>
+        </ulink>, specifically 
+        <ulink url="http://www.scheme.com/csug/syntax.html#g2154">
+  	<citetitle>Section 9.2, Syntax-Case</citetitle>
+        </ulink>.  
+      </para>
+      <para>
+        In addition, &SISC; supports non-hygienic, legacy macro support
+        in two forms; <function>define-macro</function> and 
+        <function>defmacro</function>.  These forms, found in older
+        Scheme code written for R<superscript>4</superscript>RS
+        compliant Scheme systems, should be used only
+        for executing legacy code which relies on it.  New code should
+        use the safer and more flexible <function>syntax-case</function>
+        or the standard <function>syntax-rules</function> macros.
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>define-macro</primary>
+            </indexterm>
+            &syntax;
+            <methodsynopsis language="scheme" id="define-macro">    
+              <methodname>define-macro</methodname>
+              <methodparam><parameter>(name . args)</parameter>
+              </methodparam>
+               <methodparam rep="repeat"><parameter>body</parameter>
+              </methodparam>
+            </methodsynopsis>
+          </para>
+          <para>
+            &syntax;
+            <methodsynopsis language="scheme" id="define-macro2">    
+              <methodname>define-macro</methodname>
+              <methodparam><parameter>name</parameter>
+              </methodparam>
+              <methodparam><parameter>transformer</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                In the first form, <function>define-macro</function>
+                creates a macro transformer bound to
+                <parameter>name</parameter>, which when applied will
+                have raw s-expressions bound to one or more parameters
+                (<parameter>args</parameter>).  The <literal>(name
+                . args)</literal> name and formal parameter form is
+                identical to the short form for procedure definition
+                with <function>define</function>.
+              </para>
+              <para>
+                The transformer's body will then, using the s-expressions bound
+                to its arguments, return a new s-expression that is the
+                result of the macro transformation.
+              </para>
+              <para>
+                The second form binds an arbitrary procedure to the
+                syntactic keyword <literal>name</literal>, using that
+                procedure to transform occurences of that named syntax
+                during future evaluations.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>defmacro</primary>
+            </indexterm>
+            &syntax;
+            <methodsynopsis language="scheme" id="defmacro">    
+              <methodname>defmacro</methodname>
+              <methodparam><parameter>name</parameter>
+              </methodparam>
+              <methodparam><parameter>args</parameter>
+              </methodparam>
+              <methodparam rep="repeat"><parameter>body</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                <function>defmacro</function> is another macro
+                definition form supported by some Scheme systems.  Its
+                semantics are equivalent to:
+                <programlisting>
+(define-macro (name . args) body ...)
+                </programlisting>
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+    </sect2>
+  </sect1>
+  <sect1 id="ErrorHandling">
+    <title>Errors and Error Handling</title>
+    <para>
+      Errors can be raised by primitives in libraries and Scheme-level
+      code. &SISC; provides a sophisticated mechanism for handling
+      these errors when they occur during program execution.
+    </para>
+
+    <sect2 id="FailureContinuations">
+      <title>Failure Continuations</title>
+      <para>
+        During the execution of any program, there is always a
+        continuation that represents the <emphasis>rest</emphasis> of
+        a computation.  In addition, one can imagine all the
+        activities that will occur as a result of an error.  This
+        sequence of actions is explicitly represented in &SISC; as a
+        <emphasis>failure continuation</emphasis>.
+      </para>
+      <para>
+        Two values must be applied to a failure continuation.  The
+        first is an error record, a datastructure which describes the
+        error (and may contain information about the name of the
+        function that generated the error, a descriptive message about
+        the error, etc.).  The second is the continuation of the
+        expression that raised the error.  All errors raised in &SISC;
+        automatically and implicitly obtain and apply these values to
+        the active failure continuation.  Applying the error record
+        and error continuation to the failure continuation will not
+        return to the continuation of the application, unless that
+        continuation was captured and later invoked in a non-local
+        entrance.
+      </para>
+      <sect3>
+        <title>Creation</title>
+        <para>
+          A programmer may wish to augment current failure
+          continuation, choosing a different set of actions to occur
+          for a body of code if it raises an error.  To facilitate
+          this, &SISC; provides the
+          <function>with-failure-continuation</function> procedure.
+        </para>
+        <para>
+          <blockquote>
+            <para>
+              <indexterm><primary>with-failure-continuation</primary>
+              </indexterm>
+                &procedure;
+              <methodsynopsis language="scheme" id="with-failure-continuation">
+                <type>value</type>
+                <methodname>with-failure-continuation</methodname>
+                <methodparam>
+                  <parameter>handler</parameter>
+                </methodparam>
+                <methodparam>
+                  <parameter>thunk</parameter>
+                </methodparam>
+              </methodsynopsis>
+            </para>
+            <para>
+              <indexterm><primary>with/fc</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme" id="with-fc">
+                <type>value</type>
+                <methodname>with/fc</methodname>
+                <methodparam>
+                  <parameter>handler</parameter>
+                </methodparam>
+                <methodparam>
+                  <parameter>thunk</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  <function>with-failure-continuation</function>
+                  takes as arguments a thunk (a zero-argument procedure) to
+                  be evaluated.  The thunk will be evaluated in the
+                  continuation of the <function>with/fc</function>
+                  function, and with a failure continuation defined by
+                  the provided error handler.  If during the
+                  evaluation of the thunk an error is raised, the first,
+                  two argument procedure is called with values describing
+                  the error and its context.  If no error occurs, 
+                  value of the thunk is applied to the continuation of
+                  the <function>with/fc</function> expression.
+                </para>
+              </blockquote>
+            </para>
+          </blockquote>
+        </para>
+        <para>
+          The error handler required as an argument to
+          <function>with-failure-continuation</function> must accept
+          two values.  The first is a value containing information
+          about the error that occurred.  This is often an association
+          list containing a number of attributes of the error.  The
+          second is a procedure encapsulating the continuation that
+          was in place at the site of the error.  This continuation is
+          referred to as the <emphasis>error continuation</emphasis>
+        </para>
+        <para>
+          When an error occurs, the error handler may choose one of
+          three courses in dealing with the error.  First, the handler
+          may choose to return an alternate value to be applied to the
+          continuation of the <function>with/fc</function> expression.
+          Second, the handler may restart the computation from the
+          error site by invoking the error continuation with a value
+          that should be returned in place of the expression that
+          caused the error.  Finally, the handler may choose to
+          propagate the error (or a new error) to the failure
+          continuation of the <function>with/fc</function> expression.
+          This can be done with the <function>throw</function>
+          function described in <xref linkend="RaisingErrors"/>.
+        </para>
+      </sect3>
+      <sect3>
+        <title>Capture</title>
+        <para>
+          The currently active failure continuation may be obtained
+          explicitly using the
+          <function>call-with-failure-continuation</function>
+          procedure.  This continuation may be applied to appropriate
+          values at any time in the future.
+        </para>
+        <para>
+          <blockquote>
+            <para>
+              <indexterm><primary>call-with-failure-continuation</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme" id="call-with-failure-continuation">
+                <type>value</type>
+                <methodname>call-with-failure-continuation</methodname>
+                <methodparam>
+                  <parameter>procedure</parameter>
+                </methodparam>
+              </methodsynopsis>
+            </para>
+            <para>
+              <indexterm><primary>call/fc</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme" id="call-fc">
+                <type>value</type>
+                <methodname>call/fc</methodname>
+                <methodparam>
+                  <parameter>procedure</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Calls the given one-argument procedure with the
+                  currently active failure continuation.
+                </para>
+              </blockquote>
+            </para>
+          </blockquote>
+        </para>
+      </sect3>
+      <sect3>
+        <title>Interaction with Ordinary Continuations</title>
+        <para>
+          Failure continuations exist as an attribute of the ordinary
+          continuations of Scheme expressions.  Because of this, the
+          invocation of a continuation may cause a different failure
+          continuation to become active in the region of the captured
+          continuation.  Specifically, the failure continuation in place
+          at the <function>call/cc</function> expression will be
+          reinstated when that continuation is later invoked.
+        </para>
+        <para>
+          Similarly, invoking a continuation that escapes a region of
+          code will cause any created failure continuations to be
+          abandoned, unless the region is itself captured in a
+          continuation and later invoked.
+        </para>
+        <para>
+          See also <xref linkend="DynamicWind"/>.
+        </para>
+      </sect3>
+    </sect2>
+    <sect2 id="ErrorRecords">
+      <title>Error Records</title>
+      <para>
+        An error record is the value usually propagated with an error
+        in &SISC;. It is a datastructure containing such information as
+        the location of the error, a descriptive message about the
+        error, and possibly other error metadata.  
+      </para>
+      <sect3>
+        <title>Creating Error Records</title>
+        <para>
+          Error records can be created in advance of actually 
+          raising an error with the <function>make-error</function> function.  
+          The function allows the programmer to create error records that 
+          contain a location and a message or value.  No field of an
+          error record is required.
+        </para>
+        <para>
+          <blockquote>
+            <para>
+              <indexterm><primary>make-error</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme" id="make-error">
+                <type>error-record</type>
+                <methodname>make-error</methodname>
+                <methodparam choice="opt">
+                  <parameter>location</parameter>
+                </methodparam>
+                <methodparam choice="opt">
+                  <parameter>message</parameter>
+                </methodparam>
+                <methodparam choice="opt" rep="repeat">
+                  <parameter>arguments</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Constructs an error record.  If present, a symbol,
+                  and not <literal>#f</literal>, the first argument
+                  is the location of the error, which may be a symbol
+                  equivalent to a function identifier.
+                  If present, the message is a format-string processed
+                  with the optional arguments that follow as by
+                  <function>format</function> in SRFI-28.  The
+                  remaining arguments must only be present if the
+                  format-string is present as the message.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>error-record</type>
+                <methodname>make-error</methodname>
+                <methodparam choice="opt">
+                  <parameter>location</parameter>
+                </methodparam>
+                <methodparam>
+                  <parameter>error-value</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Constructs an error record.  If present, a symbol,
+                  and not <literal>#f</literal>, the first argument is
+                  the location of the error. The second argument is an
+                  arbitrary Scheme value that will be the error value.
+                  This value will be accessible with the
+                  <function>error-message</function> function.
+                </para>
+              </blockquote>
+            </para>
+          </blockquote>
+        </para>
+        <para>
+          None of the fields of an error-record are required.  One may
+          create an error record with no information, an error record
+          with only a location, or an error record with only a message
+          or value.  Below are some examples (for an explanation of
+          the <function>throw</function> procedure see <xref
+          linkend="RaisingErrors"/>).
+        </para>
+        <informalexample>
+          <programlisting>
+(throw (make-error))
+; =&gt; Error.
+
+(throw (make-error 'foo))
+; =&gt; Error in foo.
+
+(throw (make-error "something ~a happened" 'bad))
+; =&gt; Error: something bad happened
+
+(throw (make-error 3))
+; =&gt; Error: 3
+
+(throw (make-error #f 'foo))
+; =&gt; Error: foo
+
+(throw (make-error 'foo "something ~a happened" 'bad))
+; =&gt; Error in foo: something bad happened
+          </programlisting>
+        </informalexample>
+        <para>
+          In addition, an error record may be created that adds
+          additional information to an error record that was already
+          created.  This is useful when an error was caught in an
+          error handler, and one wishes to raise an error from the
+          handler that contains additional information about the local
+          location or error message as well as the error that was
+          caught.
+        </para>
+        <para>
+          <blockquote>
+            <indexterm><primary>make-nested-error</primary></indexterm>
+            <para>
+              &procedure;
+              <methodsynopsis language="scheme" id="make-nested-error">
+                <type>error-record</type>
+                <methodname>make-nested-error</methodname>
+                <methodparam>
+                  <parameter>local-error</parameter>
+                </methodparam>
+                <methodparam>
+                  <parameter>parent-error</parameter>
+                </methodparam>
+                <methodparam>
+                  <parameter>parent-error-continuation</parameter>
+                </methodparam>
+              </methodsynopsis>
+            </para>
+            <para>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>error-record</type>
+                <methodname>make-nested-error</methodname>
+                <methodparam>
+                  <parameter>local-error</parameter>
+                </methodparam>
+                <methodparam>
+                  <parameter>exception</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  The first version creates an error record which has
+                  <parameter>parent-error</parameter> (and its
+                  associated
+                  <parameter>parent-error-continuation</parameter>) as
+                  the root cause of an error-record passed as
+                  <parameter>local-error</parameter>.
+                </para>
+                <para>
+                  The second version creates an error record which has
+                  <parameter>exception</parameter> (see <xref
+                  linkend="Exceptions"/>) as the root cause of an error
+                  passed as <parameter>local-error</parameter>.
+                </para>
+              </blockquote>
+            </para>
+          </blockquote>
+        </para>
+        <para> 
+          An example of the creating, throwing, and display of a
+          nested error follows.
+        </para>
+        <informalexample>
+          <programlisting>
+(with-failure-continuation
+  (lambda (m e)
+    (throw (make-nested-error 
+            (make-error 'foo "could not call bar.") m e)))
+  (lambda ()
+    (error 'bar "something went wrong.")))
+;=&gt; Error in foo: could not call bar.
+;   Caused by Error in bar: something went wrong.
+          </programlisting>
+        </informalexample>
+      </sect3>
+      <sect3>
+        <title>Accessors</title>
+        <para>
+          An error record contains several useful
+          pieces of information.  The following functions allow the
+          programmer to access that information.
+        </para>
+        <para>
+          <blockquote>
+            <para>
+              <indexterm><primary>error-location</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme" id="error-location">
+                <type>symbol</type>
+                <methodname>error-location</methodname>
+                <methodparam>
+                  <parameter>error-record</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Obtains the location of the error, a symbol which
+                  may be a function identifier.  If there is no
+                  location specified, <literal>#f</literal> is
+                  returned.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>error-message</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme" id="error-message">
+                <type>value</type>
+                <methodname>error-message</methodname>
+                <methodparam>
+                  <parameter>error-record</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Obtains the message of the error, which may
+                  be a string which is a descriptive message of the
+                  error, or an arbitrary value (as created by the
+                  second form of <function>make-error</function>).
+                  If there is no message specified, 
+                  <literal>#f</literal> is returned.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>error-parent-error</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme" id="error-parent-error">
+                <type>error-record</type>
+                <methodname>error-parent-error</methodname>
+                <methodparam>
+                  <parameter>error-record</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Obtains the parent error of the error.
+                  This is the value of the second argument to
+                  the <function>make-nested-error</function> function.
+                  If there is no parent specified, <literal>#f</literal> is
+                  returned.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>error-parent-continuation</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme" id="error-parent-continuation">
+                <type>error-continuation</type>
+                <methodname>error-parent-continuation</methodname>
+                <methodparam>
+                  <parameter>error-record</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Obtains the parent error continuation of the
+                  error. This is the value of the third argument to
+                  the <function>make-nested-error</function> function.
+                  If there is no parent specified,
+                  <literal>#f</literal> is returned.
+                </para>
+              </blockquote>
+            </para>
+          </blockquote>
+        </para>
+      </sect3>
+      <sect3 id="RaisingErrors">
+        <title>Raising Errors</title>
+        <para>
+          The fundamental mechanism for raising an error in
+          application code is provided by  the <function>throw</function> procedure.
+        </para>
+        <para>
+          <blockquote>
+            <indexterm><primary>throw</primary></indexterm>
+            <para>
+              &procedure;
+              <methodsynopsis language="scheme" id="throw">
+                <type>does not return</type>
+                <methodname>throw</methodname>
+                <methodparam>      
+                  <parameter>error-record</parameter>
+                </methodparam>
+                <methodparam choice="opt">      
+                  <parameter>error-continuation</parameter>
+                </methodparam>
+              </methodsynopsis>
+            </para>
+            <para>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>does not return</type>
+                <methodname>throw</methodname>
+                <methodparam>      
+                  <parameter>exception</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  The first verison applies the given error record to
+                  the current failure continuation.  If provided, the
+                  error continuation is designated by the optional
+                  parameter.  If not, the continuation of the throw
+                  expression is used.
+                </para>
+                <para>
+                  The second form applies the current failure
+                  continuation to the error record and error
+                  continuation extracted from the supplied
+                  <parameter>exception</parameter> (see <xref
+                  linkend="Exceptions"/>).
+                </para>
+              </blockquote>
+            </para>
+          </blockquote>
+        </para>
+        <para>
+          If invoked from an error-handler with the values of the handler's 
+          formal parameters, throw has the effect of
+          propagating the error in a manner that is equivalent to the
+          absence of the modified failure-continuation. 
+        </para>
+        <para>
+          <function>throw</function> could be defined in terms of
+          <function>call-with-failure-continuation</function>
+          as:
+          <programlisting>
+(define (throw error . args)
+  (call-with-failure-continuation
+     (lambda (fk)
+       (if (null? args)
+           (call-with-current-continuation (lambda (k) (fk error k)))
+           (fk error (car args))))))
+          </programlisting>
+        </para>
+        <para>
+          For convenience and compatibility with SRFI-23, the function
+          <function>error</function> is provided.  Its syntax is
+          identical to <function>make-error</function>, but it
+          immediately applies the resulting error record to the
+          current failure continuation with the current continuation
+          as the error continuation.
+        </para>
+        <para>
+          <blockquote>
+            <para>
+              <indexterm><primary>error</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme" id="error">
+                <type>does not return</type>
+                <methodname>error</methodname>
+                <methodparam choice="opt">
+                  <parameter>location</parameter>
+                </methodparam>
+                <methodparam choice="opt">
+                  <parameter>message</parameter>
+                </methodparam>
+                <methodparam choice="opt" rep="repeat">
+                  <parameter>arguments</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Raises an error record whose location, if provided, is
+                  <parameter>location</parameter>, a symbol; and whose error
+                  message, if present, is <parameter>message</parameter>.
+                  If provided, the error message is a format-string that
+                  is processed, with the optional
+                  <parameter>argument</parameter>s, as with the
+                  <function>format</function> function in SRFI 28.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>does not return</type>
+                <methodname>error</methodname>
+                <methodparam choice="opt">
+                  <parameter>location</parameter>
+                </methodparam>
+                <methodparam>
+                  <parameter>error-value</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Raises an error record whose location, if present, is the
+                  symbol <parameter>location</parameter>, and 
+                  and whose error-value is any arbitrary Scheme value.
+                </para>
+              </blockquote>
+            </para>
+          </blockquote>
+        </para>
+        <para>
+          <function>error</function> can be implemented in terms of
+          <function>throw</function> and <function>make-error</function>:
+          <programlisting>
+(define (error . args)
+  (throw (apply make-error args)))
+          </programlisting>
+        </para>
+      </sect3>
+      <sect3 id="Exceptions">
+        <title>Exceptions</title>
+        <para>
+          Exceptions in &SISC; are a simple wrapper around an error
+          record and an associated error continuation.
+        </para>
+        <para>
+          Exceptions are created with
+        </para>
+        <para>
+          <blockquote>
+            <para>
+              <indexterm><primary>make-exception</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme" id="make-exception">
+                <type>exception</type>
+                <methodname>make-exception</methodname>
+                <methodparam>
+                  <parameter>error-record</parameter>
+                </methodparam>
+                <methodparam>
+                  <parameter>error-continuation</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Constructs an exception from an
+                  <parameter>error-record</parameter> and an
+                  <parameter>error-continuation</parameter>, e.g. as
+                  obtained from the arguments of a handler procedure
+                  passed to <function>with-fc</function>.
+                </para>
+              </blockquote>
+            </para>
+          </blockquote>
+        </para>
+        <para>
+          Accessors and a type-test are provided by the following
+          procedures:
+        </para>
+        <para>
+          <blockquote>
+            <para>
+              <indexterm><primary>exception-error</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme" id="exception-error">
+                <type>error-record</type>
+                <methodname>exception-error</methodname>
+                <methodparam>
+                  <parameter>exception</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Returns the <parameter>exception</parameter>'s error
+                  record.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>exception-continuation</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme" id="exception-continuation">
+                <type>error-continuation</type>
+                <methodname>exception-continuation</methodname>
+                <methodparam>
+                  <parameter>exception</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Returns the <parameter>exception</parameter>'s error
+                  continuation.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>exception?</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>&num;t/&num;f</type>
+                <methodname>exception?</methodname>
+                <methodparam>
+                  <parameter>value</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Returns &num;t if <parameter>value</parameter> is an
+                  exception object, &num;f otherwise.
+                </para>
+              </blockquote>
+            </para>
+          </blockquote>
+        </para>
+      </sect3>
+    </sect2>
+    <sect2>
+      <title>Examples</title>
+      <para>
+	At this point, a few examples may be helpful:
+      </para>
+      <informalexample>
+	<programlisting>
+(+ 1 (/ 1 0) 3)
+; =&gt; <emphasis>A divide by zero error is raised</emphasis>
+	</programlisting>
+      </informalexample>
+      <example>
+	<title>Return a new value</title>
+<programlisting>
+(with-failure-continuation
+    (lambda (error-record error-k)
+      'error)
+  (lambda () (+ 1 (/ 1 0) 3)))
+; =&gt; <emphasis>The symbol</emphasis> 'error
+	</programlisting>
+      </example>
+      <example>
+	<title>Restart with a different value</title>
+	<programlisting>
+(with-failure-continuation
+    (lambda (error-record error-k)
+      (error-k 2))
+  (lambda () (+ 1 (/ 1 0) 3)))
+; =&gt; 6
+	</programlisting>
+      </example>
+      <example>
+	<title>Propagate the error</title>
+	<programlisting>
+(with-failure-continuation
+    (lambda (error-record error-k)
+      (throw error-record error-k))
+  (lambda () (+ 1 (/ 1 0) 3)))
+; =&gt; <emphasis>A divide by zero error is raised</emphasis>
+	</programlisting>
+      </example>
+      <example id="properror">
+	<title>Propagate a different error with the same error continuation</title>
+	<programlisting>
+(with-failure-continuation
+    (lambda (error-record error-k)
+      (throw (make-error '/ "could not perform the division.") error-k))
+  (lambda () (+ 1 (/ 1 0) 3)))
+; =&gt; <emphasis>An error is raised: Error in /: could not perform the division.</emphasis>
+	</programlisting>
+      </example>
+      <example id="raisenewerror">
+	<title>Raise a new error</title>
+	<programlisting>
+(with-failure-continuation
+    (lambda (error-record error-k)
+      (error 'example-function "could not evaluate the expression."))
+  (lambda () (+ 1 (/ 1 0) 3)))
+; =&gt; <emphasis>An error is raised: Error in example-function: could not evaluate the expression.</emphasis>
+	</programlisting>
+      </example>
+      <para>
+        Note that the difference between <xref linkend="properror"/> and 
+        <xref linkend="raisenewerror"/> is that in the former,
+        the computation can still be restarted from the second
+        argument of the addition if an outside handler catches the
+        newly raised exception and applies the continuation.  This is
+        not true in the last example, as its a new error whose
+        continuation is the same as the
+        <function>with-failure-continuation</function> expression.
+      </para>
+    </sect2>
+    <sect2 id="DynamicWind">
+      <title><function>dynamic-wind</function></title>
+      <para>
+        &R5RS; does not specify the behavior of
+        <function>dynamic-wind</function> in the case
+        where an error is raised while evaluating the 
+        <emphasis>during</emphasis> thunk.  &SISC; chooses to view
+        an error raised in that section as an instance of the
+        dynamic extent being exited.  In other words, if an error is
+        raised in the dynamic extent of a dynamic-wind expression,
+        &SISC; will ensure that the <emphasis>after</emphasis> thunk
+        is evaluated before the error is propagated to the
+        failure-continuation of the dynamic-wind expression.
+      </para>
+      <example>
+        <title>Errors and <function>dynamic-wind</function></title>
+        <programlisting>
+(define x 0)
+(dynamic-wind (lambda () (set! x (+ x 1)))
+              (lambda () (/ 1 0))
+              (lambda () (set! x (+ x 1))))
+
+; =&gt; A divide by zero error is raised, and the value of x is 2
+        </programlisting>
+      </example>
+      <para>
+        If an error is raised in either the
+        <emphasis>before</emphasis> or <emphasis>after</emphasis>
+        thunks, no additional measures are taken.  The error is
+        propagated to the failure-continuation of the dynamic-wind
+        as if the dynamic-wind call was an ordinary function
+        application.  Explicitly, if an error is raised from
+        <emphasis>before</emphasis>, neither
+        <emphasis>during</emphasis> nor <emphasis>after</emphasis>
+        will be executed.  If an error is raised in
+        <emphasis>after</emphasis>, the results of evaluating
+        <emphasis>before</emphasis> and <emphasis>during</emphasis>
+        remain valid.  
+      </para>
+      <para>
+        Also noteworthy is what happens if a continuation is invoked
+        that exits from either the <emphasis>before</emphasis> or
+        <emphasis>after</emphasis> thunks.  Such a case is treated
+        just as if a continuation was invoked during the evaluation
+        of an operand to an application.  This is to say that no
+        additional steps will be taken by &SISC;.  If
+        <emphasis>before</emphasis> is escaped by a continuation invocation,
+        neither <emphasis>during</emphasis> nor <emphasis>after</emphasis>
+        will be executed.  If <emphasis>after</emphasis> is escaped,
+        the results of <emphasis>before</emphasis> and
+        <emphasis>during</emphasis> remain valid.
+      </para>
+      <para>
+        In summary, extraordinary evaluation is only possible during
+        the evaluation of the <emphasis>during</emphasis> thunk. The
+        <emphasis>before</emphasis> and <emphasis>after</emphasis>
+        thunks are evaluated with the dynamic environment and
+        dynamic-wind stack of the call to dynamic-wind itself.
+      </para>
+    </sect2>
+   </sect1>
+  <sect1 id="SymbolicEnvironments">
+    <title>
+      Symbolic Environments and Property Maps
+    </title>
+    <para>
+      Symbolic environments and property maps 
+      provide additional named global environments useful for storing 
+      program specific data without exposing it to the general
+      purpose top-level environment.
+    </para>
+    <para>
+      A property map is dictionary structure tied
+      to the interaction environment which maps symbolic
+      names to Scheme values.  First-class symbolic environments provide
+      a similar mapping, but can be used
+      as first class values (including as an argument to <function>eval</function>).
+      Symbolic environments are used to implement &SISC;'s global (top level)and
+      report environments.
+    </para>
+    <sect2 id="AccessingSymbolicEnvironments">
+      <title>
+	    Basic Functions
+      </title>
+      <para>
+      	Symbolic environments are a distinct value type in &SISC;, and can 
+      	be checked using the <function>environment?</function> predicate.
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>environment?</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme" id="environmentq">
+              <type>#t/#f</type>
+              <methodname>environment?</methodname>
+	          <methodparam>
+	          	<parameter>value</parameter>
+	          </methodparam>	          	
+            </methodsynopsis>
+            <blockquote>
+              <para>
+	            Returns a non-false value if the provided value is a symbolic environment,
+	            false otherwise.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        Access to symbolic environments is performed through the
+        <function>getprop</function> and <function>putprop</function>
+        functions.  All symbolic environment operations are thread
+        safe.
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>getprop</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme" id="getprop">
+              <type>value</type>
+              <methodname>getprop</methodname>
+              <methodparam>
+                <parameter>binding-name</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>plist-name</parameter>
+              </methodparam>
+              <methodparam choice="opt"> 
+                <parameter>default-value</parameter>
+              </methodparam>
+            </methodsynopsis>
+          </para>
+          <para>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>value</type>
+              <methodname>getprop</methodname>
+              <methodparam>
+                <parameter>binding-name</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>environment</parameter>
+              </methodparam>
+              <methodparam choice="opt"> 
+                <parameter>default-value</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Attempts a lookup of <parameter>binding-name</parameter>
+                in an environment.
+              </para>
+              <para>
+                In the first form, the the binding is resolved in
+                the interaction-environment's property list named
+                <parameter>plist-name</parameter>, a symbol.  If the
+                environment is not found or the binding doesn't exist,
+                <parameter>default-value</parameter> is returned if
+                provided, otherwise <literal>&num;f</literal> is
+                returned.
+              </para>
+              <para>
+                In the second form, the binding is resolved in a first-class
+                symbolic environment.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>putprop</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme" id="putprop">
+              <type>undefined</type>
+              <methodname>putprop</methodname>
+              <methodparam>
+                <parameter>binding-name</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>plist-name</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>value</parameter>
+              </methodparam>
+            </methodsynopsis>
+          </para>
+          <para>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>undefined</type>
+              <methodname>putprop</methodname>
+              <methodparam>
+                <parameter>binding-name</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>environment</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>value</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Sets the value of a binding named with the 
+                symbol <parameter>binding-name</parameter> in a
+                property list or first class symbolic environment.
+              </para>
+              <para>
+                In the first form, the binding is resolved using a 
+                symbolic name
+                (<parameter>plist-name</parameter>) in the interaction
+                environment's property lists. If the
+                map does not yet exist, it is created as an 
+                empty map.
+              </para>
+              <para>
+                In the second form, the binding is resolved in the
+                provided first class symbolic environment.
+                If the binding does not yet exist in the given
+                environment, it is created.  If a binding previously
+                existed, its previous value is discarded.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+    </sect2>
+    <sect2 id="ObtainingSymbolicEnvironments">
+      <title> 
+        Obtaining and Naming
+      </title>
+      <para>
+        Symbolic environments are a first class datatype in &SISC;.  The
+        top-level environment itself is merely a special cased symbolic
+        environment.  To obtain the top-level environment as a first
+        class value, one can use the 
+        <function>interaction-environment</function> function that is an
+        optional procedure in &R5RS;.  Another useful environment is the
+        &R5RS; report environment available by calling:
+        <programlisting>
+(scheme-report-environment 5)
+        </programlisting>
+        Each call to <function>scheme-report-environment</function>
+        returns a new environment that contains only the bindings
+        available in the Scheme report. 
+      </para> 
+      <para>
+        &SISC; naturally supports the <function>null-environment</function> function from &R5RS;, 
+        which is defined only for a <emphasis>version</emphasis> of 5.  &SISC; additionally supports
+        version 0.  When <function>null-environment</function> is called with version 0, a new, completely
+        empty environment is returned, lacking even the syntactic bindings present in standard calls
+        to <function>null-environment</function>.
+      </para>
+      <para>
+        Finally, the initial environment available to the programmer when &SISC; starts can
+        be retrieved using the <function>sisc-initial-environment</function> function:
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>sisc-initial-environment</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme" id="sisc-initial-environment">
+              <type>environment</type>
+              <methodname>sisc-initial-environment</methodname>
+              <void/>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the initial &SISC; interaction environment.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        Like <function>scheme-report-environment</function>, each call
+        to <function>sisc-initial-environment</function> returns a
+        distinct environment which contains only the bindings initially
+        available when &SISC; starts.  An interesting use of this would
+        be to define one or more distinct initial-environments, bound to
+        toplevel variables.  One could then define Scheme code and data
+        in each environment that can use the full &SISC; language but
+        cannot see any bindings in other environments.
+      </para>
+      <para>
+        Finally, &R5RS; states that it is an error to modify the
+        contents of a top-level variable that has not yet been created.
+        &SISC; adheres to the standard, and raises an error when any
+        unbound variable in a symbolic environment (including the top-level)
+        is modified using <function>set!</function>.  This
+        differs from some Scheme systems that will silently create the
+        binding and set it to the new value.
+      </para>
+    </sect2>
+    <sect2 id="ChainedEnvironments">
+      <title>Chained Symbolic Environments</title>
+      <para>
+        &SISC; contains a mechanism for creating a symbolic environment
+        which is <emphasis>chained</emphasis> to another environment, such
+        that new and modified bindings are created in the new, child environment, 
+        but bindings may also be resolved from the parent if not present in the
+        child.  &SISC; uses this functionality to protect the contents of the
+        &R5RS; and &SISC; initial environments from modification.  One can
+        use it in a similar way, protecting the bindings in the parent for
+        sandboxing or other purposes.  
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>make-child-environment</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme" id="make-child-environment">
+              <type>environment</type>
+              <methodname>make-child-environment</methodname>
+              <methodparam>
+                <parameter>parent-environment</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Creates a new environment, initially empty of its own bindings,
+                but which chains to the provided <parameter>parent-environment</parameter>
+                when resolving a binding.  
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>parent-environment</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme" id="parent-environment">
+              <type>environment</type>
+              <methodname>parent-environment</methodname>
+              <methodparam>
+                <parameter>environment</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Obtains the parent environment of a symbolic environment.
+                If the given environment has no parent (e.g. is not chained),
+                <literal>&num;f</literal> is returned.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+    </sect2>
+  </sect1>
+  <sect1 id="MiscellaneousFunctions">
+    <title>
+      Miscellaneous Functions
+    </title>
+    <para>
+      The remaining functions in this chapter are not easily classified, but 
+      nevertheless are useful and worth describing.
+    </para>
+    <para>
+      <blockquote>
+        <para>
+          <indexterm><primary>circular?</primary>
+          </indexterm>
+          &procedure;
+          <methodsynopsis language="scheme" id="circular-q">
+            <type>#t/#f</type>
+            <methodname>circular?</methodname>
+            <methodparam>
+              <parameter>datum</parameter>
+            </methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns <literal>#t</literal> if the given datum
+              is circular.  A datum is circular if it is a compound
+              datum (lists or vectors for example), and one of its
+              elements is a reference to itself, or a reference to a
+              sub-element which creates a cycle.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+          <indexterm><primary>compose</primary>
+          </indexterm>
+          &procedure;
+          <methodsynopsis language="scheme" id="compose">
+            <type>procedure</type>
+            <methodname>compose</methodname>
+            <methodparam choice="opt" rep="repeat">
+              <parameter>function</parameter>
+            </methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              <function>compose</function> takes zero or more
+              functions of one argument and returns a new function of
+              one argument that will apply to that argument to the
+              selected functions in reverse order.  If no
+              functions are provided, the identity function is
+              returned.
+            </para>
+            <para>
+              For example, the function <function>caddr</function>
+              could be simply defined as:
+            </para>
+            <programlisting>
+(define caddr (compose car cdr cdr))
+            </programlisting>
+          </blockquote>
+        </para>
+        <para>
+          <indexterm><primary>iota</primary>
+          </indexterm>
+          &procedure;
+          <methodsynopsis language="scheme" id="iota">
+            <type>pair</type>
+            <methodname>iota</methodname>
+            <methodparam>
+              <parameter>n</parameter>
+            </methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              The <function>iota</function> function produces a list
+              whose elements are the integers 0 to
+              <parameter>n</parameter>-1 inclusive.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+          <indexterm><primary>time</primary>
+          </indexterm>
+          &syntax;
+          <methodsynopsis language="scheme" id="time">
+            <type>list</type>
+            <methodname>time</methodname>
+            <methodparam choice="opt">
+              <parameter>iterations</parameter>
+            </methodparam>
+            <methodparam>
+              <parameter>expression</parameter>
+            </methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Evaluates the given expression
+              <parameter>iterations</parameter> times, or if
+              <parameter>iterations</parameter> is not provided, only
+              once.  When complete, a list is returned of the
+              following form:
+              <programlisting>
+(<emphasis>result</emphasis> (<emphasis>n</emphasis> ms))
+              </programlisting>
+              where <emphasis>result</emphasis> is the Scheme value
+              that resulted from the last evaluation of the
+              expression, and <emphasis>n</emphasis> is the number of
+              milliseconds taken to evaluate the expression.  If more
+              than one iteration occurred, then the average number of
+              milliseconds elapsed during each iteration is returned.
+            </para>
+          </blockquote>
+        </para>
+      </blockquote>
+    </para>
+  </sect1>
+</chapter>
+<!-- Keep this comment at the end of the file
+Local variables:
+sgml-parent-document:("sss.xml" "chapter")
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:2
+sgml-indent-data:t
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

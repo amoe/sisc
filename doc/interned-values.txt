@@ -1,0 +1,154 @@
+Interned values are values which are associated, in a bijection, with
+an id, usually a globally unique symbol. Their main purpose is to
+avoid duplication of eq?-sensitive values on deserialisation. A
+typical example are user-defined types, such as record types and
+classes. Their duplication is usually undesirable. For example, it
+results in a deserialised record no longer inhabiting the same type as
+it did when it was being serialized. Non-generative types, which are
+built on top of interned values, solve this problem.
+
+
+1) sisc.util.InternedValue
+
+This class serves two purposes. Firstly, it contains static members
+that maintain a bijective map between symbols and values. Secondly,
+instances of this class are used in Java serialisation as wrappers for
+interned values.
+
+Since the bijective map is static it is shared between app contexts
+and hence interned values can leak between apps. This is an
+unavoidable consequence of wanting to fit in with standard Java
+serialisation in, e.g., J2EE containers, which may happen in threads
+with no associated app context. In practice this shouldn't cause much
+of a problem. Firstly, many J2EE containers have separate class
+loaders for separate web apps etc. Secondly, the main purpose of
+interned values is to store globally unique types, for which there is
+little harm in sharing between apps.
+
+Access to the bijective map is thread-safe.
+
+The map is *not* weak - symbols and values of map entries will not be
+garbage collected. It would be desirable for map entries to be removed
+when they are no longer referenced. However, it is impossible to do so
+reliably, so the current set up is the only safe solution.
+
+
+2) |intern| primitive
+
+changes in: sisc.modules.{Primitives,SimplePrimitives}
+depends on: 1
+
+A new primitive
+  (intern <symbol> <value>) => <symbol> <value>
+maintains the bijective map. It looks up both <symbol> and <value> in
+the map and
+- if it finds neither, a new map entry is created, and the supplied
+values are returned
+- if it finds one of them, the values from the associated map entry
+are returned
+- if it finds both, and they match the supplied mapping then the
+supplied values are returned
+- otherwise, i.e. if it finds both but they do not match the supplied
+mapping, an error is raised
+
+
+3) Java serialisation
+
+changes in: sisc.data.Value, sisc.ser.JavaDeserializer,
+            sisc.util.InternedValue
+depends on: 1
+
+Java serialisation of interned values is accomplished by implementing
+a writeReplace() method (which is part of the standard Java object
+output API) on Value. This checks whether the value is interned and if
+so returns an instance of InternedValue containing the value and
+associated symbol. This is then serialised by the writeExternal()
+method, which too is part of the standard Java object output API.
+
+Java deserialisation of interned values is accomplished by
+implementing a readResolve() and readExternal() methods that mirror
+the writeReplace() and writeExternal() methods above. writeReplace()
+deserialises the symbol, creates an empty value and then interns it,
+as if the |intern| primitive was called. Deserialisation is then
+performed on whatever value was the result of interning.
+
+Note that this means Java deserialisation will replace the *contents*
+of existing interned values.
+
+A small change to the JavaDeserializer is required in order to handle
+circular interned values, which may not have been fully deserialized
+and hence readResolve'd yet.
+
+
+4) block and stream serialisation
+
+changes in: sisc.ser.SLL2{Serializer,Deserializer}
+depends on: 1
+
+A new serialisation type is introduced for interned values.
+
+For every value to be serialised we check whether it is an interned
+value. If so we serialise the associated symbol followed by the value.
+
+On deserialisation we deserialise the symbol, create an empty value
+and intern it, just as if the |intern| primitive was called, obtaining
+whatever value results from that. We then deserialize into that value.
+
+Note that this means block and stream serialisation will replace the
+*contents* of existing interned values.
+
+
+5) |type-safe-intern| function
+
+changes in: sisc.modules.misc, sisc.modules.std-modules
+depends on: 2
+
+A helper function has been added to the misc module:
+  (type-safe-intern <predicate> <symbol> <value>) => <value>
+This calls the |intern| primitive. An error is raised if the given
+value has already been interned. If a different value is returned then
+<predicate> is applied to it. An error is raised if that returns
+#f, and otherwise the value is returned. 
+
+Typically this function is called with a freshly created, and not yet
+populated value, and the returned value is subsequently
+populated. Thus the contents of existing interned values may be
+replaced.
+
+
+6) non-generative record types and classes
+
+changes in: sisc.modules.std-modules, sisc.modules.record.record,
+            sisc.modules.oo.classes
+depends on: 5
+
+define-nongenerative-record-type, define-nongenerative-struct,
+define-nongenerative-class are versions of the respective macros that
+take an additional guid parameter and produce non-generative types.
+
+make-record-type and make-class take an optional guid parameter.
+
+
+7) non-generative core types
+
+changes in: sisc.modules.std-modules, sisc.modules.record.record,
+            sisc.modules.oo.{classes,misc,slots},
+            sisc.modules.generic-procedures.{methods,procedures},
+            sisc.io.{generic-io-types,serial-io,string-io}
+depends on: 6, 4
+
+All the existing core classes and record types are now
+non-generative.
+
+
+8) non-generative library types
+
+changes in: sisc.modules.srfi.srfi-{14,18,19,25,35,37,40,45}
+depends on: 6, 4
+
+All srfis that define structs or record types now define
+non-generative versions instead.
+
+As a result some of these srfis now no longer depend on srfi-9, since
+that only deals with generative record types. The sisc record module
+is imported instead.

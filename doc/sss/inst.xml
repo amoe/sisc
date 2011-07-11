@@ -1,0 +1,769 @@
+<chapter id="Installation">
+  <title>
+    Installation and Invocation
+  </title>
+  <sect1 id="RequiredEnv">
+    <title>
+      Required Environment
+    </title>
+    <para>
+      &SISC; primarily targets the Java Virtual
+      Machine, and the Java v1.3 and higher class libraries.  The
+      1.2 libraries and VM are required due to a reliance on memory
+      reference functionality used to properly garbage collect
+      unused symbols while still maintaining pointer equality between
+      those that remain active, while the 1.3 libraries are needed for
+      the proxy functionality of the Java bridge library.
+    </para>
+    <para>
+      &SISC; does not require any particular operating system, though
+      the official distribution currently provides launching
+      assistance for Windows and Unix based systems.  Theoretically
+      any machine that supports Java 1.3 or higher should be able to
+      run &SISC;.
+    </para>
+  </sect1>
+  <sect1 id="REPL">
+    <title>
+      The Read-Eval-Print-Loop
+    </title>
+    <para>
+      As in most Scheme systems, &SISC;'ss primary human interface is a
+      REPL, or Read-Eval-Print-Loop.  &SISC; presents the user with a
+      prompt ('<computeroutput>#;></computeroutput>'), then reads an
+      s-expression from the console.  &SISC; then evaluates the
+      s-expression, producing a value or error, which it then prints.
+      Finally the process begins again with a new prompt.
+    </para>
+    <para>
+      The process terminates with a forced kill of the JVM (with 
+      Control-C or similar), or when an end of file is detected on
+      the console.  Also, the <function>exit</function> procedure may
+      be used to exit the current REPL.
+    </para>
+    <para>
+      <blockquote>
+	<para>
+          <indexterm><primary>exit</primary>
+          </indexterm>
+	  &procedure; 
+	  <methodsynopsis language="scheme">
+            <type>does not return</type>
+            <methodname>exit</methodname>
+            <methodparam choice="opt">
+              <parameter>return-value</parameter>
+            </methodparam>
+          </methodsynopsis>
+	  <blockquote>
+	    <para>
+	      Instructs the current REPL to exit.  If the optional 
+              return value is given, the value will be passed out of
+              the REPL to the calling code or environment.
+	    </para>
+	  </blockquote>
+	</para>
+      </blockquote>
+    </para>
+    <para>
+      Evaluation may be prematurely interrupted on some platforms by
+      sending SIGQUIT (usually by pressing Control-C) to the &SISC;
+      process.  If supported, this will cause an interrupted error to
+      be raised at whichever expression is currently being evaluated
+      in the REPL thread.  If not caught, this will cause the error to
+      be raised at the console and a new prompt will be displayed.
+      Issuing the signal twice will terminate &SISC;.     
+    </para>
+  </sect1>
+  <sect1 id="DisplayConventions">
+    <title> 
+      Display Conventions
+    </title>
+    <para>
+      Executing or loading code in the REPL ordinarily produces a value
+      result which is displayed during the Print phase.  However,
+      two other message types may be displayed.  First, if an error
+      is raised that is not handled by the running program, the
+      message will be described in one of several forms, depending on what
+      combinations of a location, a message, and a parent message the
+      error has:
+    </para>
+    <programlisting>
+Error.
+
+Error in &lt;error-location&gt;.
+
+Error: &lt;description&gt;
+      
+Error in &lt;error-location&gt;: &lt;description&gt;
+      
+Error in nested call.
+&lt;nested-error&gt;
+
+Error in nested call: &lt;description&gt;
+&lt;nested-error&gt;
+
+Error in nested call from &lt;error-location&gt;.
+&lt;nested-error&gt;
+
+Error in nested call from &lt;error-location&gt;: &lt;description&gt;
+&lt;nested-error&gt;
+    </programlisting>
+    <para>
+      The location of an error often refers to the name of a procedure,
+      syntax, or parameter.  Errors that do not contain a location often
+      originate in an anonymous function.  Nested errors occur when
+      one function makes a call to another function and the second raises an
+      error.  If the first function wishes, it may catch this error and
+      generate its own, with the second functions error as a parent.  Thus
+      a nested error consists of an error message on the first line,
+      and the nested error message or messages on following lines.
+    </para>
+    <para>
+      In addition to errors, it is possible for code to produce
+      warnings during compilation or run-time.  A warning is a
+      message to the user about a condition that is unusual but not
+      terminal to the program flow.  The compiler, for example, does
+      a minimal amount of sanity checking on code and may produce
+      warnings about code that has the potential to raise errors
+      during execution.  Warnings are always distinguished from
+      ordinary messages by surrounding braces ({}) and starting
+      with the word 'warning'.
+    </para>
+    <programlisting>
+{warning: &lt;description&gt;}
+    </programlisting>
+  </sect1>
+  <sect1 id="running-sisc">
+    <title>Running &SISC;</title>
+    <para>
+      &SISC;'s official distribution provides a startup script for
+      Windows and Unix based hosts.  Simply executing this script
+      starts the &SISC; REPL.  Zero or more Scheme source files can
+      also be specified on the command line after the script name,
+      which will be loaded in order before the REPL prompt is
+      displayed.
+    </para>
+    <para>
+      It may be desirable to pass options to the underlying JVM.  This
+      can be done by setting the <literal>JAVAOPT</literal>
+      environment variable to the options you wish to pass to the
+      JVM.  This includes switches for heap size, system properties,
+      etc.  &SISC; itself has a number of properties that can affect
+      its operation.  See <xref linkend="config-parameters"/> 
+      for a list of these properties and their meanings.
+    </para>
+    <sect2 id="commandline">
+      <title>Command-line Switches</title>
+      <para>
+        &SISC; can, in addition to loading Scheme source programs,
+        also accept a few command-line switches to change its
+        behavior.  Any
+        non-switch argument is considered a Scheme source file to load
+        on startup, until the <emphasis>end of options</emphasis>
+        characters  "--" are reached.  Any item
+        after those characters are considered arguments to the
+        function specified in the "call-with-args" switch.  
+      </para>
+      <para>
+        All command-line switches have both a short and long form.
+        These forms are equivalent in meaning.
+      </para>
+      <table id="commandline-switches">
+        <title>&SISC; Command line Switches</title>
+        <tgroup cols='3' align='left' colsep='1' rowsep='1'>
+          <colspec colname='Long-switch'/>
+          <colspec colname='Short-switch'/>
+          <colspec colname='Meaning'/>
+          <thead>
+            <row>
+              <entry>Long Switch</entry>
+              <entry>Short Switch</entry>
+              <entry>Switch meaning</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><literal>--call-with-args &lt;name&gt;</literal></entry>
+              <entry><literal>-c &lt;name&gt;</literal></entry>
+              <entry>
+                Call the top-level procedure <literal>name</literal> 
+                with the remaining command-line arguments after the
+                "--" sequence.
+              </entry>
+            </row>          
+            <row>
+              <entry><literal>--eval &lt;expression&gt;</literal></entry>
+              <entry><literal>-e &lt;expression&gt;</literal></entry>
+              <entry>
+                Evaluate the provided expression.
+              </entry>
+            </row>          
+            <row>
+              <entry><literal>--no-repl</literal></entry>
+              <entry><literal>-x</literal></entry>
+              <entry>
+                Exit after loading all the Scheme source files and
+                processing all command-line switches.
+              </entry>
+            </row>
+            <row>
+              <entry><literal>--heap &lt;heap-file&gt;</literal></entry>
+              <entry><literal>-h &lt;heap-file&gt;</literal></entry>
+              <entry>
+                File containing pre-compiled code and data for a
+                complete Scheme top-level environment. This parameter
+                is mandatory if the heap cannot be located automatically.
+              </entry>
+            </row>
+            <row>
+              <entry><literal>--properties &lt;config-file&gt;</literal></entry>
+              <entry><literal>-p &lt;config-file&gt;</literal></entry>
+              <entry>
+                Specifies a Java properties file that contains
+                application properties. Typically some of these
+                properties define defaults for configuration parameters (<xref
+                linkend="config-parameters"/>. The file can be specified as a URL.
+              </entry>
+            </row>
+            <row>
+              <entry><literal>--listen [&lt;host&gt;:]&lt;port&gt;</literal></entry>
+              <entry><literal>-l [&lt;host&gt;:]&lt;port&gt;</literal></entry>
+              <entry>
+                Listen on host/port for REPL connections,
+                i.e. connecting to the specified host/port will create
+                a new REPL.
+              </entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
+      <para>
+        The order of processing the command line is as follows:
+      </para>
+      <orderedlist>
+        <listitem>
+          <para>
+            Process the entire command line, noting the
+            settings of each switch and accumulating all Scheme source
+            files and arguments after the end of options sequence.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Load the heap file.
+          </para>
+          </listitem>
+        <listitem>
+          <para>
+            Load each Scheme source file found in the order they
+            occured on the command line.  Note whether any errors
+            occurred.   
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            If present, evaluate the expression in an
+            <literal>--eval</literal> switch.  Note its success 
+            or failure.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            If present, apply the named function in a
+            <literal>--call-with-args</literal> switch to the
+            arguments after the end of options sequence.  Note its
+            return value.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            If <literal>--no-repl</literal> was not specified, invoke
+            the REPL, otherwise exit.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+          	If the REPL was run if its return value is 
+          	an integer, return that integer as &SISC;'s overall 
+          	return code.  If the REPL was not run, and any
+          	return code supporting step above was run, return
+          	the most recent return code.  If no return code step
+          	was performed, but a success/failure step was performed,
+          	return 1 if any failures occured, 0 otherwise.
+          </para>
+        </listitem>
+      </orderedlist>
+    </sect2>
+    <sect2 id="config-parameters">
+      <title>Configuration Parameters</title>
+      <para>
+        SISC's behaviour is affected by a number of configuration
+        parameters. These fall into two categories:
+        <orderedlist>
+          <listitem>
+           <para>
+              Static configuration parameters that can only be specified
+              at system startup and apply across all &SISC; applications
+              that use the same classloader.
+           </para>
+          </listitem>
+          <listitem>
+            <para>
+              Dynamic configuration parameters that can be altered on a
+              per-thread basis without impacting other threads. These
+              kind of parameters are also called "thread locals", or, in
+              Scheme terminology, dynamic parameters.
+            </para>
+          </listitem>
+        </orderedlist>
+      </para>
+      <sect3>
+        <title>Static Parameters</title>
+        <para>
+          Static configuration parameters can be set using Java system
+          properties. Their value can be retrieved with a Scheme
+          function, but it is not possible to alter it. Static
+          configuration parameters default to pre-defined
+          system-internal settings if left unspecified.
+        </para>
+        <para>
+          &SISC; has the following static configuration parameters:
+          <informaltable frame="all">
+            <tgroup cols="4">
+              <thead>
+                <row>
+                  <entry>
+                    Java property
+                    <footnote id="config-props">
+                      <para>
+                        The names of all properties for configuration
+                        parameters must be prefixed with
+                        <envar>sisc.</envar>.
+                      </para>
+                    </footnote>
+                  </entry>
+                  <entry>Scheme parameter</entry>
+                  <entry>default</entry>
+                  <entry>description</entry>
+                </row>
+              </thead>
+              <tbody> 
+                <row>
+                  <entry>
+                    <indexterm><primary>permit-interrupts</primary></indexterm>
+                    <envar>permitInterrupts</envar></entry>
+                  <entry><function>permit-interrupts</function></entry>
+                  <entry>true</entry>
+                  <entry>
+                    If set to <literal>true</literal>,
+                    <function>thread/interrupt</function> is
+                    permitted to interrupt running Scheme code, in
+                    addition to sending an interrupt signal to the
+                    host language.
+                  </entry>
+                </row>
+                <row>
+                  <entry>
+                    <indexterm><primary>min-float-precision</primary></indexterm>
+                    <envar>minFloatPrecision</envar></entry>
+                  <entry><function>min-float-precision</function></entry>
+                  <entry>16</entry>
+                  <entry>
+                    Specifies the minimum precision, in decimal places,
+                    to be maintained by the Quantity lib if using
+                    arbitrary precision floats.
+                  </entry>
+                </row>
+                <row>
+                  <entry>
+                    <indexterm><primary>max-float-precision</primary></indexterm>
+                    <envar>maxFloatPrecision</envar></entry>
+                  <entry><function>max-float-precision</function></entry>
+                  <entry>32</entry>
+                  <entry>
+                    Specifies the maximum precision, in decimal
+                    places, to be maintained by the Quantity lib if
+                    using arbitrary precision floats.
+                  </entry>
+                </row>
+              </tbody>
+            </tgroup>
+          </informaltable>
+        </para>
+        <para>
+          When static configuration parameters are retrieved with
+          their associated Scheme function, the value is of the type
+          specified for the parameter. See <xref
+            linkend="config-parameter-conversion"/>.
+        </para>
+      </sect3>
+      <sect3>
+        <title>Dynamic Parameters</title>
+        <para>
+          There are four ways to specify a configuration parameter, in
+          decreasing order of precedence:
+          <orderedlist numeration="arabic">
+            <listitem>
+              <para>
+                <emphasis>Invoking a scheme function</emphasis>.
+                Dynamic configuration parameters are special Scheme
+                parameters (see <xref linkend="Parameters"/>. Invoking
+                the parameter with a value sets the parameter for the
+                current thread without affecting other dynamic
+                contexts / threads.
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                <emphasis>Defining an application
+                property</emphasis>. A single &SISC; runtime can host
+                multiple applications simultaneously. Application
+                properties define default values for dynamic
+                configuration parameters across all dynamic contexts /
+                threads of an application. They can be specified at
+                application initialisation time. See <xref
+                linkend="JavaToScheme"/>. When &SISC; is started from
+                the command line, the location of a Java properties
+                file containing application properties can be
+                specified with a command line option. See <xref
+                linkend="commandline-switches"/>.
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                <emphasis>Defining a Java system property</emphasis>.
+                Java system properties define default values for
+                dynamic configuration parameters that apply across all
+                applications inside a single &SISC; runtime.
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                <emphasis>System defaults</emphasis>.
+                All dynamic configuration parameters have a reasonable
+                default value.
+              </para>
+            </listitem>
+          </orderedlist>
+        </para>
+        <para>
+          &SISC; has the following dynamic configuration parameters:
+          <informaltable frame="all">
+            <tgroup cols="4">
+              <thead>
+                <row>
+                  <entry>
+                    Java property
+                    <footnoteref linkend="config-props"/>
+                  </entry>
+                  <entry>Scheme parameter</entry>
+                  <entry>default</entry>
+                  <entry>description</entry>
+                </row>
+              </thead>
+              <tbody>
+                <row>
+                  <entry>
+                    <indexterm><primary>case-sensitive</primary></indexterm>
+                    <envar>caseSensitive</envar>
+                  </entry>
+                  <entry><function>case-sensitive</function></entry>
+                  <entry>false</entry>
+                  <entry>
+                    Determines whether symbols read via the Scheme
+                    reader are to be treated case sensitively.
+                  </entry>
+                </row>
+                <row>
+                  <entry>
+                    <indexterm><primary>character-set</primary></indexterm>
+                    <envar>characterSet</envar>
+                  </entry>
+                  <entry><function>character-set</function></entry>
+                  <entry>"UTF8"</entry>
+                  <entry>
+                    Defines the default character set used by character
+                    ports (see <xref linkend="charports"/>) if no character
+                    set is otherwise specified.
+                  </entry>
+                </row>
+                <row>
+                  <entry>
+                    <indexterm><primary>emit-annotations</primary></indexterm>
+
+                    <envar>emitAnnotations</envar></entry>
+                  <entry><function>emit-annotations</function></entry>
+                  <entry>true</entry>
+                  <entry>
+                    If set to <literal>true</literal>, this parameter
+                    causes source files loaded with
+                    <function>load</function> or
+                    <function>import</function>, as well as source
+                    entered in the console, to be annotated by the
+                    Scheme reader. Annotations include source file
+                    location information, which simplifies debugging.
+                    See <xref linkend="passive-debugging"/>.
+                  </entry>
+                </row>
+                <row>
+                  <entry>
+                    <indexterm><primary>emit-debugging-symbols</primary></indexterm>
+
+                    <envar>emitDebuggingSymbols</envar></entry>
+                  <entry><function>emit-debugging-symbols</function></entry>
+                  <entry>true</entry>
+                  <entry>
+                    If set to <literal>true</literal>, additional
+                    annotations useful for debugging, such as function
+                    and variable names, are produced by &SISC;'s
+                    compiler. See <xref linkend="passive-debugging"/>.
+                  </entry>
+                </row>                         
+                <row>
+                  <entry>
+                    <indexterm><primary>max-stack-trace-depth</primary></indexterm>
+                    <envar>maxStackTraceDepth</envar></entry>
+                  <entry><function>max-stack-trace-depth</function></entry>
+                  <entry>0</entry>
+                  <entry>
+                    Specifies the maximum depth of virtual call
+                    stacks, which are used to obtain proper stack
+                    traces even in the presence of tail recursion and
+                    continuation capture and invocation, while still
+                    preserving tail-call semantics and safe-for-space
+                    guarantees. See <xref
+                    linkend="Debugging"/>. Collecting this information
+                    is computationally expensive, so this feature is
+                    turned off by default. A value of
+                    <literal>16</literal> is about right for debugging
+                    most applications. Large values allow collection
+                    of more information but carry a large performance
+                    penalty, small values result in some call
+                    information being lost.
+                  </entry>
+                </row>
+                <row>
+                  <entry>
+                    <indexterm><primary>permissive-parsing</primary></indexterm>
+                    <envar>permissiveParsing</envar></entry>
+                  <entry><function>permissive-parsing</function></entry>
+                  <entry>false</entry>
+                  <entry>
+                    If set to <literal>true</literal>, the Scheme parser
+                    will warn rather than raise an error for various syntactic errors 
+                    such as unbalanced parentheses.  This allows one to
+                    continue parsing a syntactically invalid file, finding many errors
+                    at once.
+                  </entry>
+                </row>
+                <row>
+                  <entry>
+                    <indexterm><primary>print-shared</primary></indexterm>
+                    
+                    <envar>printShared</envar></entry>
+                  <entry><function>print-shared</function></entry>
+                  <entry>true</entry>
+                  <entry>
+                    If set to <literal>true</literal>,
+                    <function>write</function> and the REPL detect
+                    shared structures in data and invoke a version of
+                    <function>write</function> capable of emitting the
+                    shared structure's external representation of
+                    data. See <xref linkend="Writing"/>. The user may
+                    wish to set this parameter to
+                    <literal>false</literal> because of the overhead
+                    of both scanning all data, and constructing this
+                    representation when shared structures are
+                    detected.
+                  </entry>
+                </row>
+                <row>
+                  <entry>
+                    <indexterm><primary>repl-prompt</primary></indexterm>
+
+                    <envar>replPrompt</envar></entry>
+                  <entry><function>repl-prompt</function></entry>
+                  <entry></entry>
+                  <entry>
+                    String to be displayed as part of &SISC;'s REPL
+                    prompt.
+                  </entry>
+                </row>
+                <row>
+                  <entry>
+                    <indexterm><primary>stack-trace-on-error</primary></indexterm>
+
+                    <envar>stackTraceOnError</envar></entry>
+                  <entry><function>stack-trace-on-error</function></entry>
+                  <entry>true</entry>
+                  <entry>
+                    If set to <literal>true</literal>, whenever an
+                    uncaught error is encountered a full stack trace
+                    is displayed automatically. See <xref
+                    linkend="passive-debugging"/>.
+                  </entry>
+                </row>
+                                
+                <row>
+                  <entry>
+                    <indexterm><primary>strict-r5rs-compliance</primary></indexterm>
+
+                    <envar>strictR5RSCompliance</envar></entry>
+                  <entry><function>strict-r5rs-compliance</function></entry>
+                  <entry>false</entry>
+                  <entry>
+                    If set to <literal>true</literal>,
+                    <emphasis>strict</emphasis> &R5RS; syntax and
+                    semantics are followed.  This will cause SISC to
+                    raise errors in all situations described as "an
+                    error" in the Scheme standard.  This will override
+                    and invalidate all the interpretation liberties
+                    described in <xref linkend="R5RSViolations"/>.
+                  </entry>
+                </row>
+                 
+                <row>
+                  <entry>
+                    <indexterm><primary>synopsis-length</primary></indexterm>
+
+                    <envar>synopsisLength</envar></entry>
+                  <entry><function>synopsis-length</function></entry>
+                  <entry>30</entry>
+                  <entry>
+                    Limit on the length (in characters) of the
+                    external representation of data structures in
+                    error messages and warnings. When the limit is
+                    reached, an ellipsis (<literal>...</literal>) is
+                    appended to the curtailed external representation.
+                  </entry>
+                </row>
+
+                <row>
+                  <entry>
+                    <indexterm><primary>vector-length-prefixing</primary></indexterm>
+                    <envar>vectorLengthPrefixing</envar></entry>
+                  <entry><function>vector-length-prefixing</function></entry>
+                  <entry>true</entry>
+                  <entry>
+                    If set to <literal>true</literal>, this parameter
+                    will instruct the pretty-printer to emit length
+                    prefixed, trailing-duplicate-eliminated vectors in
+                    its output.  If <literal>false</literal>, ordinary
+                    full-length vectors without prefixes will be
+                    emitted. See <xref linkend="Vectors"/>.
+                  </entry>
+                </row>
+              </tbody>
+            </tgroup>
+          </informaltable>
+        </para>
+        <para>
+          When dynamic configuration parameters are retrieved or set with
+          their associated Scheme function, the value is of the type
+          specified for the parameter. See <xref
+            linkend="config-parameter-conversion"/>.
+        </para>
+      </sect3>
+      <sect3 id="config-parameter-conversion">
+        <title>Value Conversion</title>
+        <para>
+          When specifying configuration parameters via Java
+          properties, a Java-like notation is used, e.g. boolean
+          parameters are specified as <literal>true</literal> and
+          <literal>false</literal>. By contrast, when getting and
+          setting configuration parameters from Scheme, their values
+          are of the appropriate Scheme type, e.g. boolean parameters
+          are specified as <literal>#t</literal> and
+          <literal>#f</literal>. Strings and symbols undergo a
+          similiar conversion; they are specified without their
+          double/single quotes in the Java properties.
+        </para>
+        <para>
+          For parameter types other than boolean, string and symbol,
+          Java properties are read as Scheme values, i.e. Scheme
+          literal notation should be used in the properties.
+        </para>
+      </sect3>
+    </sect2>
+  </sect1>
+  <sect1 id="FileExtensions">
+    <title>Running Scheme Programs</title>
+    <sect2 id="Loading">
+      <title>Loading</title>
+      <para>
+        &SISC; supports loading Scheme programs using the &R5RS;
+        optional procedure <function>load</function>.  A number of
+        file types for loading Scheme code are supported.  The common
+        extensions are:
+      </para>
+      <itemizedlist>
+        <listitem>
+          <para>
+            <literal>scm</literal> - Scheme source code
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <literal>sce</literal> - Scheme code expanded.  This type
+            of code has been processed by the syntax expander and
+            contains only core Scheme forms.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <literal>scc</literal> - &SISC; Compiled Code.  This
+            contains expanded and compiled code in a &SISC; specific
+            representation. The code gets executed when loaded.
+          </para>
+        </listitem>
+      </itemizedlist>
+      <para>
+        In addition to code loaded, &SISC; requires a <emphasis>heap</emphasis>,
+        which contains the default set of libraries and functions for the
+        initial environment.  &SISC; will look for a heap file called <literal>sisc.shp</literal>
+        in the current directory, the directory referenced by the <literal>SISC_HOME</literal> 
+        environment variable, and as a resource paired with the <classname>HeapAnchor</classname>
+        class in the <literal>sisc.boot</literal> package of the classpath.  
+        The standard &SISC; distribution contains <literal>sisc.shp</literal> in the 
+        same directory as the supporting <literal>.jar</literal> files.  
+      </para>
+      <para>
+        It isn't uncommon to want the heap to reside on the classpath, where it
+        can be more easily resolved in applets or in web applications.  This file,
+        usually called <literal>sisc-heap.jar</literal> can be added to the classpath
+        in any usual fashion, and the heap loading routines will discover it if
+        not found elsewhere.  To create a jar file containing the heap, create the 
+        following file structure in the
+        jar:
+      </para>
+      <programlisting>
+sisc/
+sisc/boot/
+sisc/boot/HeapAnchor.class
+sisc/boot/sisc.shp
+      </programlisting>
+      <para>
+        The <literal>HeapAnchor.class</literal> class file is distributed in the
+        <literal>sisc-opt.jar</literal> file of the full binary distribution.  
+      </para>
+    </sect2>
+    
+    <sect2 id="SchemeScripts">
+      <title>Scheme Shell Scripts</title>
+      <para>
+        On Unix or Unix-like systems, &SISC; supports SRFI-22, a
+        mechanism for writing shell-like scripts that can be invoked
+        directly as executable programs.  The text of the SRFI, which
+        can be found at 
+        <ulink url="http://srfi.schemers.org/srfi-22/srfi-22.html">
+          <citetitle>http://srfi.schemers.org</citetitle></ulink>, 
+        describes how such programs are written.  
+      </para>
+    </sect2>
+  </sect1>
+</chapter>
+<!-- Keep this comment at the end of the file
+Local variables:
+sgml-parent-document:("sss.xml" "chapter")
+End:
+-->

@@ -1,0 +1,6 @@
+(module _srfi-48 (_format)
+  (define _format format))
+(module srfi-48 (format)
+  (import _srfi-48)
+  (define format _format)
+  (add-feature 'srfi-48))

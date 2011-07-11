@@ -1,0 +1,7 @@
+SISC for Debian
+---------------
+
+Relies on the java2-runtime virtual package, which is not by default 
+available in Debian main.
+
+ -- Scott G. Miller <sgmiller@gmail.com>, Thu,  7 Apr 2005 10:36:44 -0500

@@ -1,0 +1,181 @@
+SISC's extensible type system
+=============================
+
+SISC's extensible type system provides programmatic access to the type
+information of values and provides a core set of type testing and
+comparison procedures. The type system is extensible in two
+ways. Firstly any new native types are recognised
+automatically. Secondly, hooks are provided for Scheme-level
+extensions of the type-system.
+
+
+Core procedures & predicates
+----------------------------
+
+TYPE-OF <value> => <type>
+Returns the type of <value>. There is no standard representation for
+types, leaving type extensions free to choose a representation that
+suits them most.
+
+The procedure is equipped with an extension hook, TYPE-OF-HOOK. See
+below for more details on hooks. The default implementation of TYPE-OF
+returns a type based on the Java type of the internal representation
+of <value>.
+
+
+TYPE<= <type1> <type2> => #t/#f
+Returns #f if <type1> is a sub-type of <type2>.
+
+The predicate is equipped with an extension hook, TYPE<=-HOOK. See
+below for more details on hooks. The default implementation of TYPE<=
+determines sub-typing based on the inheritance relationship of the
+Java types representing native types.
+
+
+COMPARE-TYPES <type1> <type2> <type3>
+=> equal, more-specific, less-specific
+Determines the relationship of two types with respect to a
+third. <type3> must be a sub-type of <type1> and <type2>. <type1> and
+<type2> are first compared using TYPE<=. If that comparison indicates
+that the types are disjoint (i.e. <type1> is not sub-type of <type2>,
+<type2> is not a sub-type of <type1> and the types are not equal) then
+additional information from <type3> is taken into account for the
+comparison.
+
+The predicate is equipped with an extension hook,
+COMPARE-TYPES-HOOK that is invoked in the case the comparison of
+<type1> with <type2> using TYPE<= finds the two types to be
+disjoint. See below for more details on hooks. The default
+implementation returns an error.
+
+
+Derived procedures and predicates
+---------------------------------
+
+INSTANCE-OF? <value> <type> => #t/#f
+Determines whether <value> is an instance of <type>.
+
+This predicate obtains <value>'s type using TYPE-OF and then compares
+it to <type> using TYPE<=.
+
+
+TYPE= <type1> <type2> => #t/#f.
+Determines whether two types are equal by comparing them twice using
+TYPE<=.
+
+
+TYPES<= <list types1> <list types2> => #t/#f
+Determines whether all of <types1> are sub-types of <types2> by
+performing a pair-wise comparison using TYPE<= until a difference is
+found (in which ase #f is returned) or one (or both) of the lists has
+been exhausted (in which case #t is returned).
+
+INSTANCES-OF? <list values> <list types> => #t/#f
+Determines whether all of <values> are instances of <types> by
+performing a pair-wise test using INSTANCE-OF? until a test returns #f
+(in which case #f is returned) or one (or both) of the lists has been
+exhausted (in which case #t is returned).
+
+
+TYPES= <list types1> <list types2> => #t/#f
+Determines whether all of <types1> are equal to <types2> by performing
+a pair-wise comparison using TYPE= until a difference is found (in
+which case #f is returned) or one (or both) of the lists has been
+exhausted (in which case #t is returned).
+
+
+Hooks
+-----
+
+Hooks are the main mechanism by which Scheme code can extend the
+default type system. The core type system procedures TYPE-OF, TYPE<=
+and COMPARE-TYPES all provide such hooks. Extension takes place by
+installing labelled procedures on the hook. The procedures are called
+with a "next" procedure as the first argument and all the arguments of
+the call to the hook-providing procedures as the remaining arguments.
+
+Example:
+
+(type-of-hook 'record
+  (lambda (next o)
+    (if (record? o)
+        (record-type o)
+        (next o))))
+
+Installing a procedure with a label of an already installed procedure
+replaces the latter with the former.
+
+Typically the installed procedure first determines whether it is
+applicable, i.e. is capable of performing the requested comparison
+etc. If not it calls the "next" procedure, which invokes the next hook
+or, if no further hooks exist, the default implementation of the
+hooked procedure.
+
+
+Standard Types
+--------------
+
+The type system pre-defines bindings for the native types
+corresponding to all the data types defined in R5RS. One notable
+exception is that pairs and null are combined into a <list> type.
+
+We also define a <value> type that is the base type of all SISC
+values, i.e. all SISC values are instances of <value> and all types
+are sub-types of <value>.
+
+The representations of other native types can be obtained using
+
+MAKE-TYPE <java-class-name> => <native-type>
+Constructs a type representing a built-in type. The <java-class-name>
+must be a symbol and it must denote a Java class that is a sub-class
+of sisc.data.Value, the base of the SISC value type hierarchy.
+
+
+Examples
+--------
+
+(import type-system)
+(type<= <number> <value>) ;=> #t
+(type<= <value> <number>) ;=> #f
+(instance-of? 1 <number>) ;=> #t
+(instance-of? 1 <value>) ;=> #t
+(instance-of? 1 <symbol>) ;=> #f
+(eq? (type-of 1) <number>) ;=> #t
+
+(import record)
+(define-struct foo (x))
+(define-struct bar (x))
+(define f (make-foo 1))
+(define b (make-bar 1))
+(instance-of? f foo) ;=> #t
+(instance-of? f <record>) ;=> #t
+(instance-of? f <value>) ;=> #t
+(instance-of? b foo) ;=> #f
+(type<= foo <record>) ;=> #t
+(type<= foo <value>) ;=> #t
+(type<= foo bar) ;=> #f
+
+
+What's Changed?
+---------------
+
+The major changes in the type system since the previous version are as
+follows:
+
+* The code and module have been disentangled from that of generic
+procedures, the object system and Java FFI.
+
+* The type of a Scheme value is distinct from the type obtained by S2J
+for the Java object representing the value, i.e. the type system
+clearly distinguishes between Scheme values/types and Java
+values/types.
+
+* The type system is extensible at both the native (Java) and Scheme
+level.
+
+* There is no longer a built-in meta type. It is however easy to add
+using the new extension mechanism.
+
+* The canonical super type, i.e. the super type of everything, is no
+longer called <top> but <value>. There no longer is a canonical sub
+type <bot>.

@@ -1,0 +1,4168 @@
+<chapter id="IO">
+  <title>I/O</title>
+  <para>
+      &SISC;'s I/O routines are implemented in a flexible manner, allowing
+    extensions to create new I/O sources that will behave as
+    standard Scheme port objects.  The ports can then be operated on
+    with all &R5RS; port operations, as well as some &SISC; specific
+    port functions.
+  </para>
+  <sect1>
+    <title>Ports</title>
+    <sect2 id="urlfile">
+      <title>URLs</title>
+      <para>
+        In &SISC; all procedures that create ports for accessing
+        files, e.g. <function>open-input-file</function>,
+        <function>open-output-file</function> accept URLs in addition
+        to ordinary file names. Here are some examples of valid URLs:
+        <programlisting>
+http://foo.com/bar/bar1.scm
+file:/tmp/foo.scm
+file:c:\bar\baz.scm
+file:foo.scm
+jar:http://foo.com/bar.jar!/bar/bar1.scm
+        </programlisting>
+        The last is a URL referring to a file stored in a JAR on a
+        remote web server. For further details on the format of URLs
+        please consult <ulink
+        url="http://www.ietf.org/rfc/rfc2396.txt">this
+        specification</ulink>. The format of JAR URLs is defined in
+        <ulink
+        url="http://java.sun.com/j2se/1.4/docs/api/java/net/JarURLConnection.html">the
+        JDK API documentation</ulink>.  What types of URLs are
+        supported by a particular installation of Java depends on the
+        configured protocol handlers. See <ulink
+        url="http://java.sun.com/j2se/1.4/docs/api/java/net/URL.html">the
+        JDK API documentation</ulink> for details.
+        <footnote>
+          <para>
+            Handling of JAR files in URLS may be dependent on the
+            &SISC; host language, as well as some uncommon protocols.
+            FILE, HTTP and FTP should be expected to work with any
+            host language.
+          </para>
+        </footnote>
+      </para>
+      <para>
+        Relative file names or URLs are resolved in relation to the
+        following parameter:
+        <blockquote>
+          <para>
+            <indexterm><primary>current-url</primary></indexterm>
+              &parameter;
+            <methodsynopsis language="scheme">
+              <type>url</type>
+              <methodname>current-url</methodname>
+              <methodparam choice="opt">
+                <parameter>url</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Retrieves or sets the URL which forms the basis for
+                resolving relative filenames and URLs. It is
+                initialized on start up with the path to the current
+                directory. All parameters and the returned value are
+                strings.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+        The algorithm for resolving relative URLs is defined in <ulink
+        url="http://www.ietf.org/rfc/rfc2396.txt">this
+        specification</ulink>.  For compatibility with other Schemes,
+        &SISC; also supports the
+        <function>current-directory</function> procedure, which is a
+        simple wrapper around <function>current-url</function>.
+      </para>
+      <para>
+        A convenience procedure exists for executing a procedure while
+        the <function>current-url</function> is temporarily set to a
+        different value:
+        <blockquote>
+          <para>
+            <indexterm><primary>with-current-url</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>value</type>
+              <methodname>with-current-url</methodname>
+              <methodparam><parameter>url</parameter></methodparam>
+              <methodparam><parameter>thunk</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Sets the current URL to the URL obtained by
+                normalizing <parameter>url</parameter> in relation to
+                the current URL, then executes
+                <parameter>thunk</parameter>, and then sets
+                the current URL back to the previous value.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        URLs can be normalized using
+        <blockquote>
+          <para>
+            <indexterm><primary>normalize-url</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>url</type>
+              <methodname>normalize-url</methodname>
+              <methodparam><parameter>url1</parameter></methodparam>
+              <methodparam choice="opt">
+                <parameter>url2</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                When called with one string argument,
+                <function>normalize-url</function> returns the
+                normalized version of the given URL. Normalization
+                involves, amongst other things, the replacement of
+                relative path references such as <literal>.</literal>
+                and <literal>..</literal>.
+              </para>
+              <para>
+                When called with two string arguments, the procedure
+                returns the normalized version of the second URL when
+                interpreted as a being relative to the first URL.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+    </sect2>
+    <sect2>
+      <title>Buffered I/O</title>
+      <para>
+		Buffered ports are provided in &SISC; to layer over any existing
+		port, and read or write in larger, more efficient chunks.
+	    Buffered ports are created with the following constructors, which
+	    accept the underlying port and an optional size, indicating the number
+	    of bytes or characters to buffer before making an underlying read or write.
+	  </para>
+      <blockquote>
+        <para>
+          <indexterm><primary>open-buffered-binary-input-port</primary>
+          </indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>binary-input-port</type>
+            <methodname>open-buffered-binary-input-port</methodname>
+            <methodparam>
+              <parameter>binary-input-port</parameter>
+            </methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Creates a binary-input-port which is buffered, and
+              reads its bytes from the provided port.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+          <indexterm><primary>open-buffered-binary-output-port</primary>
+          </indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>binary-output-port</type>
+            <methodname>open-buffered-binary-output-port</methodname>
+            <methodparam>
+              <parameter>binary-output-port</parameter>
+            </methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Creates a binary-output-port which is buffered, and
+              writes its bytes to the provided port.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+          <indexterm><primary>open-buffered-character-input-port</primary>
+          </indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>character-input-port</type>
+            <methodname>open-buffered-character-input-port</methodname>
+            <methodparam>
+              <parameter>character-input-port</parameter>
+            </methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Creates a character-input-port which is buffered, and
+              reads its characters from the provided port.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+          <indexterm><primary>open-buffered-character-output-port</primary>
+          </indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>character-output-port</type>
+            <methodname>open-buffered-character-output-port</methodname>
+            <methodparam>
+              <parameter>character-output-port</parameter>
+            </methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Creates a character-output-port which is buffered, and
+              writes its characters to the provided port.
+            </para>
+          </blockquote>
+        </para>
+      </blockquote>
+      <para>
+        With buffered output ports, individual writes may not actually 
+		reach the eventual output source, so the programmer must explicitly
+		flush the port when it the output data <emphasis>must</emphasis>
+		reach its destination.  
+      </para>	        
+      <blockquote>
+        <para>
+          <indexterm><primary>flush-output-port</primary>
+          </indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>undefined</type>
+            <methodname>flush-output-port</methodname>
+            <methodparam choice="opt">
+              <parameter>output-port</parameter>
+            </methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Causes the specified
+              <parameter>output-port</parameter>'s buffered data to be
+              written immediately.  This operation is allowed on any
+              output port, but may have no affect on some.
+              <parameter>output-port</parameter> defaults to
+              <literal>current-output-port</literal>.
+            </para>
+          </blockquote>
+        </para>
+      </blockquote>
+    </sect2>
+    <sect2 id="charports">
+      <title>Character Ports</title>
+      <para>
+        The &R5RS; I/O primitives implemented by &SISC; create
+        <emphasis>character ports</emphasis>.  Character ports read
+        characters from input sources and treat the data as characters
+        in a given character set.  Correspondingly, character ports
+        output bytes from characters according to a given character
+        set's encoding rules.
+      </para>
+      <para>
+        By default character ports use the value of the string
+        parameter <function>character-set</function> as the character
+        encoding name.  A list of many possible encoding names can be
+        found in the
+        <ulink url="http://java.sun.com/j2se/1.4/docs/guide/intl/encoding.doc.html">
+        Java Platform Documentation</ulink>
+      </para>
+      <para>
+        One may temporarily change the default character set using
+        the <function>with-character-set</function> function.
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>with-character-set</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>value</type>
+              <methodname>with-character-set</methodname>
+              <methodparam>
+                <parameter>encoding</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>thunk</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Changes the value of the
+                <function>character-set</function> parameter, and the
+                default character set to the named encoding while
+                executing the body of <parameter>thunk</parameter>.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+      <sect3>
+        <title>Port Creation</title>
+        <para>
+          <blockquote>
+            <para>
+              <indexterm><primary>open-input-file</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>input-port</type>
+                <methodname>open-input-file</methodname>
+                <methodparam>
+                  <parameter>url</parameter>
+                </methodparam>
+                <methodparam choice="opt">
+                  <parameter>encoding</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Creates an input port from the specified
+                  <parameter>url</parameter>.  If the optional
+                  <parameter>encoding</parameter> parameter, a string,
+                  is supplied input will be decoded from the specified
+                  encoding rather than the default.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>open-output-file</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>output-port</type>
+                <methodname>open-output-file</methodname>
+                <methodparam>
+                  <parameter>url</parameter>
+                </methodparam>
+                <methodparam choice="opt">
+                  <parameter>encoding</parameter>
+                </methodparam>
+                <methodparam choice="opt">
+                  <parameter>auto-flush</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Creates an output port to the specified
+                  <parameter>url</parameter>.  If the optional
+                  <parameter>encoding</parameter> parameter, a string,
+                  is supplied output will be encoded in the specified
+                  encoding rather than the default.  If the optional
+                  <parameter>auto-flush</parameter> argument is provided
+                  and is non-false, the port will automatically flush
+                  after each write call.  If the specified file exists,
+                  it will be overwritten silently when the port is
+                  opened.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>open-character-input-port</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>input-port</type>
+                <methodname>open-character-input-port</methodname>
+                <methodparam>
+                  <parameter>binary-input-port</parameter>
+                </methodparam>
+                <methodparam choice="opt">
+                  <parameter>character-set</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Creates an input port which reads from the
+                  provided binary input port.  One may specify the
+                  desired character set as a string, otherwise the character
+                  set is retrieved from the <literal>character-set</literal>
+                  dynamic parameter.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>open-character-output-port</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>output-port</type>
+                <methodname>open-character-output-port</methodname>
+                <methodparam>
+                  <parameter>binary-output-port</parameter>
+                </methodparam>
+                <methodparam choice="opt">
+                  <parameter>character-set</parameter>
+                </methodparam>
+                <methodparam choice="opt">
+                  <parameter>auto-flush</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Creates an output port which writes to the
+                  provided binary output port.  One may specify the
+                  desired character set as a string, otherwise the character
+                  set is retrieved from the <literal>character-set</literal>
+                  dynamic parameter.  If the optional
+                  <parameter>auto-flush</parameter> argument is provided
+                  and is non-false, the port will automatically flush
+                  after each write call.
+                </para>
+              </blockquote>
+            </para>
+          </blockquote>
+        </para>
+      </sect3>
+      <sect3 id="bulkchario">
+        <title>Bulk Character I/O</title>
+        <para>
+          In addition to the &R5RS; I/O primitives, &SISC; provides
+          two functions for reading and writing blocks of characters
+          from a character port.
+        </para>
+        <para>
+          <blockquote>
+            <para>
+              <indexterm><primary>read-string</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>integer</type>
+                <methodname>read-string</methodname>
+                <methodparam><parameter>buffer</parameter></methodparam>
+                <methodparam><parameter>offset</parameter></methodparam>
+                <methodparam><parameter>count</parameter></methodparam>
+                <methodparam choice="opt">
+                  <parameter>character-input-port</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Reads up to <parameter>count</parameter> characters from the
+                  implicit or specified character port into the string
+                  <parameter>buffer</parameter> starting from the position
+                  specified by the integer <parameter>offset</parameter>.  The
+                  number of characters successfully read (which may be
+                  fewer than <parameter>count</parameter>) is returned, or the
+                  end-of-file value if the end-of-file was reached
+                  before any characters were encountered.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>write-string</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>undefined</type>
+                <methodname>write-string</methodname>
+                <methodparam><parameter>buffer</parameter></methodparam>
+                <methodparam><parameter>offset</parameter></methodparam>
+                <methodparam><parameter>count</parameter></methodparam>
+                <methodparam choice="opt">
+                  <parameter>character-output-port</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Writes exactly <parameter>count</parameter> characters from
+                  the given string <parameter>buffer</parameter> starting from
+                  the integer position <parameter>offset</parameter> to the
+                  implicit or specified character output port.
+                </para>
+              </blockquote>
+            </para>
+          </blockquote>
+        </para>
+      </sect3>
+      <sect3 id="iodelegate">
+        <title>Port Creation Wrappers</title>
+        <para>
+          The next set of procedures assists in creating a port,
+          followed by calling a given procedure with that port.  When
+          the procedure returns, the port is closed. Invoking escaping
+          continuations from inside the procedure does not close the
+          port, and invoking a continuation captured inside the
+          procedure does not open the port.
+        </para>
+        <para>
+          <blockquote>
+            <para id="func-call-with-input-file">
+              <indexterm><primary>call-with-input-file</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>value</type>
+                <methodname>call-with-input-file</methodname>
+                <methodparam>
+                  <parameter>url</parameter>
+                </methodparam>
+                <methodparam choice="opt">
+                  <parameter>encoding</parameter>
+                </methodparam>
+                <methodparam>
+                  <parameter>procedure</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Calls <parameter>procedure</parameter> with a new
+                  input port attached to <parameter>url</parameter>.
+                  The result of the thunk is returned.
+                </para>
+                <para>
+                  If the optional <parameter>encoding</parameter>
+                  parameter is provided, the character port created will
+                  use the specified encoding rather than the default.
+                </para>
+              </blockquote>
+            </para>
+            <para id="func-call-with-output-file">
+              <indexterm><primary>call-with-output-file</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>value</type>
+                <methodname>call-with-output-file</methodname>
+                <methodparam>
+                  <parameter>url</parameter>
+                </methodparam>
+                <methodparam choice="opt">
+                  <parameter>encoding</parameter>
+                </methodparam>
+                <methodparam>
+                  <parameter>procedure</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Calls <parameter>procedure</parameter> with a new
+                  character output port attached to
+                  <parameter>url</parameter>. The result of the thunk is
+                  returned.
+                </para>
+                <para>
+                  If the optional <parameter>encoding</parameter>
+                  parameter is provided, the character port created will
+                  use the specified encoding rather than the default.
+                </para>
+              </blockquote>
+            </para>
+          </blockquote>
+        </para>
+      </sect3>
+      <sect3 id="redirectedio">
+        <title>Replacing Standard Ports</title>
+        <para>
+          The following procedures wrap a thunk, redirecting the input
+          and output of the thunk while it is evaluating to an input or
+          output port other than the
+          <literal>current-input-port</literal>
+          and <literal>current-output-port</literal>. Invoking escaping
+          continuations from inside the procedure restores the original
+          port, and invoking a continuation captured inside the procedure
+          restores the redirection.
+        </para>
+        <para>
+          <blockquote>
+            <para id="func-with-input-from-port">
+              <indexterm><primary>with-input-from-port</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>value</type>
+                <methodname>with-input-from-port</methodname>
+                <methodparam>
+                  <parameter>input-port</parameter>
+                </methodparam>
+                <methodparam>
+                  <parameter>thunk</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Evaluates <parameter>thunk</parameter> with
+                  <parameter>input-port</parameter> as the
+                  <literal>current-input-port</literal> for the duration
+                  of the evaluation.
+                </para>
+              </blockquote>
+            </para>
+            <para id="func-with-output-to-port">
+              <indexterm><primary>with-output-to-port</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>value</type>
+                <methodname>with-output-to-port</methodname>
+                <methodparam>
+                  <parameter>output-port</parameter>
+                </methodparam>
+                <methodparam>
+                  <parameter>thunk</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Evaluates <parameter>thunk</parameter> with
+                  <parameter>output-port</parameter> as the
+                  <literal>current-output-port</literal> for the duration
+                  of the evaluation.
+                </para>
+              </blockquote>
+            </para>
+            <para id="func-with-input-from-file">
+              <indexterm><primary>with-input-from-file</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>value</type>
+                <methodname>with-input-from-file</methodname>
+                <methodparam>
+                  <parameter>url</parameter>
+                </methodparam>
+                <methodparam choice="opt">
+                  <parameter>encoding</parameter>
+                </methodparam>
+                <methodparam>
+                  <parameter>thunk</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Evaluates <parameter>thunk</parameter> with an input
+                  port attached to a file opened for reading from
+                  <parameter>url</parameter> as the
+                  <literal>current-input-port</literal> for the duration
+                  of the evaluation. The port is closed when
+                  <parameter>thunk</parameter> returns normally.
+                </para>
+                <para>
+                  If the optional <parameter>encoding</parameter>
+                  parameter is provided, the character port created will
+                  use the specified encoding rather than the default.
+                </para>
+              </blockquote>
+            </para>
+            <para id="func-with-output-to-file">
+              <indexterm><primary>with-output-to-file</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>value</type>
+                <methodname>with-output-to-file</methodname>
+                <methodparam>
+                  <parameter>url</parameter>
+                </methodparam>
+                <methodparam choice="opt">
+                  <parameter>encoding</parameter>
+                </methodparam>
+                <methodparam>
+                  <parameter>thunk</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Evaluates <parameter>thunk</parameter> with an input
+                  port attached to a file opened for writing to
+                  <parameter>url</parameter> as the
+                  <literal>current-output-port</literal> for the
+                  duration of the evaluation. The port is closed when
+                  <parameter>thunk</parameter> returns normally.
+                </para>
+                <para>
+                  If the optional <parameter>encoding</parameter>
+                  parameter is provided, the character port created will
+                  use the specified encoding rather than the default.
+                </para>
+              </blockquote>
+            </para>
+          </blockquote>
+        </para>
+      </sect3>
+      <sect3>
+        <title>Port Predicates</title>
+        <para>
+          <blockquote>
+            <para>
+              <indexterm><primary>input-port?</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>&num;t/&num;f</type>
+                <methodname>input-port?</methodname>
+                <methodparam>
+                  <parameter>value</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Returns &num;t if <parameter>value</parameter> is an
+                  input port, &num;f otherwise.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>output-port?</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>&num;t/&num;f</type>
+                <methodname>output-port?</methodname>
+                <methodparam>
+                  <parameter>value</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Returns &num;t if <parameter>value</parameter> is an
+                  output port, &num;f otherwise.
+                </para>
+              </blockquote>
+            </para>
+          </blockquote>
+        </para>
+      </sect3>
+    </sect2>
+    <sect2 id="StringPorts"> <title>String Ports</title>
+      <para>
+        &requires;
+        <emphasis role="bold">
+          (import <emphasis>string-io</emphasis>)
+        </emphasis>
+      </para>
+      <para>
+        String ports are input or output ports that read or write to a
+        string rather than a file or other stream.  String ports can
+        be used to parse or emit formatted strings using the standard
+        Scheme port operations.  A String Input port will read from a
+        given string until the end of string is reached, at which
+        point <computeroutput>&num;!eof</computeroutput> is returned.
+      </para>
+      <para>
+        String ports deal with characters as the atomic unit, and as such
+        preserve full unicode width characters at all times.
+      </para>
+      <para>
+        <blockquote>
+          <para id="func-open-input-string">
+            <indexterm><primary>open-input-string</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>string-input-port</type>
+              <methodname>open-input-string</methodname>
+              <methodparam>
+                <parameter>string</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Creates a string input port whose characters are read
+                from the provided string.  Characters will be returned
+                from any read operation on the port until the end of
+                the string is reached.  Read calls after reaching the
+                end of the string will return &num;!eof.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-open-output-string">
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>string-output-port</type>
+              <methodname>open-output-string</methodname> <void/>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Creates a string output port, which behaves as an
+                ordinary output port, except that writes are used to
+                create a string as output.  The results of all the
+                write operations are retrieved using
+                <function>get-output-string</function>.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-get-output-string">
+            <indexterm><primary>get-output-string</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>string</type> <methodname>get-output-string</methodname>
+              <methodparam>
+                <parameter>string-output-port</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the string that was created by zero or more
+                writes to a string output port.  If no writes were
+                performed on the string output port, an empty string
+                ("") is returned.  After this call, the provided
+                string output port is reset to its initial, empty
+                state.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-call-with-input-string">
+            <indexterm><primary>call-with-input-string</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>value</type>
+              <methodname>call-with-input-string</methodname>
+              <methodparam>
+                <parameter>string</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>procedure</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para> Calls <parameter>procedure</parameter> with a new
+              string input port created from
+              <parameter>string</parameter>.  The result of the thunk
+              is returned.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-call-with-output-string">
+            <indexterm><primary>call-with-output-string</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>string</type>
+              <methodname>call-with-output-string</methodname>
+              <methodparam>
+                <parameter>procedure</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para> Calls <parameter>procedure</parameter> with a new
+              string output port.  The contents of the
+              string-output-port are returned when the procedure
+              returns.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-with-input-from-string">
+            <indexterm><primary>with-input-from-string</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>value</type>
+              <methodname>with-input-from-string</methodname>
+              <methodparam>
+                <parameter>string</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>thunk</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Evaluates <parameter>thunk</parameter> with a
+                string-input-port created from
+                <parameter>string</parameter> as the
+                <literal>current-input-port</literal> for the duration
+                of the evaluation.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-with-output-to-string">
+            <indexterm><primary>with-output-to-string</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>string</type>
+              <methodname>with-output-to-string</methodname>
+              <methodparam>
+                <parameter>thunk</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Evaluates <parameter>thunk</parameter> with a
+                string-output-port created as the
+                <literal>current-output-port</literal> for the duration
+                of the evaluation.  When the thunk returns, the
+                contents of the string-output-port are returned.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>string-input-port?</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>&num;t/&num;f</type>
+              <methodname>string-input-port?</methodname>
+              <methodparam>
+                <parameter>value</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns &num;t if <parameter>value</parameter> is a
+                string input port, &num;f otherwise.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>string-output-port?</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>&num;t/&num;f</type>
+              <methodname>string-output-port?</methodname>
+              <methodparam>
+                <parameter>value</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns &num;t if <parameter>value</parameter> is a
+                string output port, &num;f otherwise.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+      <note>
+        <para>
+          This interface complies with SRFI-6 (Basic String Ports).
+        </para>
+      </note>
+    </sect2>
+    <sect2 id="BinaryIO">
+      <title>Binary Ports and Block IO</title>
+      <para>
+        &requires;
+        <emphasis role="bold">
+          (import <emphasis>binary-io</emphasis>)
+        </emphasis>
+      </para>
+      <para>
+        In addition to the &R5RS; I/O functions, &SISC; provides a
+        symmetric set of functions for reading and writing binary data
+        to and from ports with no character set translation.  These
+        ports are operated on using the binary I/O functions described below.
+        Using character-oriented operations (such as the traditional &R5RS;
+        functions <function>read</function>,
+        <function>read-char</function>, <function>display</function>,
+        etc.) is an error.
+        Binary ports also provide block input/output functions, that allow
+        a Scheme program to read blocks of more than one byte of data at a
+        time from binary ports. &SISC; stores data that is read or is to be
+        written in block fashion in a binary buffer (see <xref linkend="Buffers"/>).
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>open-binary-input-file</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>binary-input-port</type>
+              <methodname>open-binary-input-file</methodname>
+              <methodparam>
+                <parameter>url</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Creates an input port in the same manner as &R5RS;
+                <function>open-input-file</function>, producing an
+                input port that does no character-set decoding on the
+                bytes read as input.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>open-binary-output-file</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>binary-output-port</type>
+              <methodname>open-binary-output-file</methodname>
+              <methodparam>
+                <parameter>url</parameter>
+              </methodparam>
+              <methodparam choice="opt">
+                <parameter>auto-flush</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Creates an output port in the same manner as
+                <function>open-output-file</function>, producing an
+                output port that does no character-set encoding.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-call-with-binary-input-file">
+            <indexterm><primary>call-with-binary-input-file</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>value</type>
+              <methodname>call-with-binary-input-file</methodname>
+              <methodparam>
+                <parameter>url</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>procedure</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Calls <parameter>procedure</parameter> with a new
+                binary input port attached to
+                <parameter>url</parameter>.  The result of the thunk
+                is returned.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-call-with-binary-output-file">
+            <indexterm><primary>call-with-binary-output-file</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>value</type>
+              <methodname>call-with-binary-output-file</methodname>
+              <methodparam>
+                <parameter>url</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>procedure</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Calls <parameter>procedure</parameter> with a new
+                binary output port attached to
+                <parameter>url</parameter>. The result of the thunk is
+                returned.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-with-binary-input-from-file">
+            <indexterm><primary>with-binary-input-from-file</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>value</type>
+              <methodname>with-binary-input-from-file</methodname>
+              <methodparam>
+                <parameter>url</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>thunk</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Evaluates <parameter>thunk</parameter> with a binary
+                input port attached to a file opened for reading from
+                <parameter>url</parameter> as the
+                <literal>current-input-port</literal> for the duration
+                of the evaluation. The port is closed when
+                <parameter>thunk</parameter> returns normally.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-with-binary-output-to-file">
+            <indexterm><primary>with-binary-output-to-file</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>value</type>
+              <methodname>with-binary-output-to-file</methodname>
+              <methodparam>
+                <parameter>url</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>thunk</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Evaluates <parameter>thunk</parameter> with a binary
+                output port attached to a file opened for writing to
+                <parameter>url</parameter> as the
+                <literal>current-output-port</literal> for the
+                duration of the evaluation. The port is closed when
+                <parameter>thunk</parameter> returns normally.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            There are several operations specifically available for
+            use on binary ports.
+          </para>
+          <para id="func-peek-byte">
+            <indexterm><primary>peek-byte</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>integer</type>
+              <methodname>peek-byte</methodname>
+              <methodparam choice="opt">
+                <parameter>binary-input-port</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Similar to <function>peek-char</function>, reads ahead
+                one byte in the stream, returning the next byte available
+                but not advancing the stream.  The byte is returned
+                as an integer.  The current input port is used
+                unless specified.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-read-byte">
+            <indexterm><primary>read-byte</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>integer</type>
+              <methodname>read-byte</methodname>
+              <methodparam choice="opt">
+                <parameter>binary-input-port</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Reads a single byte from the stream, advancing the
+                stream and returning the byte as an integer.
+                The current input port is used unless specified.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-read-block">
+            <indexterm><primary>read-block</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>integer</type>
+              <methodname>read-block</methodname>
+              <methodparam>
+                <parameter>buffer</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>offset</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>count</parameter>
+              </methodparam>
+              <methodparam choice="opt">
+                <parameter>binary-input-port</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Reads up to <parameter>count</parameter> bytes of data
+                from the current input port or the
+                <parameter>binary-input-port</parameter> parameter
+                if provided,
+                into the binary buffer <parameter>buffer</parameter>
+                starting at position <parameter>offset</parameter>.
+                Note that less
+                than <parameter>count</parameter> bytes may be read.
+                The number of bytes actually read is returned.  If the
+                end-of-file is encountered before any bytes could be
+                read, <literal>&num;!eof</literal> will be returned.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-write-byte">
+            <indexterm><primary>write-byte</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>undefined</type>
+              <methodname>write-byte</methodname>
+              <methodparam><parameter>integer</parameter>
+              </methodparam>
+              <methodparam choice="opt">
+                <parameter>binary-output-port</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Writes a single byte specified as an integer
+                to the given <parameter>binary-output-port</parameter>
+                if provided, current output port otherwise.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-write-block">
+            <indexterm><primary>write-block</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>undefined</type>
+              <methodname>write-block</methodname>
+              <methodparam>
+                <parameter>buffer</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>offset</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>count</parameter>
+              </methodparam>
+              <methodparam choice="opt">
+                <parameter>binary-output-port</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Writes <parameter>count</parameter> bytes of data from
+                the provided <parameter>buffer</parameter> at
+                starting point <parameter>offset</parameter> to the
+                given <parameter>binary-output-port</parameter> or
+                to the current output port if unspecified.  Exactly
+                <parameter>count</parameter> bytes will be written.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>binary-input-port?</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>&num;t/&num;f</type>
+              <methodname>binary-input-port?</methodname>
+              <methodparam>
+                <parameter>value</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns &num;t if <parameter>value</parameter> is a
+                binary input port, &num;f otherwise.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>binary-output-port?</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>&num;t/&num;f</type>
+              <methodname>binary-output-port?</methodname>
+              <methodparam>
+                <parameter>value</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns &num;t if <parameter>value</parameter> is a
+                binary output port, &num;f otherwise.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+      <sect3>
+        <title>Buffer I/O</title>
+        <para>
+          &requires;
+          <emphasis role="bold">
+            (import <emphasis>buffer-io</emphasis>)
+          </emphasis>
+        </para>
+        <para>
+          A module is also provided for input and output to and from
+          binary buffers using buffer ports, similar to character I/O to
+          and from strings using string ports.
+        </para>
+        <para>
+          <blockquote>
+            <para id="func-open-input-buffer">
+              <indexterm><primary>open-input-buffer</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>buffer-input-port</type>
+                <methodname>open-input-buffer</methodname>
+                <methodparam>
+                  <parameter>buffer</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Creates a buffer input port whose bytes are read
+                  from the provided buffer.  Bytes will be returned
+                  from any read operation on the port until the end of
+                  the buffer is reached.  Read calls after reaching the
+                  end of the buffer will return &num;!eof.
+                </para>
+              </blockquote>
+            </para>
+            <para id="func-open-output-buffer">
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>buffer-output-port</type>
+                <methodname>open-output-buffer</methodname>
+                <void/>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Creates a buffer output port, which behaves as an
+                  ordinary output port, except that writes are used to
+                  create a buffer as output.  The results of all the
+                  write operations are retrieved using
+                  <function>get-output-buffer</function>.
+                </para>
+              </blockquote>
+            </para>
+            <para id="func-get-output-buffer">
+              <indexterm><primary>get-output-buffer</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>buffer</type> <methodname>get-output-buffer</methodname>
+                <methodparam>
+                  <parameter>buffer-output-port</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Returns the buffer that was created by zero or more
+                  writes to a buffer output port.  If no writes were
+                  performed on the buffer output port, an empty buffer
+                  is returned.  After this call, the provided
+                  buffer output port is reset to its initial, empty
+                  state.
+                </para>
+              </blockquote>
+            </para>
+            <para id="func-call-with-input-buffer">
+              <indexterm><primary>call-with-input-buffer</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>value</type>
+                <methodname>call-with-input-buffer</methodname>
+                <methodparam>
+                  <parameter>buffer</parameter>
+                </methodparam>
+                <methodparam>
+                  <parameter>procedure</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para> Calls <parameter>procedure</parameter> with a new
+                  buffer input port created from
+                  <parameter>buffer</parameter>.  The result of the thunk
+                  is returned.
+                </para>
+              </blockquote>
+            </para>
+            <para id="func-call-with-output-buffer">
+              <indexterm><primary>call-with-output-buffer</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>buffer</type>
+                <methodname>call-with-output-buffer</methodname>
+                <methodparam>
+                  <parameter>procedure</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para> Calls <parameter>procedure</parameter> with a new
+                  buffer output port.  The contents of the
+                  buffer-output-port are returned when the procedure
+                  returns.
+                </para>
+              </blockquote>
+            </para>
+            <para id="func-with-input-from-buffer">
+              <indexterm><primary>with-input-from-buffer</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>value</type>
+                <methodname>with-input-from-buffer</methodname>
+                <methodparam>
+                  <parameter>buffer</parameter>
+                </methodparam>
+                <methodparam>
+                  <parameter>thunk</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Evaluates <parameter>thunk</parameter> with a
+                  buffer-input-port created from
+                  <parameter>buffer</parameter> as the
+                  <literal>current-input-port</literal> for the duration
+                  of the evaluation.
+                </para>
+              </blockquote>
+            </para>
+            <para id="func-with-output-to-buffer">
+              <indexterm><primary>with-output-to-buffer</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>buffer</type>
+                <methodname>with-output-to-buffer</methodname>
+                <methodparam>
+                  <parameter>thunk</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Evaluates <parameter>thunk</parameter> with a
+                  buffer-output-port created as the
+                  <literal>current-output-port</literal> for the duration
+                  of the evaluation.  When the thunk returns, the
+                  contents of the buffer-output-port are returned.
+                </para>
+              </blockquote>
+            </para>
+          </blockquote>
+        </para>
+      </sect3>
+    </sect2>
+    <sect2 id="JavaPorts"> <title>Java Ports</title>
+      <para>
+        &requires;
+        <emphasis role="bold">
+          (import <emphasis>java-io</emphasis>)
+        </emphasis>
+      </para>
+      <para>
+        This module provides procedures to convert between Scheme and
+        Java I/O types. In general, binary Scheme ports map to
+        plain Java streams, while character Scheme ports map to Java
+        readers and writers.
+      </para>
+      <para>
+        The following example is somewhat contrived, but illustrates
+        a common usage pattern:
+        <programlisting>
+          <![CDATA[
+;; A convoluted Hello World example.
+(import s2j)
+(import java-io)
+
+(define-java-classes
+  (<java.lang.system> |java.lang.System|))
+
+(define-generic-java-field-accessors
+  (:jout out))
+
+(let ((stdout (open-character-output-port
+               (->binary-output-port
+                (:jout (java-null <java.lang.system>)) #t) #t)))
+  (display "Hello, world!" stdout))
+          ]]>
+        </programlisting>
+      </para>
+      <para>
+        <blockquote>
+          <para id="func--&gt;binary-input-port">
+            <indexterm><primary>-&gt;binary-input-port</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>binary-input-port</type>
+              <methodname>-&gt;binary-input-port</methodname>
+              <methodparam>
+                <parameter>jinput-stream</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns a binary input port associated to the
+                <classname>java.io.InputStream</classname> object
+                passed as the <parameter>jinput-stream</parameter>
+                parameter.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func--&gt;binary-output-port">
+            <indexterm><primary>-&gt;binary-output-port</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>binary-output-port</type>
+              <methodname>-&gt;binary-output-port</methodname>
+              <methodparam>
+                <parameter>joutput-stream</parameter>
+              </methodparam>
+              <methodparam choice="opt">
+                <parameter>aflush?</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns a binary input port associated to the
+                <classname>java.io.OutputStream</classname> object
+                passed as the <parameter>joutput-stream</parameter>
+                parameter. If the optional boolean
+                <parameter>aflush?</parameter> parameter is not
+                provided, the port will not autoflush by default.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func--&gt;character-input-port">
+            <indexterm><primary>-&gt;character-input-port</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>character-input-port</type>
+              <methodname>-&gt;character-input-port</methodname>
+              <methodparam>
+                <parameter>jreader</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns a character input port associated to the
+                <classname>java.io.Reader</classname> object passed as
+                the <parameter>jreader</parameter> parameter.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func--&gt;character-output-port">
+            <indexterm><primary>-&gt;character-output-port</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>character-output-port</type>
+              <methodname>-&gt;character-output-port</methodname>
+              <methodparam>
+                <parameter>jwriter</parameter>
+              </methodparam>
+              <methodparam choice="opt">
+                <parameter>aflush?</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns a binary input port associated to the
+                <classname>java.io.Writer</classname> object passed as
+                the <parameter>joutput-stream</parameter>
+                parameter. If the optional boolean
+                <parameter>aflush?</parameter> parameter is not
+                provided, the port will not autoflush by default.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func--&gt;jinput-stream">
+            <indexterm><primary>-&gt;jinput-stream</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>jinput-stream</type>
+              <methodname>-&gt;jinput-stream</methodname>
+              <methodparam>
+                <parameter>input-port</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns a <classname>java.io.InputStream</classname>
+                object associated to the given Scheme
+                <parameter>input-port</parameter>. The function
+                produces an error if a character port is passed.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func--&gt;joutput-stream">
+            <indexterm><primary>-&gt;joutput-stream</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>joutput-stream</type>
+              <methodname>-&gt;joutput-stream</methodname>
+              <methodparam>
+                <parameter>output-port</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns a <classname>java.io.OutputStream</classname>
+                object associated to the given Scheme
+                <parameter>output-port</parameter>. The function
+                produces an error if a character port is passed.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func--&gt;jreader">
+            <indexterm><primary>-&gt;jreader</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>jreader</type>
+              <methodname>-&gt;jreader</methodname>
+              <methodparam>
+                <parameter>character-input-port</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns a <classname>java.io.Reader</classname> object
+                associated to the given Scheme
+                <parameter>character-input-port</parameter>.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func--&gt;jwriter">
+            <indexterm><primary>-&gt;jwriter</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>jwriter</type>
+              <methodname>-&gt;jwriter</methodname>
+              <methodparam>
+                <parameter>character-output-port</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns a <classname>java.io.Writer</classname> object
+                associated to the given Scheme
+                <parameter>character-output-port</parameter>.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        Scheme ports can also be used from Java.  See <xref linkend="SchemePortsInJava"/>
+        for information.
+      </para>
+    </sect2>
+    <sect2 id="SerialIO">
+      <title>Serialization</title>
+      <para>
+        &requires;
+        <emphasis role="bold">
+          (import <emphasis>serial-io</emphasis>)
+        </emphasis>
+      </para>
+      <para>
+        With <function>read</function> and <function>write</function>,
+        Scheme values are read and written in a standardized, textual
+        external representation. However, this external representation
+        only fully describes a limited subset of Scheme types. For
+        instance it is impossible to read/write a procedure, or
+        closure, or continuation.
+      </para>
+      <para>
+        &SISC; provides a special composed port type and procedures
+        for reading and writing <emphasis>any</emphasis> Scheme value using a
+        binary representation. The (de)serialization preserves the
+        referential structure of the object graph comprising the
+        serialized values.
+      </para>
+      <para>
+        Serial ports are composed onto and thus are binary ports,
+        i.e. all operations applicable to binary ports also apply to
+        serial ports.
+      </para>
+      <sect3 id="serialportcreation">
+        <title>Port Creation and Identification</title>
+        <para>
+          <blockquote>
+            <para>
+              <indexterm><primary>open-serial-input-port</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>serial-input-port</type>
+                <methodname>open-serial-input-port</methodname>
+                <methodparam>
+                  <parameter>binary-input-port</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Creates a serial input port which reads external
+                  representations of Scheme values from the given
+                  binary input port.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>open-serial-output-port</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>serial-output-port</type>
+                <methodname>open-serial-output-port</methodname>
+                <methodparam>
+                  <parameter>binary-output-port</parameter>
+                </methodparam>
+                <methodparam choice="opt">
+                  <parameter>auto-flush</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Creates a serial output port which can be used to
+                  write external representations of Scheme values
+                  to the provided binary output port.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>serial-input-port?</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>&num;t/&num;f</type>
+                <methodname>serial-input-port?</methodname>
+                <methodparam>
+                  <parameter>value</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Returns &num;t if <parameter>value</parameter> is a
+                  serial input port, &num;f otherwise.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>serial-output-port?</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>&num;t/&num;f</type>
+                <methodname>serial-output-port?</methodname>
+                <methodparam>
+                  <parameter>value</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Returns &num;t if <parameter>value</parameter> is a
+                  serial output port, &num;f otherwise.
+                </para>
+              </blockquote>
+            </para>
+          </blockquote>
+        </para>
+      </sect3>
+      <sect3 id="serialportwrappers">
+        <title>Serial Port Wrappers</title>
+        <para>
+          <blockquote>
+            <para>
+              <indexterm><primary>call-with-serial-input-port</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>value</type>
+                <methodname>call-with-serial-input-port</methodname>
+                <methodparam>
+                  <parameter>binary-input-port</parameter>
+                </methodparam>
+                <methodparam>
+                  <parameter>procedure</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Calls <parameter>procedure</parameter> with a new
+                  serial input port attached to
+                  <parameter>binary-input-port</parameter>.
+                  The result of the thunk is returned.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>call-with-serial-output-port</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>value</type>
+                <methodname>call-with-serial-output-port</methodname>
+                <methodparam>
+                  <parameter>binary-output-port</parameter>
+                </methodparam>
+                <methodparam>
+                  <parameter>procedure</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Calls <parameter>procedure</parameter> with a new
+                  serial output port attached to
+                  <parameter>binary-output-port</parameter>.
+                  The result of the thunk is returned.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>with-serial-input-from-port</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>value</type>
+                <methodname>with-serial-input-from-port</methodname>
+                <methodparam>
+                  <parameter>binary-input-port</parameter>
+                </methodparam>
+                <methodparam>
+                  <parameter>thunk</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Evaluates <parameter>thunk</parameter> with a serial
+                  input port attached to the specified
+                  <parameter>binary-input-port</parameter> as the
+                  <literal>current-input-port</literal> for the duration
+                  of the evaluation. The port is
+                  <emphasis>not</emphasis> closed when
+                  <parameter>thunk</parameter> returns.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>with-serial-output-to-port</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>value</type>
+                <methodname>with-serial-output-to-port</methodname>
+                <methodparam>
+                  <parameter>binary-output-port</parameter>
+                </methodparam>
+                <methodparam>
+                  <parameter>thunk</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Evaluates <parameter>thunk</parameter> with a serial
+                  input port attached to the specified
+                  <parameter>binary-output-port</parameter> as the
+                  <literal>current-output-port</literal> for the
+                  duration of the evaluation. The port is
+                  <emphasis>not</emphasis> closed when
+                  <parameter>thunk</parameter> returns.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>call-with-serial-input-file</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>value</type>
+                <methodname>call-with-serial-input-file</methodname>
+                <methodparam>
+                  <parameter>url</parameter>
+                </methodparam>
+                <methodparam>
+                  <parameter>procedure</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Calls <parameter>procedure</parameter> with a new
+                  serial input port attached to
+                  <parameter>url</parameter>. The result of the thunk is
+                  returned.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>call-with-serial-output-file</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>value</type>
+                <methodname>call-with-serial-output-file</methodname>
+                <methodparam>
+                  <parameter>url</parameter>
+                </methodparam>
+                <methodparam>
+                  <parameter>procedure</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Calls <parameter>procedure</parameter> with a new
+                  serial output port attached to
+                  <parameter>url</parameter>. The result of the thunk is
+                  returned.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>with-serial-input-from-file</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>value</type>
+                <methodname>with-serial-input-from-file</methodname>
+                <methodparam>
+                  <parameter>url</parameter>
+                </methodparam>
+                <methodparam>
+                  <parameter>thunk</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Evaluates <parameter>thunk</parameter> with a serial
+                  input port attached to a file opened for reading from
+                  <parameter>url</parameter> as the
+                  <literal>current-input-port</literal> for the duration
+                  of the evaluation. The port is closed when
+                  <parameter>thunk</parameter> returns normally.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>with-serial-output-to-file</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>value</type>
+                <methodname>with-serial-output-to-file</methodname>
+                <methodparam>
+                  <parameter>url</parameter>
+                </methodparam>
+                <methodparam>
+                  <parameter>thunk</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Evaluates <parameter>thunk</parameter> with a serial
+                  input port attached to a file opened for writing to
+                <parameter>url</parameter> as the
+                  <literal>current-output-port</literal> for the
+                  duration of the evaluation. The port is closed when
+                  <parameter>thunk</parameter> returns normally.
+                </para>
+              </blockquote>
+            </para>
+          </blockquote>
+        </para>
+      </sect3>
+      <sect3 id="serialprims">
+        <title>Serialization Procedures</title>
+        <para>
+          <blockquote>
+            <para>
+              <indexterm><primary>deserialize</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>value</type>
+                <methodname>deserialize</methodname>
+                <methodparam choice="opt">
+                  <parameter>serial-input-port</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Reads a Scheme value from an external representation
+                  retrieved from
+                  <parameter>serial-input-port</parameter>. If
+                  <parameter>serial-input-port</parameter> is absent the
+                  data is read from the current input port.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>serialize</primary>
+              </indexterm>
+              &procedure;
+              <methodsynopsis language="scheme">
+                <type>undefined</type>
+                <methodname>serialize</methodname>
+                <methodparam>
+                  <parameter>value</parameter>
+                </methodparam>
+                <methodparam choice="opt">
+                  <parameter>serial-output-port</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  Writes an external representation of
+                  <parameter>value</parameter> to
+                  <parameter>serial-output-port</parameter>. If
+                  <parameter>serial-output-port</parameter> is absent
+                  the data is written to the current output port.
+                </para>
+              </blockquote>
+            </para>
+          </blockquote>
+        </para>
+      </sect3>
+    </sect2>
+  </sect1>
+  <sect1 id="netio">
+    <title>Networking</title>
+    <para>
+        &requires;
+      <emphasis role="bold">
+        (import <emphasis>networking</emphasis>)
+      </emphasis>
+    </para>
+    <para>
+      The &SISC; Networking library provides a mechanism for
+      creating and manipulating IP network protocols as standard
+      Scheme ports.  &SISC; supports TCP, UDP, and Multicast UDP.
+      Each is described in the sections that follow.
+    </para>
+    <para>
+      Each protocol provides one or more <emphasis>socket
+        constructors</emphasis>.  These functions produce a Socket
+      handle, which is represented in &SISC; as
+      <computeroutput>&num;&lt;socket&gt;</computeroutput>.  A
+      socket handle is then used to obtain Scheme ports.
+    </para>
+    <para>
+      IP addresses and network hostnames are represented as strings in
+      &SISC;.  Unless otherwise noted, the network library functions
+      that require an address may take a network address as a string
+      which may be any of:
+    </para>
+    <itemizedlist>
+      <listitem>
+        <para>
+          A hostname, to be resolved through the domain name system.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          An IPv4 network address in the standard dotted quad format. (RFC-791)
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          An IPv6 network address in colon separated hexadecimal form,
+          and zero-shortened form. (RFC-2373)
+        </para>
+      </listitem>
+    </itemizedlist>
+    <para>
+      IPv6 addresses must be supported by the underlying operating
+      system.  An error may be raised if the address is not
+      supported.  All IP port values must be exact
+      integers in the proper range.
+    </para>
+    <sect2 id="netutils">
+      <title>IP Addressing</title>
+      <para>
+        Several utility functions are provided for manipulating IP
+        addresses.  These are described below.
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>get-host-ip-by-name</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>string</type>
+              <methodname>get-host-ip-by-name</methodname>
+              <methodparam>
+                <parameter>hostname</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Attempts to resolve a hostname provided as a string into an
+                IP address in dotted-quad form.  If the host cannot be
+                found, &f; is returned.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-get-host-name-by-ip">
+            <indexterm><primary>get-host-name-by-ip</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>string</type>
+              <methodname>get-host-name-by-ip</methodname>
+              <methodparam>
+                <parameter>ip-address</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Attempts a reverse lookup of the given dotted-quad address
+                to determine a registered domain name.  If unsuccessful, &f;
+                is returned.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-get-local-host">
+            <indexterm><primary>get-local-host</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>string</type>
+              <methodname>get-local-host</methodname>
+              <void/>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Attempts to determine the Internet visible IP address of the
+                local machine.  If successful, this address is returned in
+                dotted-quad notation.  &f; is returned otherwise.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+    </sect2>
+    <sect2 id="sockets">
+      <title>Socket Operations</title>
+      <para>
+        Once obtained using a protocol specific constructor, a
+        Socket Handle allows manipulation of common socket options,
+        the creation of Scheme input/output ports, and closing of
+        the socket.
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>socket?</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>&num;t/&num;f</type>
+              <methodname>socket?</methodname>
+              <methodparam><parameter>value</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns true if and only if the provided value is a socket.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-open-socket-input-port">
+            <indexterm><primary>open-socket-input-port</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>input-port</type>
+              <methodname>open-socket-input-port</methodname>
+              <methodparam><parameter>socket</parameter>
+              </methodparam>
+              <methodparam choice="opt">
+                <parameter>encoding</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Opens a character input port to the socket.  If the optional <parameter>encoding</parameter>
+                parameter is provided, the character port created will
+                use the specified encoding rather than the default.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-open-socket-output-port">
+            <indexterm><primary>open-socket-output-port</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>output-port</type>
+              <methodname>open-socket-output-port</methodname>
+              <methodparam><parameter>socket</parameter>
+              </methodparam>
+              <methodparam choice="opt">
+                <parameter>encoding</parameter>
+              </methodparam>
+              <methodparam choice="opt">
+                <parameter>auto-flush</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Opens a character output port to the socket.  If provided, the
+                boolean argument specifies whether the given port should be
+                set to auto-flush mode.  If unspecified, the port does
+                <emphasis>not</emphasis> auto-flush.
+                If the optional <parameter>encoding</parameter>
+                parameter is provided, the character port created will
+                use the specified encoding rather than the default.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-open-binary-socket-input-port">
+            <indexterm><primary>open-binary-socket-input-port</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>binary-input-port</type>
+              <methodname>open-binary-socket-input-port</methodname>
+              <methodparam><parameter>socket</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Opens a binary input port to the socket.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-open-binary-socket-output-port">
+            <indexterm><primary>open-binary-socket-output-port</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>binary-output-port</type>
+              <methodname>open-binary-socket-output-port</methodname>
+              <methodparam><parameter>socket</parameter>
+              </methodparam>
+              <methodparam choice="opt">
+                <parameter>auto-flush</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Opens a character output port to the socket.  If provided, the
+                boolean argument specifies whether the given port should be
+                set to auto-flush mode.  If unspecified, the port does
+                <emphasis>not</emphasis> auto-flush.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-close-socket">
+            <indexterm><primary>close-socket</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>unspecified</type>
+              <methodname>close-socket</methodname>
+              <methodparam>
+                <parameter>socket</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Closes an IP socket.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        The port-obtaining functions above work on most sockets.
+        An exception applies for  TCP server sockets, which are used only to
+        obtain connected TCP sockets.
+      </para>
+    </sect2>
+    <sect2 id="TCP">
+      <title>TCP</title>
+      <para>
+        The most commonly used Internet protocol maps most favorably
+        to Scheme's input/output model.  Writing to an output port
+        retrieved from a TCP socket writes the data to that socket.
+        Reading from an input port reads from the connected socket.
+        One important note is that one can control the amount of data
+        that fills a TCP packet by using an output port that does
+        not auto-flush.  Data is written to the port until one
+        considers the packet complete, and then uses
+        <computeroutput>(flush-output-port port)</computeroutput> to
+        complete the packet.  Note also that this does not
+        <emphasis>guarantee</emphasis> that one gets the desired
+        packet size, but does allow one to construct reasonably
+        sized packets.
+      </para>
+      <para>
+        TCP sockets are obtained one of two ways.  Either one
+        creates an outgoing connection to another listening host and
+        then subsequently obtains a socket handle, or one creates a
+        <emphasis>listening socket</emphasis> and then obtains a
+        socket by waiting for an incoming connection on the
+        specified port.  In either case, the result is a socket
+        handle with an available input and output port that can be
+        obtained using a function in the previous section.
+      </para>
+      <para>
+        <blockquote>
+          <para id="func-open-tcp-socket">
+            <indexterm><primary>open-tcp-socket</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>socket</type>
+              <methodname>open-tcp-socket</methodname>
+              <methodparam>
+                <parameter>host</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>port</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Attempts to connect to the host at the given hostname or IP
+                address encoded as a string, at the given TCP port
+                specified as an integer.  An error is raised if the host
+                cannot be found or the connection fails.  If successful,
+                a socket is returned.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-open-tcp-listener">
+            <indexterm><primary>open-tcp-listener</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>server-socket</type>
+              <methodname>open-tcp-listener</methodname>
+              <methodparam>
+                <parameter>port</parameter>
+              </methodparam>
+              <methodparam choice="opt">
+                <parameter>interface-address</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Creates a TCP server socket, which may only be used with
+                accept-tcp-socket, or closed.  The server socket will listen
+                on the integer port specified.  If provided, the
+                interface-address, a string specifies the address of a
+                local interface to bind to.  If not provided, the port
+                is bound on all available interfaces.  An error is
+                raised if the socket cannot be bound and set listening.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>server-socket?</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>&num;t/&num;f</type>
+              <methodname>server-socket?</methodname>
+              <methodparam><parameter>value</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns true if and only if the provided value is a server
+                socket.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-accept-tcp-socket">
+            <indexterm><primary>accept-tcp-socket</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>socket</type>
+              <methodname>accept-tcp-socket</methodname>
+              <methodparam>
+                <parameter>server-socket</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Accepts an incoming connection on the provided
+                server-socket, and returns a TCP socket handle.  This
+                function will block until an incoming connection is made,
+                or, if set, the socket timeout is exceeded.  If the latter
+                happens, an error will be raised.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-set-so-timeout">
+            <indexterm><primary>set-so-timeout!</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>undefined</type>
+              <methodname>set-so-timeout!</methodname>
+              <methodparam>
+                <parameter>socket</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>timeout</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Sets the socket timeout on a socket.  The socket can be
+                either a server socket or connected socket.  In the former
+                case, this value specifies the number of milliseconds that
+                an accept-tcp-socket can wait before timing out.  In the
+                latter, the value specifies the number of milliseconds that
+                can elapse during a read call before timing out.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+    </sect2>
+    <sect2 id="SSL">
+      <title>TLS and SSL</title>
+      <para>
+        Sockets which are encrypted using the Secure Sockets Layer
+        (SSL) or Transport Security Layer (TLS) can be created an
+        accepted as well.  This functionality can heavily depend on
+        the underlying support in the JVM, including security
+        settings, restrictions, installed certificates, etc.  For 
+        information on the Java Secure Socket Extension (JSSE) and its
+        setup, refer to the 
+        <ulink url="http://java.sun.com/products/jsse/reference/docs/index.html">
+          <citetitle>JSSE documentation</citetitle>
+        </ulink> page at Sun.
+      </para>
+      <para>
+        The SSL functionality is built atop the sockets and server
+        sockets functionality as in TCP networking above.  A separate 
+        constructor for sockets (<function>open-ssl-socket</function>)
+        and listening sockets (<function>open-ssl-listener</function>)
+        exist, and produce sockets which are used identically to TCP
+        sockets as previously described.
+      </para>
+      <para>
+        <blockquote>
+          <para id="func-open-ssl-socket">
+            <indexterm><primary>open-ssl-socket</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>socket</type>
+              <methodname>open-ssl-socket</methodname>
+              <methodparam>
+                <parameter>host</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>port</parameter>
+              </methodparam>
+              <methodparam choice="opt">
+                <parameter>auto-close</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Attempts to connect to the host at the given hostname or IP
+                address encoded as a string, at the given TCP port
+                specified as an integer, and establish an SSL
+                connection using the default cipher
+                suites and protocols available. 
+                An error is raised if the host cannot be found or the
+                connection fails.  
+                If successful, a socket is returned.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-open-ssl-listener">
+            <indexterm><primary>open-ssl-listener</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>server-socket</type>
+              <methodname>open-ssl-listener</methodname>
+              <methodparam>
+                <parameter>port</parameter>
+              </methodparam>
+              <methodparam choice="opt">
+                <parameter>interface-address</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Creates an SSL TCP server socket, which may only be used with
+                accept-tcp-socket, or closed.  The server socket will listen
+                on the integer port specified.  If provided, the
+                interface-address, a string specifies the address of a
+                local interface to bind to.  If not provided, the port
+                is bound on all available interfaces.  An error is
+                raised if the socket cannot be bound and set
+                listening.
+              </para>
+              <para>
+                The cipher suites, protocols, and modes which this server
+                socket will accept are set with the following
+                functions.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-get-enabled-cipher-suites">
+            <indexterm><primary>get-enabled-cipher-suites</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>list</type>
+              <methodname>get-enabled-cipher-suites</methodname>
+              <methodparam>
+                <parameter>ssl-server-socket</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>        
+                Returns a list of strings naming the cipher suites
+                which are enabled for this server socket. 
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-set-enabled-cipher-suites">
+            <indexterm><primary>set-enabled-cipher-suites!</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>list</type>
+              <methodname>set-enabled-cipher-suites!</methodname>
+              <methodparam>
+                <parameter>ssl-server-socket</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>suite-list</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>        
+                Accepts an ssl server socket and a list of strings
+                naming the cipher suites which should be available
+                for negotiation with the remote end.  The previous
+                list is returned.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-get-enabled-protocols">
+            <indexterm><primary>get-enabled-protocols</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>list</type>
+              <methodname>get-enabled-protocols</methodname>
+              <methodparam>
+                <parameter>ssl-server-socket</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>        
+                Returns a list of strings naming the security protocols
+                which are enabled for this server socket. 
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-set-enabled-protocols">
+            <indexterm><primary>set-enabled-protocols!</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>list</type>
+              <methodname>set-enabled-protocols!</methodname>
+              <methodparam>
+                <parameter>ssl-server-socket</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>protocol-list</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>        
+                Accepts an ssl server socket and a list of strings
+                naming the protocols which should be available
+                for negotiation with the remote end.  The previous
+                list is returned.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-session-creation-permitted">
+            <indexterm><primary>session-creation-permitted</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>boolean</type>
+              <methodname>session-creation-permitted?</methodname>
+              <methodparam>
+                <parameter>ssl-server-socket</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>        
+                Returns true if new SSL/TLS sessions can be created
+                by the sockets obtained from this server socket.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-set-session-creation-permitted">
+            <indexterm><primary>set-session-creation-permitted!</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>boolean</type>
+              <methodname>set-session-creation-permitted!</methodname>
+              <methodparam>
+                <parameter>ssl-server-socket</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>boolean</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>        
+                Sets whether new SSL/TLS sessions can be created
+                by the sockets obtained from this server socket.
+                The previous value is returned.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-is-client-mode">
+            <indexterm><primary>is-client-mode?</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>boolean</type>
+              <methodname>is-client-mode?</methodname>
+              <methodparam>
+                <parameter>ssl-server-socket</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>        
+                Returns true if the SSL server socket will be in
+                the rare client mode after accepting the connection,
+                rather than the more common server mode.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-set-client-mode">
+            <indexterm><primary>set-client-mode!</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>boolean</type>
+              <methodname>set-client-mode!</methodname>
+              <methodparam>
+                <parameter>ssl-server-socket</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>boolean</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>        
+                Sets whether the SSL server socket will be in
+                client mode when accepting new connections.  The 
+                previousvalue is returned.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-get-client-auth">
+            <indexterm><primary>get-client-auth</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>symbol or &num;f</type>
+              <methodname>get-client-auth</methodname>
+              <methodparam>
+                <parameter>ssl-server-socket</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>        
+                Returns the necessity of the remote client to
+                authenticate to this server socket.  The returned values
+                are either <literal>needed</literal>, indicating the
+                remote must authenticate, <literal>wanted</literal>,
+                indicating the remote will be requiested to authenticate
+                but is not required to, or
+                <literal>&num;f</literal>, indicating the remote will
+                not be requested to authenticate.
+              </para>
+            </blockquote>
+          </para>
+          <para id="func-set-client-auth">
+            <indexterm><primary>set-client-auth!</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>symbol or &num;f</type>
+              <methodname>set-client-auth!</methodname>
+              <methodparam>
+                <parameter>ssl-server-socket</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>client-auth-mode</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>        
+                Sets the client authentication requirements, as described
+                in <function>get-client-auth</function> above.  One
+                of the above values must be specified.  The previous
+                value is returned.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+    </sect2>
+    <sect2 id="UDP">
+      <title>UDP</title>
+      <para>
+        UDP sockets can be obtained for both receive only and
+        send/receive sessions.
+      </para>
+      <note>
+        <para>
+          The behavior of the <function>char-ready?</function>
+          function is somewhat more difficult to predict on a UDP
+          input port.  The function will return <literal>#t</literal>
+          only when a previous datagram contained more bytes than were
+          requested by the read operation that received it.
+        </para>
+      </note>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>open-udp-listen-socket</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>udp socket</type>
+              <methodname>open-udp-listen-socket</methodname>
+              <methodparam>
+                <parameter>listen-port</parameter>
+              </methodparam>
+              <methodparam choice="opt">
+                <parameter>interface-address</parameter>
+              </methodparam>
+              <methodparam choice="opt">
+                <parameter>datagram-size</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Opens a UDP socket that listens on
+                <parameter>listen-port</parameter> (optionally bound
+                to only the interface on
+                <parameter>interface-address</parameter>).  If
+                provided, <parameter>datagram-size</parameter>
+                specifies the buffer size (in bytes) for receiving UDP
+                datagrams.  Datagrams larger than
+                <parameter>datagram-size</parameter> are truncated to
+                that size.  If unspecified, the default datagram size
+                is 1500 bytes.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>open-udp-socket</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>udp socket</type>
+              <methodname>open-udp-socket</methodname>
+              <methodparam>
+                <parameter>remote-host</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>remote-port</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Opens a UDP socket for sending datagrams to
+                the Internet host specified by
+                <parameter>remote-host</parameter>, on port
+                <parameter>remote-port</parameter>.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        After obtaining a UDP socket, input and output ports can be
+        obtained in the usual manner.  It is an error to attempt to
+        obtain an output-port from a listening UDP socket, or an input
+        port from a sending UDP socket.
+      </para>
+      <para>
+        UDP input ports behave as
+        ordinary input ports.  When a datagram arrives as a result of
+        any read operation on the port, their entire contents are
+        stored in a buffer of length
+        <parameter>datagram-size</parameter> bytes.  Successive read
+        operations return data from that buffer until it is exhausted,
+        at which point a read operation will cause the UDP socket to
+        listen for another datagram.
+      </para>
+      <para>
+        UDP output ports should be treated with some care, however.
+        If a UDP output port was obtained in auto-flush mode, each
+        write operation to the output port will cause a new datagram
+        to be sent.  Control over the size of the datagram must be
+        maintained by using a port that does not auto-flush, writing
+        the desired data, and flushing once the amount of data that
+        the user wants to occupy a single UDP datagram is reached.
+        The behavior of constructing very large UDP packets is
+        undefined.  The packet may be silently dropped or (more
+        likely) fragmented at the IP layer.
+      </para>
+    </sect2>
+    <sect2>
+      <title>Multicast UDP</title>
+      <para>
+          &SISC; provides support for IP multicast UDP datagrams as
+        well.  This allows a program to both send and receive to an IP
+        multicast group.  Multicast UDPs are an extension of ordinary
+        UDP.  Thus all I/O operations on a Multicast UDP socket are
+        subject to the same semantics as an ordinary UDP socket.
+      </para>
+      <note>
+        <para>
+          The Multicast UDP library requires that the underlying
+          operating system's IP networking stack support Multicast.
+          The functions described here may produce an error if the
+          operating system does not.
+        </para>
+      </note>
+      <para>
+        A program wishing to use multicast UDP sockets must first
+        obtain a multicast socket for either listening to a multicast
+        group, or for both listening and sending to such a group.
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>open-multicast-socket</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>multicast udp socket</type>
+              <methodname>open-multicast-socket</methodname>
+              <methodparam>
+                <parameter>listen-port</parameter>
+              </methodparam>
+              <methodparam choice="opt">
+                <parameter>interface-address</parameter>
+              </methodparam>
+              <methodparam choice="opt">
+                <parameter>datagram-size</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Opens a multicast UDP socket that listens on
+                <parameter>listen-port</parameter> (optionally bound
+                only to the interface addressed by
+                <parameter>interface-address</parameter>.  If
+                provided, <parameter>datagram-size</parameter> specifies the
+                buffer size (in bytes) for receiving UDP datagrams.
+                Datagrams larger than
+                <parameter>datagram-size</parameter> are truncated to
+                that size.  If unspecified, the default datagram size
+                is 1500 bytes.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>multicast udp socket</type>
+              <methodname>open-multicast-socket</methodname>
+              <methodparam>
+                <parameter>group</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>port</parameter>
+              </methodparam>
+              <methodparam choice="opt">
+                <parameter>interface-address</parameter>
+              </methodparam>
+              <methodparam choice="opt">
+                <parameter>datagram-size</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Opens a multicast UDP socket for sending datagrams
+                to the specified multicast
+                <parameter>group</parameter>, on the specified
+                <parameter>port</parameter>.  The returned socket will
+                also be capable of listening to that group on the same
+                port (and optionally bound only to the interface
+                addressed by <parameter>interface-address</parameter>),
+                though the socket will not initially be a member of
+                the group.  If provided,
+                <parameter>datagram-size</parameter> specifies the
+                buffer size (in bytes) for receiving UDP datagrams.
+                Datagrams larger than
+                <parameter>datagram-size</parameter> are truncated to
+                that size.  If unspecified, the default datagram size
+                is 1500 bytes.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        Once a sending socket has been obtained (the second form), an
+        output-port can be obtained in the usual manner, and datagrams
+        can be immediately sent to the multicast group.  To receive
+        datagrams, sockets returned from both forms must
+        <emphasis>join</emphasis> a multicast group.
+      </para>
+      <para>
+        A multicast group is specified by a class D IP address and by a
+        standard UDP port number. Class D IP addresses are in the range
+        224.0.0.0 to 239.255.255.255, inclusive. The address 224.0.0.0 is
+        reserved and should not be used.
+      </para>
+      <para>
+        Groups are joined and left using the following functions:
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>join-multicast-group</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>undefined</type>
+              <methodname>join-multicast-group</methodname>
+              <methodparam>
+                <parameter>multicast-socket</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>group</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Causes the given multicast socket to join the group
+                specified by the Internet address in
+                <parameter>group</parameter>.  Once joined, read
+                operations on an obtained input-port will be able to
+                receive datagrams destined to that group.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>leave-multicast-group</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>undefined</type>
+              <methodname>leave-multicast-group</methodname>
+              <methodparam>
+                <parameter>multicast-socket</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>group</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Causes the given multicast socket to leave the group
+                specified by the Internet address in
+                <parameter>group</parameter>.  Read operations on any
+                input ports obtained from this socket will no longer
+                receive datagrams from that group.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        A single multicast socket can simultaneously listen to more
+        than one multicast group.  A socket can only send to one
+        group, however: the group it was constructed with.
+      </para>
+      <para>
+        Multicast packets are limited in extent by their
+        time-to-live.  Each time a multicast packet crosses a router,
+        its ttl is decremented.  In this manner, one can send
+        datagrams only to local networks or subnetworks, as well as
+        more grand scopes.  The TTL of a socket is set using
+        <function>set-multicast-ttl!</function>
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>set-multicast-ttl!</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>undefined</type>
+              <methodname>set-multicast-ttl!</methodname>
+              <methodparam>
+                <parameter>multicast-socket</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>ttl</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Sets the multicast TTL of the given socket to
+                <parameter>ttl</parameter>, an integer.  All datagrams
+                sent after this call will have their TTL set to the
+                new value.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        Valid multicast TTLs are in the range 0 (restricted to the
+        same host) to 255 (unlimited in scope).
+      </para>
+    </sect2>
+  </sect1>
+  <sect1 id="UserDefinedPorts">
+    <title>User Defined Ports</title>
+    <para>
+        &requires;
+      <emphasis role="bold">
+        (import <emphasis>custom-io</emphasis>)
+      </emphasis>
+    </para>
+    <para>
+      &SISC; provides the ability to create new I/O port types from
+      within Scheme.  To add a new port type, one invokes a 
+      custom port constructors described below, passing 
+      procedures (Scheme or otherwise) which implement the operations
+      required by that port.  Each custom port constructor returns 
+      a Scheme port which may be used with any of the &SISC; or &R5RS;
+      I/O functions.  Port implementors may also use an associated
+      <emphasis>port-local</emphasis> value to coordinate state
+      for some specialized ports.
+    </para>
+    <para>
+      <blockquote>
+	<para>
+	  <indexterm><primary>set-port-local!</primary>
+	  </indexterm>
+	  &procedure;
+	  <methodsynopsis language="scheme">
+	    <type>value</type>
+	    <methodname>set-port-local!</methodname>
+	    <methodparam>
+	      <parameter>custom-port</parameter>
+	    </methodparam>
+	    <methodparam>
+	      <parameter>value</parameter>
+	    </methodparam>
+	  </methodsynopsis>
+	  <blockquote>
+	    <para>
+	      Sets the port-local value of the given custom port.
+	    </para>
+	  </blockquote>
+	</para>
+	<para>
+	  <indexterm><primary>port-local</primary>
+	  </indexterm>
+	  &procedure;
+	  <methodsynopsis language="scheme">
+	    <type>value</type>
+	    <methodname>port-local</methodname>
+	    <methodparam>
+	      <parameter>wrapper-stream</parameter>
+	    </methodparam>
+	  </methodsynopsis>
+	  <blockquote>
+	    <para>
+	      Gets the port-local value of the given custom port.
+	    </para>
+	  </blockquote>
+	</para>
+      </blockquote>
+    </para>
+    <para>
+      <blockquote>
+	<para>
+	  <indexterm><primary>make-custom-character-input-port</primary>
+	  </indexterm>
+	  &procedure;
+	  <methodsynopsis language="scheme">
+	    <type>character-input-port</type>
+	    <methodname>make-custom-character-input-port</methodname>
+	    <methodparam>
+	      <parameter>read</parameter>
+	    </methodparam>
+	    <methodparam>
+	      <parameter>read-string</parameter>
+	    </methodparam>
+	    <methodparam>
+	      <parameter>ready?</parameter>
+	    </methodparam>
+	    <methodparam>
+	      <parameter>close</parameter>
+	    </methodparam>
+	  </methodsynopsis>
+	  <blockquote>
+	    <para>
+	      Creates a character-input-port whose functionality is
+	      implemented by the four provided fundamental procedures.
+	    </para>
+	    <para>
+	      The fundamental procedures required are as follows:
+	    </para>
+	    <methodsynopsis language="scheme">
+	      <type>integer</type>
+	      <methodname>read</methodname>
+	      <methodparam>
+		<parameter>port</parameter>
+	      </methodparam>
+	    </methodsynopsis>
+	    <blockquote>
+	      <para>
+		Return a character as an integer value, or -1 if the end of 
+		stream has been reached.  
+		<parameter>port</parameter> is a reference to the
+		custom Scheme port which contains the procedure.
+	      </para>
+	    </blockquote>
+	    <methodsynopsis language="scheme">
+	      <type>integer</type>
+	      <methodname>read-string</methodname>
+	      <methodparam>
+		<parameter>port</parameter>
+	      </methodparam>
+	      <methodparam>
+		<parameter>mutable-string</parameter>
+	      </methodparam>
+	      <methodparam>
+		<parameter>offset</parameter>
+	      </methodparam>
+	      <methodparam>
+		<parameter>count</parameter>
+	      </methodparam>
+	    </methodsynopsis>
+	    <blockquote>
+	      <para>
+		Reads up to <parameter>count</parameter> characters 
+		into the given mutable string at position 
+		<parameter>offset</parameter>.  The number of
+		actual characters read are returned as an integer
+		value, or -1 if the end of stream has been reached.  
+		<parameter>port</parameter> is a reference to the
+		custom Scheme port which contains the procedure.
+	      </para>
+	    </blockquote>
+	    <methodsynopsis language="scheme">
+	      <type>boolean</type>
+	      <methodname>ready?</methodname>
+	      <methodparam>
+		<parameter>port</parameter>
+	      </methodparam>
+	    </methodsynopsis>
+	    <blockquote>
+	      <para>
+		Returns a non-false value if one or more characters
+		are available for reading, false otherwise.
+	      </para>
+	    </blockquote>
+	    <methodsynopsis language="scheme">
+	      <type>undefined</type>
+	      <methodname>close</methodname>
+	      <methodparam>
+		<parameter>port</parameter>
+	      </methodparam>
+	    </methodsynopsis>
+	    <blockquote>
+	      <para>
+		Closes the port.
+	      </para>
+	    </blockquote>
+	  </blockquote>
+	</para>
+      </blockquote>
+    </para>
+    <para>
+      <blockquote>
+	<para>
+	  <indexterm><primary>make-custom-binary-input-port</primary>
+	  </indexterm>
+	  &procedure;
+	  <methodsynopsis language="scheme">
+	    <type>binary-input-port</type>
+	    <methodname>make-custom-binary-input-port</methodname>
+	    <methodparam>
+	      <parameter>read</parameter>
+	    </methodparam>
+	    <methodparam>
+	      <parameter>read-block</parameter>
+	    </methodparam>
+	    <methodparam>
+	      <parameter>available</parameter>
+	    </methodparam>
+	    <methodparam>
+	      <parameter>close</parameter>
+	    </methodparam>
+	  </methodsynopsis>
+	  <blockquote>
+	    <para>
+	      Creates a binary-input-port whose functionality is
+	      implemented by the four provided fundamental procedures.
+	    </para>
+	    <para>
+	      The fundamental procedures required are as follows:
+	    </para>
+	    <methodsynopsis language="scheme">
+	      <type>integer</type>
+	      <methodname>read</methodname>
+	      <methodparam>
+		<parameter>port</parameter>
+	      </methodparam>
+	    </methodsynopsis>
+	    <blockquote>
+	      <para>
+		Return a byte as an integer value, or -1 if the end of 
+		stream has been reached. 
+		<parameter>port</parameter> is a reference to the
+		custom Scheme port which contains the procedure.
+	      </para>
+	    </blockquote>
+	    <methodsynopsis language="scheme">
+	      <type>integer</type>
+	      <methodname>read-block</methodname>
+	      <methodparam>
+		<parameter>port</parameter>
+	      </methodparam>
+	      <methodparam>
+		<parameter>buffer</parameter>
+	      </methodparam>
+	      <methodparam>
+		<parameter>offset</parameter>
+	      </methodparam>
+	      <methodparam>
+		<parameter>count</parameter>
+	      </methodparam>
+	    </methodsynopsis>
+	    <blockquote>
+	      <para>
+		Reads up to <parameter>count</parameter> bytes
+		into the given binary buffer at position 
+		<parameter>offset</parameter>.  The number of
+		actual bytes read are returned as an integer
+		value, or -1 if the end of stream has been reached.  
+		<parameter>port</parameter> is a reference to the
+		custom Scheme port which contains the procedure.
+	      </para>
+	    </blockquote>
+	    <methodsynopsis language="scheme">
+	      <type>integer</type>
+	      <methodname>available</methodname>
+	      <methodparam>
+		<parameter>port</parameter>
+	      </methodparam>
+	    </methodsynopsis>
+	    <blockquote>
+	      <para>
+		Returns a count of the number of bytes which
+		are available for reading.  This number need 
+		not be accurate.
+	      </para>
+	    </blockquote>
+	    <methodsynopsis language="scheme">
+	      <type>undefined</type>
+	      <methodname>close</methodname>
+	      <methodparam>
+		<parameter>port</parameter>
+	      </methodparam>
+	    </methodsynopsis>
+	    <blockquote>
+	      <para>
+		Closes the port.
+	      </para>
+	    </blockquote>
+	  </blockquote>
+	</para>
+      </blockquote>
+    </para>
+    <para>
+      <blockquote>
+	<para>
+	  <indexterm><primary>make-custom-character-output-port</primary>
+	  </indexterm>
+	  &procedure;
+	  <methodsynopsis language="scheme">
+	    <type>character-output-port</type>
+	    <methodname>make-custom-character-output-port</methodname>
+	    <methodparam>
+	      <parameter>write</parameter>
+	    </methodparam>
+	    <methodparam>
+	      <parameter>write-string</parameter>
+	    </methodparam>
+	    <methodparam>
+	      <parameter>flush</parameter>
+	    </methodparam>
+	    <methodparam>
+	      <parameter>close</parameter>
+	    </methodparam>
+	  </methodsynopsis>
+	  <blockquote>
+	    <para>
+	      Creates a character-output-port whose functionality is
+	      implemented by the four provided fundamental procedures.
+	    </para>
+	    <para>
+	      The fundamental procedures required are as follows:
+	    </para>
+	    <methodsynopsis language="scheme">
+	      <type>undefined</type>
+	      <methodname>write</methodname>
+	      <methodparam>
+		<parameter>port</parameter>
+	      </methodparam>
+	      <methodparam>
+		<parameter>byte</parameter>
+	      </methodparam>
+	    </methodsynopsis>
+	    <blockquote>
+	      <para>
+		Writes a character represented as an integer value.
+		<parameter>port</parameter> is a reference to the
+		custom Scheme port which contains the procedure.
+	      </para>
+	    </blockquote>
+	    <methodsynopsis language="scheme">
+	      <type>void</type>
+	      <methodname>write-string</methodname>
+	      <methodparam>
+		<parameter>port</parameter>
+	      </methodparam>
+	      <methodparam>
+		<parameter>string</parameter>
+	      </methodparam>
+	      <methodparam>
+		<parameter>offset</parameter>
+	      </methodparam>
+	      <methodparam>
+		<parameter>count</parameter>
+	      </methodparam>
+	    </methodsynopsis>
+	    <blockquote>
+	      <para>
+		Writes <parameter>count</parameter> characters 
+		from the given string at position 
+		<parameter>offset</parameter>. 
+		<parameter>port</parameter> is a reference to the
+		custom Scheme port which contains the procedure.
+	      </para>
+	    </blockquote>
+	    <methodsynopsis language="scheme">
+	      <type>undefined</type>
+	      <methodname>flush</methodname>
+	      <methodparam>
+		<parameter>port</parameter>
+	      </methodparam>
+	    </methodsynopsis>
+	    <blockquote>
+	      <para>
+		Flushes any unwritten characters to the stream.
+	      </para>
+	    </blockquote>
+	    <methodsynopsis language="scheme">
+	      <type>undefined</type>
+	      <methodname>close</methodname>
+	      <methodparam>
+		<parameter>port</parameter>
+	      </methodparam>
+	    </methodsynopsis>
+	    <blockquote>
+	      <para>
+		Closes the port.
+	      </para>
+	    </blockquote>
+	  </blockquote>
+	</para>
+      </blockquote>
+    </para>
+    <para>
+      <blockquote>
+	<para>
+	  <indexterm><primary>make-custom-binary-output-port</primary>
+	  </indexterm>
+	  &procedure;
+	  <methodsynopsis language="scheme">
+	    <type>binary-output-port</type>
+	    <methodname>make-custom-binary-output-port</methodname>
+	    <methodparam>
+	      <parameter>write</parameter>
+	    </methodparam>
+	    <methodparam>
+	      <parameter>write-block</parameter>
+	    </methodparam>
+	    <methodparam>
+	      <parameter>flush</parameter>
+	    </methodparam>
+	    <methodparam>
+	      <parameter>close</parameter>
+	    </methodparam>
+	  </methodsynopsis>
+	  <blockquote>
+	    <para>
+	      Creates a binary-output-port whose functionality is
+	      implemented by the four provided fundamental procedures.
+	    </para>
+	    <para>
+	      The fundamental procedures required are as follows:
+	    </para>
+	    <para>
+	      The fundamental procedures required are as follows:
+	    </para>
+	    <methodsynopsis language="scheme">
+	      <type>undefined</type>
+	      <methodname>write</methodname>
+	      <methodparam>
+		<parameter>port</parameter>
+	      </methodparam>
+	      <methodparam>
+		<parameter>byte</parameter>
+	      </methodparam>
+	    </methodsynopsis>
+	    <blockquote>
+	      <para>
+		Writes a byte represented as an integer value.
+		<parameter>port</parameter> is a reference to the
+		custom Scheme port which contains the procedure.
+	      </para>
+	    </blockquote>
+	    <methodsynopsis language="scheme">
+	      <type>void</type>
+	      <methodname>write-block</methodname>
+	      <methodparam>
+		<parameter>port</parameter>
+	      </methodparam>
+	      <methodparam>
+		<parameter>buffer</parameter>
+	      </methodparam>
+	      <methodparam>
+		<parameter>offset</parameter>
+	      </methodparam>
+	      <methodparam>
+		<parameter>count</parameter>
+	      </methodparam>
+	    </methodsynopsis>
+	    <blockquote>
+	      <para>
+		Writes <parameter>count</parameter> bytes
+		from the given binary buffer at position 
+		<parameter>offset</parameter>. 
+		<parameter>port</parameter> is a reference to the
+		custom Scheme port which contains the procedure.
+	      </para>
+	    </blockquote>
+	    <methodsynopsis language="scheme">
+	      <type>undefined</type>
+	      <methodname>flush</methodname>
+	      <methodparam>
+		<parameter>port</parameter>
+	      </methodparam>
+	    </methodsynopsis>
+	    <blockquote>
+	      <para>
+		Flushes any unwritten characters to the stream.
+	      </para>
+	    </blockquote>
+	    <methodsynopsis language="scheme">
+	      <type>undefined</type>
+	      <methodname>close</methodname>
+	      <methodparam>
+		<parameter>port</parameter>
+	      </methodparam>
+	    </methodsynopsis>
+	    <blockquote>
+	      <para>
+		Closes the port.
+	      </para>
+	    </blockquote>
+	  </blockquote>
+	</para>
+      </blockquote>
+    </para>
+    <para>
+      Finally, the underlying procedures which implement a custom port
+      can be retrieved with the following function:
+    </para>
+    <para>
+      <blockquote>
+	<para>
+	  <indexterm><primary>custom-port-procedures</primary>
+	  </indexterm>
+	  &procedure;
+	  <methodsynopsis language="scheme">
+	    <type>list</type>
+	    <methodname>custom-port-procedures</methodname>
+	    <methodparam>
+	      <parameter>custom-port</parameter>
+	    </methodparam>
+	  </methodsynopsis>
+	  <blockquote>
+	    <para>
+	      Returns the procedures which implement a custom port
+	      as a list.
+	    </para>
+	  </blockquote>
+	</para>
+      </blockquote>
+    </para>
+    <para>
+      As an example, here are String Ports, implemented as user
+      defined ports:
+    </para>
+    <example>
+      <title>User defined string ports</title>
+      <programlisting>
+(import custom-io)
+
+;; String Input Ports
+
+(define (sio/read port)
+  (let ([local (port-local port)])
+    (let ([ptr (vector-ref local 1)])
+      (if (= (vector-ref local 2) ptr)
+          -1
+          (let ([c (char-&gt;integer
+                    (string-ref (vector-ref local 0) ptr))])
+            (vector-set! local 1 (+ ptr 1))
+            c)))))
+
+(define (sio/read-string local buffer offset length)
+  (let ([local (port-local port)])
+    (let ([str (vector-ref local 0)]
+          [strlen (vector-ref local 2)])
+      (do ([i offset (+ i 1)]
+           [j (vector-ref local 1) (+ j 1)]
+           [c 0 (+ c 1)])
+          ((or (= i (+ offset length))
+               (= j strlen))
+           (vector-set! local 1 (+ ptr 1))
+           c)
+        (string-set! buffer i (string-ref str j))))))
+
+(define null (lambda args (void)))
+
+(define (open-input-string str)
+  (unless (string? str)
+    (error 'open-input-string "expected string, got '~a'.~%" str))
+  (let ([port (make-custom-character-input-port
+               sio/read sio/read-string null null)])
+    ; Use the port local value to store the string and a pointer
+    ; for the current position
+    (set-port-local! port (vector str 0 (string-length str)))
+    port))
+
+
+;; String Output Ports
+
+(define (sio/write port char)
+  (set-port-local! port
+    (cons char (port-local port))))
+
+(define (sio/write-string port string offset length)
+  (set-port-local! port
+   (append (reverse (string->list (substring string offset (+ length offset))))
+           (port-local port))))
+
+(define (open-output-string)
+  (let ([port
+         (make-custom-character-output-port
+          sio/write sio/write-string null null)])
+    (set-port-local! port '())
+    port))
+
+(define (get-output-string port)
+  (flush-output-port port)
+  (let ([str (apply string
+                    (reverse (port-local port)))])
+    (set-port-local! port '())
+    str))
+      </programlisting>
+    </example>
+  </sect1>
+  <sect1>
+    <title>Miscellaneous</title>
+    <sect2 id="PrettyPrinting">
+      <title>Pretty-Printing</title>
+      <para>
+          &SISC; includes a pretty-printer, a function that behaves like
+        <computeroutput>write</computeroutput>, but introduces
+        whitespace in order to make the output of data more readable
+        to humans.
+      </para>
+      <para id="func-pretty-print">
+        <blockquote>
+          <para>
+            <indexterm><primary>pretty-print</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>unspecified</type>
+              <methodname>pretty-print</methodname>
+              <methodparam>
+                <parameter>value</parameter>
+              </methodparam>
+              <methodparam choice="opt">
+                <parameter>output-port</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Pretty-prints the specified value, either to the specified
+                output-port, or to the console if no output-port is
+                specified.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+    </sect2>
+    <sect2>
+      <title>Source Loading</title>
+      <para>
+        The <function>load</function> procedure accepts URLs as well
+        as ordinary file names. See <xref linkend="urlfile"/> for
+        details on what kinds of URLs are supported.
+      </para>
+      <para>
+        The file name passed to <function>load</function> is resolved
+        relative to the <function>current-url</function>
+        parameter. During the execution of <function>load</function>,
+        <function>current-url</function> is set to the loaded file, so
+        that any invocations of <function>load</function> from the
+        loaded file resolve the given file name relative to the file
+        currently being loaded. For example, lets assume we have a web
+        site that serves the following files:
+        <programlisting>
+ ;;;contents of http://foo.com/bar/bar1.scm ;;;
+(load "bar2.scm")
+;;;contents of http://foo.com/bar/bar2.scm ;;;
+(load "/baz/baz1.scm")
+;;;contents of http://foo.com/baz/baz1.scm ;;;
+(load "../baz/baz2.scm")
+;;;contents of http://foo.com/baz/baz2.scm ;;;
+(display "Hello")
+        </programlisting>
+        Invoking
+        <programlisting>
+(load "http://foo.com/bar/bar1.scm")
+        </programlisting>
+        results in each file being loaded; with the last file in the chain,
+        <filename>baz2.scm</filename>, displaying
+        <computeroutput>Hello</computeroutput>.
+      </para>
+      <para>
+        The <function>load</function> function supports many types of
+        files which contain executable code.
+        <function>load</function> will attempt to determine (primarily
+        by the file's extension) which type of file is being loaded to
+        load that file in the correct manner.  The file types
+        currently supported are those described in <xref
+                                                         linkend="FileExtensions"/>.
+      </para>
+      <para>
+        When a pure source file is loaded, each s-expression is evaluated
+        in sequence, exactly as if entered into the REPL one
+        s-expression at a time.
+      </para>
+    </sect2>
+    <sect2>
+      <title>Location Tracking</title>
+      <para>
+          &SISC; allows the location of input, i.e. the file name, line
+        number, and column number, to be tracked when reading from an
+        input port.
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>open-source-input-file</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>input-port</type>
+              <methodname>open-source-input-file</methodname>
+              <methodparam>
+                <parameter>url</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                This procedure behaves the same as
+                <function>open-input-file</function>, except that it
+                also tracks the location of the input.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>input-port-location</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>list</type>
+              <methodname>input-port-location</methodname>
+              <methodparam>
+                <parameter>input-port</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the current location information associated
+                with <parameter>input-port</parameter>. The return
+                value is an association list containing the following
+                keys: <literal>source-file</literal>,
+                <literal>line-number</literal>,
+                <literal>column-number</literal>. If no location
+                information is available, &num;f is returned.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+    </sect2>
+    <sect2 id="Resources">
+      <title>Locating Resources</title>
+      <para>
+          &SISC; provides a mechanism for locating and subsequently
+          loading named resources, such as Scheme source files, Scheme
+          data files, property files. The resources are located using
+          the mechanism described in <xref
+          linkend="ClassLoading"/>. This allows Scheme programs to
+          load resources in a portable, J2EE-compliant manner.
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>find-resource</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>url</type>
+              <methodname>find-resource</methodname>
+              <methodparam><parameter>string</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Locates the resource named by
+                <parameter>string</parameter> on the Java class
+                path. The resource location is returned as a URL
+                suitable for &SISC; I/O operations. If the resource
+                cannot be found, &num;f is returned.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>find-resources</primary>
+            </indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>url-list</type>
+              <methodname>find-resources</methodname>
+              <methodparam><parameter>string</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Locates the resource named by
+                <parameter>string</parameter> on the Java class path.
+                The resource locations are returned as a list of URLs
+                suitable for &SISC; I/O operations. If the resource
+                cannot be found, an empty list is returned.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+    </sect2>
+    <sect2 id="FileManipulation">
+      <title>File Manipulation</title>
+      <para>
+        &requires;
+        <emphasis role="bold">
+          (import <emphasis>file-manipulation</emphasis>)
+        </emphasis>
+      </para>
+      <para>
+        The file-manipulation library provides access to a number of
+        functions for reading and manipulating files and their
+        attributes.  The file-manipulation library acts on filenames
+        in the same manner as other Scheme file related functions,
+        e.g. it accepts file and directory names as strings, which are
+        resolved relative to the current URL.
+      </para>
+      <para>
+        The following functions act on both files and directories.
+        With the exception of <function>file-exists?</function> and
+        <function>get-parent-url</function>, the  behavior when
+        applying these to non-existant files or directories is
+        undefined.
+      </para>
+      <blockquote>
+        <para>
+          <indexterm><primary>file-delete!</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>#t/#f</type>
+            <methodname>file-delete!</methodname>
+            <methodparam>
+              <parameter>filename</parameter>
+            </methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Attempts to remove the given file or directory.  If
+              successful, <literal>#t</literal> is returned.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+          <indexterm><primary>file-hidden?</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>#t/#f</type>
+            <methodname>file-exists?</methodname>
+            <methodparam>
+              <parameter>filename</parameter>
+            </methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns true if the given file or directory exists.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+          <indexterm><primary>file-is-directory?</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>#t/#f</type>
+            <methodname>file-is-directory?</methodname>
+            <methodparam>
+              <parameter>filename</parameter>
+            </methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns true if the given string names an existing
+              directory.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+          <indexterm><primary>file-is-file?</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>#t/#f</type>
+            <methodname>file-is-file?</methodname>
+            <methodparam>
+              <parameter>filename</parameter>
+            </methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns true if the given string names an existing
+              file.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+          <indexterm><primary>file-last-modified</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>integer</type>
+            <methodname>file-last-modified</methodname>
+            <methodparam>
+              <parameter>filename</parameter>
+            </methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns the number of milliseconds since the Unix
+              epoch (Jan 1, 1970) of the date the file or directory
+              was last modified.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+          <indexterm><primary>file-rename!</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>#t/#f</type>
+            <methodname>file-rename!</methodname>
+            <methodparam>
+              <parameter>source-filename</parameter>
+            </methodparam>
+            <methodparam>
+              <parameter>dest-filename</parameter>
+            </methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Renames the given source file or directory to the
+              destination.  This can be used both to rename a file
+              or directory or to move a file/directory in the same
+              filesystem.  If successful, <literal>#t</literal> is
+              returned.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+          <indexterm><primary>file-set-last-modified!</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>#t/#f</type>
+            <methodname>file-set-last-modified!</methodname>
+            <methodparam>
+              <parameter>filename</parameter>
+            </methodparam>
+            <methodparam>
+              <parameter>unixtime</parameter>
+            </methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Sets the last modified date of the given filename to
+              the given integer (in number of milliseconds since the
+              epoch).  Returns <literal>#t</literal> if successful.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+          <indexterm><primary>get-parent-url</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>string</type>
+            <methodname>get-parent-url</methodname>
+            <methodparam>
+              <parameter>filename</parameter>
+            </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Given any URL, returns the URL of its parent.  For
+                filenames, as an example, the parent directory is
+                returned.
+              </para>
+            </blockquote>
+          </para>
+      </blockquote>
+      <para>
+        The following functions operate only on files.  Their behavior
+        when applied to directories or non-existant files is undefined.
+      </para>
+      <blockquote>
+        <para>
+          <indexterm><primary>file-is-readable?</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>#t/#f</type>
+            <methodname>file-is-readable?</methodname>
+            <methodparam>
+              <parameter>filename</parameter>
+            </methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns <literal>#t</literal> if the file can be opened
+              for reading.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+          <indexterm><primary>file-is-writeable?</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>#t/#f</type>
+            <methodname>file-is-writeable?</methodname>
+            <methodparam>
+              <parameter>filename</parameter>
+            </methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns <literal>#t</literal> if the file can be opened
+              for writing.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+          <indexterm><primary>file-length</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>integer</type>
+            <methodname>file-length</methodname>
+            <methodparam>
+              <parameter>filename</parameter>
+            </methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns the length, in bytes, of the given file.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+          <indexterm><primary>file-set-read-only!</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>#t/#f</type>
+            <methodname>file-set-read-only!</methodname>
+            <methodparam>
+              <parameter>filename</parameter>
+            </methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Sets the given file read-only.  Returns
+              <literal>#t</literal> if successful.
+            </para>
+          </blockquote>
+        </para>
+      </blockquote>
+      <para>
+        Finally, the following functions are specific to directories.
+        Their behavior on files is undefined.  The behavior of
+        <function>directory-list</function> is undefined on
+        non-existant directories.
+      </para>
+      <blockquote>
+        <para>
+          <indexterm><primary>directory-list</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>list of strings</type>
+            <methodname>directory-list</methodname>
+            <methodparam>
+              <parameter>directory</parameter>
+            </methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Retrieves the children of the given directory, as a
+              list of strings.  Each string names one child, and is
+              a filename relative to the given directory.
+            </para>
+          </blockquote>
+        </para>
+          <para>
+	    <indexterm><primary>make-directory!</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>#t/#f</type>
+              <methodname>make-directory!</methodname>
+              <methodparam>
+                <parameter>directoryname</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Attempts to creates the given directory.  Returns
+                <literal>#t</literal> if successful.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+	    <indexterm><primary>make-directories!</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>#t/#f</type>
+              <methodname>make-directories!</methodname>
+              <methodparam>
+                <parameter>directoryname</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Attempts to creates the given directory and all
+                non-existing parent directories.  Returns
+                <literal>#t</literal> if successful.
+              </para>
+            </blockquote>
+          </para>
+      </blockquote>
+    </sect2>
+    <sect2 id="ClassLoading">
+      <title>Class Loading</title>
+      <para>
+        Some &SISC; features require classes and other resources to be
+        loaded. By default, &SISC; will use the current thread's class
+        loader, or, if none is present, the system class
+        loader. &SISC; maintains a list of class path extensions onto
+        which class and resource loading falls back. This list can be
+        inspected and extended using the following functions:
+        <blockquote>
+          <para>
+            <indexterm><primary>class-path-extension</primary></indexterm>
+            &parameter;
+            <methodsynopsis language="scheme">
+              <type>string-list</type>
+              <methodname>class-path-extension</methodname>
+              <void/>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Retrieves the current class path extension. The class
+                path extension is a list of strings representing URLs,
+                typically pointing to jar files or directories. It is
+                used a fall back during class and resource loading.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>class-path-extension-append!</primary></indexterm>
+            &parameter;
+            <methodsynopsis language="scheme">
+              <type>undefined</type>
+              <methodname>class-path-extension-append!</methodname>
+              <methodparam>
+                <parameter>class-path</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Appends a list of URLs to the current class path
+                extension.
+              </para>
+              <para>
+                The elements of the <parameter>class-path</parameter>
+                list are normalized using the
+                <parameter>current-url</parameter> (see <xref
+                  linkend="urlfile"/>), thus permitting the usage of
+                relative URLs.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+        Note that the class path extension is part of the dynamic
+        environment,, so each thread has its own setting, initially
+        inherited from the parent thread. See <xref
+        linkend="Threads"/> for more details on &SISC;'s threading
+        semantics.
+      </para>
+    </sect2>
+  </sect1>
+</chapter>
+<!-- Keep this comment at the end of the file
+Local variables:
+sgml-parent-document:("sss.xml" "chapter")
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:2
+sgml-indent-data:t
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

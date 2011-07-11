@@ -1,0 +1,1999 @@
+<chapter id="LibraryFunctions">
+  <title>
+    Additional Libraries
+  </title>
+  <sect1 id="SISCLibs">
+    <title>Optional &SISC; Libraries</title>
+    <para>
+      The optional &SISC; libraries are
+      <link linkend="Modules">modules</link>
+      whose definition is included in the full &SISC; distribution,
+      but not the lite distribution.
+    </para>
+    <sect2 id="Definitions">
+      <title>Definitions</title>
+      <para>
+        &requires; 
+        <emphasis role="bold">
+          (import <emphasis>misc</emphasis>)
+        </emphasis>
+      </para>
+      <para>
+        In addition to the standard &R5RS; definition syntaxes, &SISC;
+        provides an additional value definition and syntax definition form.
+      </para>
+      <para>
+        First, <function>define-values</function>, which allows
+        more than one binding to be created at once, given the
+        multiple-value return of its body.
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>define-values</primary>
+            </indexterm>
+            &syntax;
+            <methodsynopsis language="scheme" id="definevalues">
+              <type>undefined</type>
+              <methodname>define-values</methodname>
+              <methodparam>
+                <parameter>(binding</parameter>
+              </methodparam>
+              <methodparam rep="repeat">
+                <parameter>binding</parameter>
+              </methodparam>
+              <methodparam><parameter>)</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>expression</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Evaluates the expression in the body, which
+                must return the same number of values as
+                there are binding names.  Each value is then
+                bound (in an undefined order) to each binding
+                name.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        <function>define-values</function> behaves like
+        <function>define</function> in terms of which environment the
+        bindings are created.  If the <function>define-values</function>
+        statement is at the top-level then bindings are created in the
+        top-level environment.  If the statement is in a lexical
+        environment, then it behaves just as an internal define.
+      </para>
+      <para>
+        Second, <function>define-simple-syntax</function> provides a
+        shorthand for syntax definition when the syntactic form's
+        appearance is similar to a function.
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>define-simple-syntax</primary>
+            </indexterm>
+            &syntax;
+            <methodsynopsis language="scheme" id="definesimplesyntax">
+              <type>undefined</type>
+              <methodname>define-simple-syntax</methodname>
+              <methodparam>
+                <parameter>(name</parameter>
+              </methodparam>
+              <methodparam rep="repeat">
+                <parameter>vars</parameter>
+              </methodparam>
+              <methodparam><parameter>)</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>body</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Creates a syntactic form with the given name, 
+                and any number of listed syntactic variables, which
+                expands to the given body (with instances of the
+                syntactic variables hygienically expanded).
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>        
+      </para>
+      <para>
+        Here is an example usage of
+        <function>define-simple-syntax</function> to define the
+        <function>when</function> macro:
+      </para>
+      <programlisting>
+(define-simple-syntax (when condition body ...)
+  (if condition
+      (begin body ...)))
+      </programlisting>
+    </sect2>
+    <sect2 id="BitwiseLogicalOperations">
+      <title>
+        Bitwise Logical Operations
+      </title>
+      <para>
+        &requires; 
+        <emphasis role="bold">
+          (import <emphasis>logicops</emphasis>)
+        </emphasis>
+      </para>
+      <para>
+        In addition to the &R5RS; set of procedures that deal with
+        numbers, &SISC; provides operators for performing bitwise
+        logic operations on exact integers.
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>logand</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>integer</type>
+              <methodname>logand</methodname>
+              <methodparam><parameter>integer</parameter>
+              </methodparam>
+              <methodparam choice="opt" rep="repeat">
+                <parameter>integer</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Performs the logical AND of all the provided arguments.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>logor</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>integer</type>
+              <methodname>logor</methodname>
+              <methodparam><parameter>integer</parameter>
+              </methodparam>
+              <methodparam choice="opt" rep="repeat">
+                <parameter>integer</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Performs the logical OR of all the provided arguments.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>logxor</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>integer</type>
+              <methodname>logxor</methodname>
+              <methodparam><parameter>integer</parameter>
+              </methodparam>
+              <methodparam choice="opt" rep="repeat">
+                <parameter>integer</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Performs the logical exclusive-OR of all the provided arguments.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>lognot</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>integer</type>
+              <methodname>lognot</methodname>
+              <methodparam><parameter>integer</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Performs the logical NOT of the provided integer.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>logcount</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>integer</type>
+              <methodname>logcount</methodname>
+              <methodparam><parameter>integer</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the count of the number of 1 bits in the
+                representation of a given positive integer, or 0 bits
+                in a negative integer.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        In addition, two operators are provided to perform arithmetic
+        shifts on any integer (these operators do not have the range
+        limitation the previous logical functions do).  The shift
+        operators return a newly generated number formed by shifting
+        the provided number left or right by the given number of bits.
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>ashl</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>integer</type>
+              <methodname>ashl</methodname>
+              <methodparam><parameter>integer</parameter></methodparam>
+              <methodparam><parameter>bits</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Arithmetically shifts <parameter>integer</parameter>
+                left by <parameter>bits</parameter> bits.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>ashr</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>integer</type>
+              <methodname>ashr</methodname>
+              <methodparam><parameter>integer</parameter></methodparam>
+              <methodparam><parameter>bits</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Arithmetically shifts <parameter>integer</parameter>
+                right by <parameter>bits</parameter> bits.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        Mathematically, if r is the number, and s is the number of
+        bits, ashl calculates:
+        
+        <programlisting>
+r x 2<superscript>s</superscript>
+        </programlisting>
+        while ashr calculates
+        <programlisting>
+r / 2<superscript>s</superscript>
+        </programlisting>
+        in the integer domain.  Both ashl and ashr operate on exact
+        integers and produce only exact integers.  
+      </para>
+    </sect2>
+    <sect2 id="Records">
+      <title>Records</title>
+      <para>
+          &requires; 
+        <emphasis role="bold">
+          (import <emphasis>record</emphasis>)
+        </emphasis>
+      </para>
+      <para>
+        &SISC; provides a native implementation of record types as
+        defined in SRFI-9. See <ulink
+          url="http://srfi.schemers.org/srfi-9/"/> for details. In
+        addition to the <function>define-record-type</function> syntax
+        provided by SRFI-9, a more compact (but less flexible)
+        <function>define-struct</function> syntax is offered.
+      </para>
+      <para>
+        <indexterm><primary>define-struct</primary></indexterm>
+        &syntax;
+        <methodsynopsis language="scheme">
+          <void/>
+          <methodname>define-struct</methodname>
+          <methodparam><parameter>name</parameter></methodparam>
+          <methodparam><parameter>(field ...)</parameter></methodparam>
+        </methodsynopsis>
+        <blockquote>
+          <para>
+            Defines a SRFI-9 record type as follows:
+<programlisting>
+(define-record-type (make-<parameter>name</parameter> <parameter>field</parameter> ...)
+  <parameter>name</parameter>?
+  (<parameter>field</parameter> <parameter>name</parameter>-<parameter>field</parameter> set-<parameter>name</parameter>-<parameter>field</parameter>!)
+  ...)
+</programlisting>
+            i.e. naming conventions are used to determine the names of
+            the record type constructor, predicate, field access and
+            field modifier procedures.
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        Records are <function>eq?</function> and
+        <function>eqv?</function> if and only if they are
+        identical. Records are <function>equal?</function> if and only
+        if they are instances of the same record type and all their
+        fields are <function>equal?</function>.
+      </para>
+      <para>
+        It is also possible to define
+        <emphasis>non-generative</emphasis> record types, using
+        <function>define-nongenerative-record-type</function> and
+        <function>define-nongenerative-struct</function>. Non-generative
+        record types are associated with a user-specified guid. If an
+        attempt is made to define a record type with a guid that is
+        already bound to an existing record type then the existing
+        record type is modified, instead of a new record type being
+        created. Non-generative record types are serialised specially
+        such that deserialising them also performs this check. By
+        contract, deserialisation of ordinary, generative record types
+        and their instances results in duplicate types being created,
+        which is usually not desirable.
+      </para>
+      <para>
+        <indexterm><primary>define-nongenerative-record-type</primary></indexterm>
+        &syntax;
+        <methodsynopsis language="scheme">
+          <void/>
+          <methodname>define-nongenerative-record-type</methodname>
+          <methodparam><parameter>name</parameter></methodparam>
+          <methodparam><parameter>guid</parameter></methodparam>
+          <methodparam><parameter>(constructor-name field ...)</parameter></methodparam>
+          <methodparam><parameter>(predicate ...)</parameter></methodparam>
+          <methodparam><parameter>(field-spec ...)</parameter></methodparam>
+        </methodsynopsis>
+        <blockquote>
+          <para>
+            This is the same as <function>define-record-type</function>,
+            except that the resulting record type is
+            <emphasis>non-generative</emphasis> with
+            <parameter>guid</parameter>, a symbol, as the unique
+            identifier.
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        <indexterm><primary>define-nongenerative-struct</primary></indexterm>
+        &syntax;
+        <methodsynopsis language="scheme">
+          <void/>
+          <methodname>define-nongenerative-struct</methodname>
+          <methodparam><parameter>name</parameter></methodparam>
+          <methodparam><parameter>guid</parameter></methodparam>
+          <methodparam><parameter>(field ...)</parameter></methodparam>
+        </methodsynopsis>
+        <blockquote>
+          <para>
+            This is the same as <function>define-struct</function>,
+            except that the resulting struct is
+            <emphasis>non-generative</emphasis> with
+            <parameter>guid</parameter>, a symbol, as the unique
+            identifier.
+          </para>
+        </blockquote>
+      </para>
+    </sect2>
+    <sect2 id="Hashtables">
+      <title>Hash Tables</title>
+      <para>
+          &requires; 
+        <emphasis role="bold">
+          (import <emphasis>hashtable</emphasis>)
+        </emphasis>
+      </para>
+      <para>
+        Hash tables store mappings of keys to values. Hence they are
+        similar to association lists, except that hash tables allow
+        retrieval, addition and modification in constant time whereas
+        association lists typically perform these operations in linear
+        time based on the number of elements.
+      </para>
+      <sect3 id="hashtablecreation">
+        <title>Creation and Introspection</title>
+        <para>
+          Hash tables are a distinct data type. They can be created
+          empty or filled with the contents of an association list. The
+          converse, creating an association list from a hash table, is
+          also supported.
+        </para>
+        <blockquote>
+          <para>
+            <indexterm><primary>make-hashtable</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>hashtable</type>
+              <methodname>make-hashtable</methodname>
+              <methodparam choice="opt">
+                <parameter>equivalence-predicate</parameter>
+              </methodparam>
+              <methodparam choice="opt">
+                <parameter>hash-function</parameter>
+              </methodparam>
+              <methodparam choice="opt">
+                <parameter>thread-safe?</parameter>
+              </methodparam>
+              <methodparam choice="opt">
+                <parameter>weak?</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Creates a hash table. The first optional argument
+                supplies the equivalence test procedure that the
+                hashtable should use for comparison of keys. This must
+                be a function accepting two arguments and returning a
+                boolean. It defaults to
+                <function>equal?</function>.
+              </para>
+              <para>
+                The second optional argument supplies the hash
+                function, which must accept one argument and return a
+                numeric value. For the equivalence predicates
+                <function>eq?</function>, <function>eqv?</function>,
+                <function>equal?</function>,
+                <function>string=?</function>,
+                <function>string-ci=?</function> it defaults to
+                <function>hash-by-eq</function>,
+                <function>hash-by-eqv</function>,
+                <function>hash-by-equal</function>,
+                <function>hash-by-string=</function>,
+                <function>hash-by-string-ci=?</function> respectively,
+                and <function>hash-by-equal</function> otherwise.
+              </para>
+              <para>
+                The third optional argument determines whether
+                operations on the hash table should be made
+                thread-safe. The default is &num;f. Thread
+                synchronization (see <xref linkend="Threads"/>) is
+                required if there are potentially several threads
+                operating concurrently on the hash table and one of
+                these threads performs a structural modification
+                (i.e. adds or removes an entry; merely changing the
+                value of an entry is not a structural
+                modification). Failure to enforce proper thread
+                synchronization has unpredicatable results.
+              </para>
+              <para>
+                The fourth optional argument determines whether the
+                keys in the hash table are held with weak references,
+                allowing them to be garbage collected, and
+                automatically removed from the hashtable when they are
+                not referenced from elsewhere. The default is &num;t.
+              </para>
+              <para>
+                For reasons of disambiguation, the hash function
+                argument can only be supplied if the preceeding
+                equivalence predicate was also supplied, and the
+                weakness argument can only be supplied if the
+                preceeding thread-safety argument was also supplied.
+              </para>
+              <para>
+                The equivalence and hash function must produce
+                stable results for the keys in a hash table.
+              </para>
+              <para>
+                The effects of invoking an escaping continuation
+                inside the equivalence predicate or hash function, or
+                invoking a continuation captured inside the
+                equivalence predicate or hash function after that
+                function has returned, are unspecified.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>alist-&gt;hashtable</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>hashtable</type>
+              <methodname>alist-&gt;hashtable</methodname>
+              <methodparam><parameter>alist</parameter></methodparam>
+              <methodparam choice="opt">
+                <parameter>equivalence-predicate</parameter>
+              </methodparam>
+              <methodparam choice="opt">
+                <parameter>hash-function</parameter>
+              </methodparam>
+              <methodparam choice="opt">
+                <parameter>thread-safe?</parameter>
+              </methodparam>
+              <methodparam choice="opt">
+                <parameter>weak?</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Creates a hashtable and initializes it with the keys
+                and values found in
+                <parameter>alist</parameter>. <parameter>alist</parameter>
+                must be a list of pairs, with the
+                <function>car</function> of each pair representing a
+                key and the <function>cdr</function> representing its
+                associated value. The optional arguments are the same
+                as for <function>make-hashtable</function>.
+              </para>
+              <para>
+                If there are multiple pairs which contain the same key
+                (with respect to chosen equivalence test) then the
+                resulting hash table will associate the key with the
+                value of the last such pair.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>hashtable?</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>&num;t/&num;f</type>
+              <methodname>hashtable?</methodname>
+              <methodparam><parameter>value</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns &num;t if <parameter>value</parameter> is a hash
+                table, &num;f otherwise.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>hashtable/equivalence-function</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>procedure</type>
+              <methodname>hashtable/equivalence-function</methodname>
+              <methodparam><parameter>hashtable</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the equivalence predicate of
+                <parameter>hashtable</parameter>.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>hashtable/hash-function</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>procedure</type>
+              <methodname>hashtable/hash-function</methodname>
+              <methodparam><parameter>hashtable</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the hash function of
+                <parameter>hashtable</parameter>.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>hashtable/thread-safe?</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>&num;t/&num;f</type>
+              <methodname>hashtable/thread-safe?</methodname>
+              <methodparam><parameter>hashtable</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns &num;t if <parameter>hashtable</parameter> is
+                thread safe, &num;f otherwise.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>hashtable/weak?</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>&num;t/&num;f</type>
+              <methodname>hashtable/weak?</methodname>
+              <methodparam><parameter>hashtable</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns &num;t if the keys in
+                <parameter>hashtable</parameter> are held by weak
+                references, &num;f otherwise.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>hashtable/size</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>number</type>
+              <methodname>hashtable/size</methodname>
+              <methodparam><parameter>hashtable</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the number of key/value pairs stored in
+                <parameter>hashtable</parameter>.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>hashtable-&gt;alist</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>alist</type>
+              <methodname>hashtable-&gt;alist</methodname>
+              <methodparam><parameter>hashtable</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns an association list comprising the elements of
+                <parameter>hashtable</parameter>. The list contains
+                pairs whose <function>car</function>s are they keys
+                found in <parameter>hashtable</parameter> and whose
+                <function>cdr</function>s contain the associated
+                values.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </sect3>
+      <sect3>
+        <title>Hash Functions</title>
+        <para>
+          Several hash functions that return results consistent with
+          common equivalence predicates are predefined.
+        </para>
+        <blockquote>
+          <para>
+            <indexterm><primary>hash-by-eq</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>number</type>
+              <methodname>hash-by-eq</methodname>
+              <methodparam><parameter>value</parameter></methodparam>
+            </methodsynopsis>
+          </para>
+          <para>
+            <indexterm><primary>hash-by-eqv</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>number</type>
+              <methodname>hash-by-eqv</methodname>
+              <methodparam><parameter>value</parameter></methodparam>
+            </methodsynopsis>
+          </para>
+          <para>
+            <indexterm><primary>hash-by-equal</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>number</type>
+              <methodname>hash-by-equal</methodname>
+              <methodparam><parameter>value</parameter></methodparam>
+            </methodsynopsis>
+          </para>
+          <para>
+            <indexterm><primary>hash-by-string=</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>number</type>
+              <methodname>hash-by-string=</methodname>
+              <methodparam><parameter>string</parameter></methodparam>
+            </methodsynopsis>
+          </para>
+          <para>
+            <indexterm><primary>hash-by-string-ci=</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>number</type>
+              <methodname>hash-by-string-ci=</methodname>
+              <methodparam><parameter>string</parameter></methodparam>
+            </methodsynopsis>
+          </para>
+          <para>
+            These procedures return a hash code of their argument that
+            is consistent with <function>eq?</function>,
+            <function>eqv?</function>, <function>equal?</function>,
+            <function>string=?</function>,
+            <function>string-ci=?</function>, respectively.
+          </para>
+        </blockquote>
+      </sect3>
+      <sect3>
+        <title>Access and Modification</title>
+        <para>
+          All hash table access operations follow a similar
+          pattern. They return the value that was associated with the
+          the given key at the time the operation was invoked. If no
+          binding for the key existed, an optionally supplied value is
+          returned that defaults to &num;f. This allows the programmer
+          to associate keys with &num;f values and distinguish this case
+          from not having any association for a key.
+        </para>
+        <blockquote>
+          <para>
+            <indexterm><primary>hashtable/put!</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>value</type>
+              <methodname>hashtable/put!</methodname>
+              <methodparam><parameter>hashtable</parameter></methodparam>
+              <methodparam><parameter>key</parameter></methodparam>
+              <methodparam><parameter>val</parameter></methodparam>
+              <methodparam choice="opt">
+                <parameter>nobinding</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Associates <parameter>key</parameter> with
+                <parameter>val</parameter> in
+                <parameter>hashtable</parameter>. Returns the previous
+                association of <parameter>key</parameter> or
+                <parameter>nobinding</parameter>, which defaults to
+                &num;f, if <parameter>key</parameter> has no previous
+                association.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>hashtable/get</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>value</type>
+              <methodname>hashtable/get</methodname>
+              <methodparam><parameter>hashtable</parameter></methodparam>
+              <methodparam><parameter>key</parameter></methodparam>
+              <methodparam choice="opt">
+                <parameter>nobinding</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the value associated with
+                <parameter>key</parameter> in
+                <parameter>hashtable</parameter>, or
+                <parameter>nobinding</parameter>, which defaults to
+                &num;f, if <parameter>key</parameter> has no
+                association.
+              </para>
+            </blockquote>
+          </para>
+          <para>    
+            <indexterm><primary>hashtable/get!</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>value</type>
+              <methodname>hashtable/get!</methodname>
+              <methodparam><parameter>hashtable</parameter></methodparam>
+              <methodparam><parameter>key</parameter></methodparam>
+              <methodparam><parameter>thunk</parameter></methodparam>
+              <methodparam choice="opt">
+                <parameter>unsafe?</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the value associated with
+                <parameter>key</parameter> in
+                <parameter>hashtable</parameter>. If
+                <parameter>key</parameter> has no association then
+                <parameter>thunk</parameter> is called and the
+                result is associated with <parameter>key</parameter>
+                in <parameter>hashtable</parameter> and also returned.
+                The <parameter>unsafe?</parameter>, which defaults to
+                &num;t, indicates whether <parameter>thunk</parameter>
+                may invoke escaping continuations or raise errors.
+                Setting <parameter>unsafe?</parameter> to &num;f
+                results in more efficient execution but may cause
+                deadlocks if <parameter>thunk</parameter> is unsafe.
+                See also <function>mutex/synchronize-unsafe</function> in 
+                <xref linkend="highlevelconcurrency"/>.
+              </para>
+              <para>
+                When <parameter>hashtable</parameter> is
+                thread-safe this operation is atomic.
+              </para>
+            </blockquote>
+          </para>
+          <para>    
+            <indexterm><primary>hashtable/contains?</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>&num;t/&num;f</type>
+              <methodname>hashtable/contains?</methodname>
+              <methodparam><parameter>hashtable</parameter></methodparam>
+              <methodparam><parameter>key</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the &num;t if <parameter>hashtable</parameter>
+                contains an entry for <parameter>key</parameter>,
+                &num;f otherwise.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>hashtable/remove!</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>value</type>
+              <methodname>hashtable/remove!</methodname>
+              <methodparam><parameter>hashtable</parameter></methodparam>
+              <methodparam><parameter>key</parameter></methodparam>
+              <methodparam choice="opt">
+                <parameter>nobinding</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Removes the association of <parameter>key</parameter> in
+                <parameter>hashtable</parameter>. Returns the associated
+                value of <parameter>key</parameter> or
+                <parameter>nobinding</parameter>, which defaults to
+                &num;f, if <parameter>key</parameter> has no
+                association.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </sect3>
+      <sect3>
+        <title>Bulk Operations</title>
+        <para>
+          Bulk operations are operations that apply to all elements of a
+          hash table.
+        </para>
+        <blockquote>
+          <para>
+            <indexterm><primary>hashtable/clear!</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <void/>
+              <methodname>hashtable/clear!</methodname>
+              <methodparam><parameter>hashtable</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Removes all elements from <parameter>hashtable</parameter>.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>hashtable/keys</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>list</type>
+              <methodname>hashtable/keys</methodname>
+              <methodparam><parameter>hashtable</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the keys contained in <parameter>hashtable</parameter>.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>hashtable/for-each</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <void/>
+              <methodname>hashtable/for-each</methodname>
+              <methodparam><parameter>proc</parameter></methodparam>
+              <methodparam><parameter>hashtable</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Applies <parameter>proc</parameter> to each element of
+                <parameter>hashtable</parameter>. <parameter>proc</parameter>
+                is called with two parameters - the key and the value
+                of the element.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>hashtable/map</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>list</type>
+              <methodname>hashtable/map</methodname>
+              <methodparam><parameter>proc</parameter></methodparam>
+              <methodparam><parameter>hashtable</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Applies <parameter>proc</parameter> to each element of
+                <parameter>hashtable</parameter>. <parameter>proc</parameter>
+                is called with two parameters - the key and the value
+                of the element. The results of calling
+                <parameter>proc</parameter> are returned as a list.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </sect3>
+    </sect2>
+    <sect2 id="Buffers"> 
+      <title>Binary Buffers</title>
+      <para>
+          &requires; 
+        <emphasis role="bold">
+          (import <emphasis>buffers</emphasis>)
+        </emphasis>
+      </para>
+      <para>
+        Binary buffers provide an opaque container for a fixed amount
+        of binary data.  The binary buffer library provides a number 
+        of functions for creating and accessing those buffers.  
+        The buffer is very similar to a vector, in
+        that it is a randomly accessable, zero-based structure.  But as
+        a tradeoff for space efficiency, binary 
+        buffers are only capable of storing bytes.  The bytes are stored
+        as 8-bit, unsigned fixed integers (of the range 0-255).
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>buffer?</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>&num;t/&num;f</type>
+              <methodname>buffer?</methodname>
+              <methodparam><parameter>value</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns true if and only if the provided argument is a
+                binary buffer.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>make-buffer</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>buffer</type>
+              <methodname>make-buffer</methodname>
+              <methodparam><parameter>size</parameter></methodparam>
+              <methodparam choice="opt"><parameter>fill-value</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Creates a new buffer capable of storing
+                <parameter>size</parameter> bytes.
+                <parameter>size</parameter> must be a fixed
+                non-negative integer.  If provided, the value of all
+                bytes in the buffer is initialized to
+                <parameter>fill-value</parameter>.  If not provided,
+                the contents of the buffer is unspecified.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>buffer</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>buffer</type>
+              <methodname>buffer</methodname>
+              <methodparam choice="opt" rep="repeat">
+                <parameter>value</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Creates a new buffer whose size is equal to
+                the number of arguments given and whose contents are
+                the bytes given as arguments.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>buffer-length</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>fixed integer</type>
+              <methodname>buffer-length</methodname>
+              <methodparam><parameter>buffer</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the capacity of the given buffer.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>buffer-ref</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>fixed integer</type>
+              <methodname>buffer-ref</methodname>
+              <methodparam><parameter>buffer</parameter></methodparam>
+              <methodparam><parameter>index</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the byte at offset
+                <parameter>index</parameter> in the specified buffer.
+                It is an error if <parameter>index</parameter> is out
+                of range.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>buffer-set!</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>undefined</type>
+              <methodname>buffer-set!</methodname>
+              <methodparam><parameter>buffer</parameter></methodparam>
+              <methodparam><parameter>index</parameter>
+              </methodparam>
+              <methodparam><parameter>new-value</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Sets the byte at offset <parameter>index</parameter>
+                of the specified buffer to the given fixed integer
+                <parameter>new-value</parameter>.
+                It is an error if <parameter>index</parameter> is out
+                of range.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>buffer-copy!</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>undefined</type>
+              <methodname>buffer-copy!</methodname>
+              <methodparam><parameter>source-buffer</parameter></methodparam>
+              <methodparam><parameter>source-offset</parameter>
+              </methodparam>
+              <methodparam><parameter>dest-buffer</parameter>
+              </methodparam>
+              <methodparam><parameter>dest-offset</parameter>
+              </methodparam>
+              <methodparam choice="opt"><parameter>count</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Copies <parameter>count</parameter> bytes starting from index
+                <parameter>source-offset</parameter> in the source
+                buffer to successive bytes starting at index
+                <parameter>dest-offset</parameter> in the destination
+                buffer.  If <parameter>count</parameter> is
+                unspecified, it is assumed to be the length of the
+                source buffer.
+                It is an error to copy more bytes from the source
+                buffer than are available, or to copy more bytes into
+                the destination buffer than its capacity allows.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        Buffers are serializable (can exist in loadable libraries or
+        a &SISC; heap), but are not representable in an s-expression.  
+        For this reason, they bear the printed representation of
+        <literal>&num;&lt;buffer&gt;</literal>.
+      </para>
+    </sect2>
+    <sect2>
+      <title>Procedure Properties</title>
+      <para>
+          &requires; 
+        <emphasis role="bold">
+          (import <emphasis>procedure-properties</emphasis>)
+        </emphasis>
+      </para>
+      <para>
+          &SISC; allows key/value bindings to be associated with
+        procedures. This has a number of applications. For instance,
+        <link linkend="GenericProcedures">generic procedures</link>
+        store their methods in a procedure property.
+      </para>
+      <para>
+        Keys must be symbols. Values are any valid Scheme value. 
+        All operations are thread-safe.
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>procedure-property</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>value</type>
+              <methodname>procedure-property</methodname>
+              <methodparam><parameter>proc</parameter></methodparam>
+              <methodparam><parameter>symbol</parameter></methodparam>
+              <methodparam choice="opt">
+                <parameter>nobinding</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the value associated with the property
+                <parameter>symbol</parameter> of procedure
+                <parameter>proc</parameter>, or
+                <parameter>nobinding</parameter>, which defaults to
+                &num;f, if the property is not set.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+        <blockquote>
+          <para>
+            <indexterm><primary>set-procedure-property!</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>value</type>
+              <methodname>set-procedure-property!</methodname>
+              <methodparam><parameter>proc</parameter></methodparam>
+              <methodparam><parameter>symbol</parameter></methodparam>
+              <methodparam><parameter>val</parameter></methodparam>
+              <methodparam choice="opt">
+                <parameter>nobinding</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Sets the property <parameter>symbol</parameter> of procedure
+                <parameter>proc</parameter> to the value
+                <parameter>val</parameter>. Returns the previous value
+                of the property or <parameter>nobinding</parameter>,
+                which defaults to &num;f, if the property was unset.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+        <blockquote>
+          <para>
+            <indexterm><primary>procedure-property!</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>value</type>
+              <methodname>procedure-property!</methodname>
+              <methodparam><parameter>proc</parameter></methodparam>
+              <methodparam><parameter>symbol</parameter></methodparam>
+              <methodparam><parameter>thunk</parameter></methodparam>
+              <methodparam choice="opt">
+                <parameter>unsafe?</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the value associated with the property
+                <parameter>symbol</parameter> of procedure
+                <parameter>proc</parameter>. If the property is unset
+                then <parameter>thunk</parameter> is called and the
+                property is set to the result, which is also returned.
+                The <parameter>unsafe?</parameter>, which defaults to
+                &num;t, indicates whether <parameter>thunk</parameter>
+                may invoke escaping continuations or raise errors.
+                Setting <parameter>unsafe?</parameter> to &num;f
+                results in more efficient execution but may cause
+                deadlocks if <parameter>thunk</parameter> is unsafe.
+                See also <function>mutex/synchronize-unsafe</function> in 
+                <xref linkend="highlevelconcurrency"/>.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+    </sect2>
+    <sect2 id="LibraryModule">
+      <title>Loadable Scheme Libraries</title>
+      <para>
+          &requires; 
+        <emphasis role="bold">
+          (import <emphasis>libraries</emphasis>)
+          <footnote>
+            <para>
+              This module gets imported by default.
+            </para>
+          </footnote>
+        </emphasis>
+      </para>
+      <para>
+        Scheme code can be packaged into libraries that can have
+        dependencies on other libraries and can be loaded as
+        required. Libraries are identified by a name that follows Java
+        package file naming conventions, i.e. using path-style names
+        typically containing domain, organisation name, project name and
+        library name. For instance, if company Foo produces a library
+        Baz for project Bar and that library contains three files, the
+        file structure might look as follows:
+<programlisting>
+com/foo/bar/baz.scm
+com/foo/bar/baz/baz1.scm
+com/foo/bar/baz/baz2.scm
+com/foo/bar/baz/baz3.scm
+</programlisting>
+        This library can be made accessible from &SISC; by adding the
+        base directory or a jar file containing these files to the
+        Java class path. Libraries are loaded by the following
+        procedure.
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>require-library</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>undefined</type>
+              <methodname>require-library</methodname>
+              <methodparam><parameter>name</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Checks whether the library identified by
+                <parameter>name</parameter> (a string), has already
+                been loaded and, if not, loads it. An error is raised
+                if the library cannot be found.
+              </para>
+              <para>
+                Libraries are loaded using the
+                <function>load</function> procedure from a resource
+                located by the <link
+                linkend="Resources"><function>find-resource</function>
+                procedure</link>.  The name of the resource is derived
+                from the name of the library by appending ".scc",
+                ".sce" and, if that does not succeed, ".scm".
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        Note that <function>require-library</function> only loads a
+        single file. The definition of dependencies on other libraries
+        and the loading of other files therefore needs to happen
+        within that file. For instance, the file
+        <filename>com/foo/bar/baz.scm</filename> from the above
+        example might contain the following:
+        <programlisting>
+(require-library 'com/foo/bar/boo)
+(load "baz/baz1.scm")
+(load "baz/baz2.scm")
+(load "baz/baz3.scm")
+        </programlisting>
+      </para>
+      <para>
+        It is possible to programmatically check whether a particular
+        library exists and whether it has been loaded:
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>library-exists?</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>&num;t/&num;f</type>
+              <methodname>library-exists?</methodname>
+              <methodparam><parameter>name</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns &num;t if the library identified by
+                <parameter>name</parameter> (a string) exists, &num;f
+                otherwise.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>library-loaded?</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>&num;t/&num;f</type>
+              <methodname>library-loaded?</methodname>
+              <methodparam><parameter>name</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns &num;t if the library identified by
+                <parameter>name</parameter> (a string) 
+                has been loaded, &num;f otherwise.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+    </sect2>
+    <sect2 id="OperatingSystemInterface">
+      <title>
+        Operating System Interface
+      </title>
+      <para>
+        &requires; 
+        <emphasis role="bold">
+          (import <emphasis>os</emphasis>)
+        </emphasis>
+      </para>
+      <para>
+        The operating system interface currently contains functions
+        for spawning external processes on the host operating system,
+        obtaining input/output ports to the resulting process, and
+        monitoring their status.  
+      </para>
+      <para> 
+        Two procedures exist for spawning processes:
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>spawn-process</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>process</type>
+              <methodname>spawn-process</methodname>
+              <methodparam><parameter>program/commandline</parameter></methodparam>
+              <methodparam choice="opt"><parameter>arglist</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Spawns a process, returning a process handle.  If the
+                optional argument list is provided, then the first
+                argument is the binary to run with those arguments.
+                If omitted, the first argument is tokenized as a
+                commandline and used to spawn the process.
+              </para>
+            </blockquote>
+          </para>      
+          <para>
+            <indexterm><primary>spawn-process-with-environment</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>process</type>
+              <methodname>spawn-process-with-environment</methodname>
+              <methodparam><parameter>program</parameter></methodparam>
+              <methodparam><parameter>arglist</parameter></methodparam>
+              <methodparam><parameter>environment</parameter></methodparam>
+              <methodparam choice="opt"><parameter>working-directory</parameter></methodparam>
+            </methodsynopsis>
+          </para>
+          <para>
+            <indexterm><primary>spawn-process/env</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>process</type>
+              <methodname>spawn-process/env</methodname>
+              <methodparam><parameter>program</parameter></methodparam>
+              <methodparam><parameter>arglist</parameter></methodparam>
+              <methodparam><parameter>environment</parameter></methodparam>
+              <methodparam choice="opt"><parameter>working-directory</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Spawns a process named by
+                <parameter>program</parameter> with the arguments
+                given in <parameter>arglist</parameter>, in the given
+                <parameter>environment</parameter>.  The environment
+                is an association list of strings to strings.  The key
+                in the association list is an environment variable
+                name, and the corresponding value is the value to
+                assign to that environment variable.  If the
+                environment parameter is <literal>&num;f</literal>,
+                the environment variables of the current &SISC;
+                instance are used.  
+              </para>
+              <para>
+                The optional parameter
+                <parameter>working-directory</parameter> specifies the
+                directory which will be set as the current directory
+                when the process is spawned.  If ommited, the value of
+                the <function>current-directory</function> parameter
+                (i.e. the current directory of the running Scheme
+                program) is used instead.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>process?</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>&num;t/&num;f</type>
+              <methodname>process?</methodname>
+              <methodparam><parameter>value</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns <literal>&num;t</literal> if the given value 
+                is a process handle.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        Once started, a process will run in parallel to the current
+        Scheme program according to the usual scheduling of the host
+        platform.  The process handle obtained can be used to obtain
+        the input, output, and error streams of the process using the
+        following functions:
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>get-process-stdout</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>binary-input-port</type>
+              <methodname>get-process-stdout</methodname>
+              <methodparam><parameter>process</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns a binary input port which will read bytes which the
+                given process has written to its standard output stream.
+              </para>
+            </blockquote>
+          </para>      
+          <para>
+            <indexterm><primary>get-process-stderr</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>binary-input-port</type>
+              <methodname>get-process-stderr</methodname>
+              <methodparam><parameter>process</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns a binary input port which will read bytes which the
+                given process has written to its standard error stream.
+              </para>
+            </blockquote>
+          </para>      
+          <para>
+            <indexterm><primary>get-process-stdin</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>binary-output-port</type>
+              <methodname>get-process-stdin</methodname>
+              <methodparam><parameter>process</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns a binary output port which when written to will send
+                bytes to the given process' standard input stream.
+              </para>
+            </blockquote>
+          </para>      
+        </blockquote>
+      </para>
+      <para>
+        Finally, functions are provided to check the status of a
+        spawned process, and to wait for a process to complete:
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>process-terminated?</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>integer or &num;f</type>
+              <methodname>process-terminated?</methodname>
+              <methodparam><parameter>process</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Checks to see if the given process has terminated, and
+                returns the process' return code if so.  If the
+                process is still running, <literal>&num;f</literal> is returned.
+              </para>
+            </blockquote>
+          </para>      
+          <para>
+            <indexterm><primary>wait-for-process</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>integer or &num;f</type>
+              <methodname>wait-for-process</methodname>
+              <methodparam><parameter>process</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Waits for the given process to terminate, and
+                returns the process' return code if so.  The wait
+                operation may be interrupted by other code, in which
+                <literal>&num;f</literal> is returned.
+              </para>
+            </blockquote>
+          </para>      
+        </blockquote>
+      </para>
+    </sect2>
+  </sect1>
+  <sect1 id="ThirdPartyLibs">
+    <title>Third-Party Libraries</title>
+    <para>
+        &SISC; provides hooks for accessing a number of third-party
+      Scheme libraries.
+    </para>
+    <warning>
+      <para>
+        This functionality has not undergone much testing.
+      </para>
+    </warning>
+    <sect2>
+      <title>SRFIs</title>
+      <para>
+        The Scheme Requests For Implementation (SRFI) process aims to
+        coordinate libraries and other additions to the Scheme
+        language between different Scheme implementations. For details
+        see <ulink url="http://srfi.schemers.org/"/> which describes
+        the process and contains a list of all available SRFIs.
+      </para>
+      <sect3>
+        <title>SRFI Modules</title>
+        <para>
+          In &SISC; each SRFI is encapsulated in a module. See <xref
+          linkend="Modules"/> for details of &SISC;'s module system.
+          The definitions for SRFI modules are not included in the
+          standard &SISC; heap build and hence must be loaded
+          separately from various compiled library files in the
+          <filename>sisc-lib.jar</filename> jar file in the root
+          directory of the &SISC; binary distribution. As long as this
+          jar file is on the classpath, which is the case by default,
+          any SRFI's module definition may be loaded with the expression
+          <literal>(require-library
+          'sisc/libs/srfi/srfi-<parameter>n</parameter>)</literal>, where 
+          <parameter>n</parameter> is the SRFI's number.  For example:
+          <programlisting>
+(require-library 'sisc/libs/srfi/srfi-9)
+          </programlisting>
+          All SRFI's may be loaded at once by requiring
+          <literal>sisc/libs/srfi</literal>.
+        </para>
+      </sect3>
+      <sect3>
+        <title>Using SRFIs</title>
+        <para>
+            &SISC; currently supports SRFIs
+          0, 1, 2, 5, 6, 7, 8, 9, 11, 13, 14, 16, 18, 19, 22, 23, 
+          25, 26, 27, 28, 29, 30, 31, 34, 35, 37, 38, 39, 40, 42, 43, 
+          45, 48, 51, 54, 55, 59, 60, 61, 62, 66, 67, 69 and 78.
+          Once the SRFI module definitions have been loaded as
+          described above, a SRFI <parameter>n</parameter> can be
+          imported using
+          <programlisting>
+(import srfi-<parameter>n</parameter>)
+          </programlisting>
+          e.g.
+          <programlisting>
+(import srfi-1)
+(xcons 1 2) ;=&gt; (2 . 1)
+          </programlisting>
+        </para>
+        <para>
+          SRFI modules, like all modules in &SISC;, can be
+          imported/used by other modules. Doing so does not pollute
+          the top-level environment with the definitions exported by
+          the module, i.e. any code outside the importing module
+          remains unaffected.
+        </para>
+        <para>
+          If, however, an SRFI is to be imported into the top-level,
+          one can use the <function>require-extension</function>
+          mechanism (see <xref linkend="SRFI55"/>).
+        </para>
+      </sect3>
+      <sect3>
+        <title>SRFI Extensions</title>
+        <para>
+          Some SRFIs have built-in extension points that Scheme
+          implementations can use to augment a SRFI's
+          functionality. It is also the case that some SRFIs would
+          benefit from slightly extended APIs.
+        </para>
+        <para>
+          This section documents the SRFI extensions implemented by
+          &SISC;.
+        </para>
+        <sect4>
+          <title>SRFI 69 (Basic hash tables)</title>
+          <para>
+            The <function>make-hash-table</function> function takes
+            two additional optional arguments:
+            <parameter>thread-safe?</parameter> and
+            <parameter>weak?</parameter>. See <function>make-hashtable</function>
+            in <xref linkend="hashtablecreation"/> for details.
+          </para>
+          <para>
+            The basic hash table API is extended in a separate
+            module:
+            <blockquote>
+              <para>
+                &requires; 
+                <emphasis role="bold">
+                  (import <emphasis>srfi-69-ext</emphasis>)
+                </emphasis>
+              </para>
+              <para>
+                <indexterm><primary>hash-table-thread-safe?</primary>
+                </indexterm>
+                &procedure;
+                <methodsynopsis language="scheme">
+                  <type>&num;t/&num;f</type>
+                  <methodname>hash-table-thread-safe?</methodname>
+                  <methodparam><parameter>hashtable</parameter></methodparam>
+                </methodsynopsis>
+                <blockquote>
+                  <para>
+                    Returns &num;t if <parameter>hashtable</parameter> is
+                    thread safe, &num;f otherwise.
+                  </para>
+                </blockquote>
+              </para>
+              <para>
+                <indexterm><primary>hash-table-weak?</primary>
+                </indexterm>
+                &procedure;
+                <methodsynopsis language="scheme">
+                  <type>&num;t/&num;f</type>
+                  <methodname>hash-table-weak?</methodname>
+                  <methodparam><parameter>hashtable</parameter></methodparam>
+                </methodsynopsis>
+                <blockquote>
+                  <para>
+                    Returns &num;t if the keys in
+                    <parameter>hashtable</parameter> are held by weak
+                    references, &num;f otherwise.
+                  </para>
+                </blockquote>
+              </para>
+              <para>    
+                <indexterm><primary>hash-table-ref!</primary>
+                </indexterm>
+                &procedure;
+                <methodsynopsis language="scheme">
+                  <type>value</type>
+                  <methodname>hash-table-ref!</methodname>
+                  <methodparam><parameter>hashtable</parameter></methodparam>
+                  <methodparam><parameter>key</parameter></methodparam>
+                  <methodparam><parameter>thunk</parameter></methodparam>
+                </methodsynopsis>
+                <blockquote>
+                  <para>
+                    Returns the value associated with
+                    <parameter>key</parameter> in
+                    <parameter>hashtable</parameter>. If
+                    <parameter>key</parameter> has no association then
+                    <parameter>thunk</parameter> is called and the
+                    result is associated with
+                    <parameter>key</parameter> in
+                    <parameter>hashtable</parameter> and also
+                    returned.
+                  </para>
+                  <para>
+                    When <parameter>hashtable</parameter> is
+                    thread-safe this operation is atomic.
+                  </para>
+                </blockquote>
+              </para>
+              <para>    
+                <indexterm><primary>hash-table-ref!/default</primary>
+                </indexterm>
+                &procedure;
+                <methodsynopsis language="scheme">
+                  <type>value</type>
+                  <methodname>hash-table-ref!</methodname>
+                  <methodparam><parameter>hashtable</parameter></methodparam>
+                  <methodparam><parameter>key</parameter></methodparam>
+                  <methodparam><parameter>default</parameter></methodparam>
+                </methodsynopsis>
+                <blockquote>
+                  <para>
+                    Returns the value associated with
+                    <parameter>key</parameter> in
+                    <parameter>hashtable</parameter>. If
+                    <parameter>key</parameter> has no association then
+                    <parameter>default</parameter> is associated with
+                    <parameter>key</parameter> in
+                    <parameter>hashtable</parameter> and also
+                    returned.
+                  </para>
+                  <para>
+                    When <parameter>hashtable</parameter> is
+                    thread-safe this operation is atomic.
+                  </para>
+                </blockquote>
+              </para>
+            </blockquote>
+          </para>
+        </sect4>
+      </sect3>
+    </sect2>
+    <sect2>
+      <title>SLIB</title>
+      <para>
+        The <application>SLIB</application> portable scheme library
+        provides compatibility and utility functions for standard
+        Scheme implementations. It is supported by many Schemes,
+        including &SISC;.
+      </para>
+      <sect3>
+        <title>Downloading and Installation</title>
+        <para>
+          The latest version of <application>SLIB</application> is
+          available from <ulink
+                                url="http://swissnet.ai.mit.edu/~jaffer/SLIB.html"/> as both
+          a zip file and RPM. The site also hosts an online version of
+          the <application>SLIB</application> manual.
+        </para>
+        <para>
+          Download <application>SLIB</application> and install it in a
+          convenient location. The RPM will by default be installed
+          in <filename>/usr/share/slib/</filename>. Do not worry when
+          you see some errors about missing programs such as
+          <application>mzscheme</application> and
+          <application>scheme48</application> when installing the RPM
+          - these happen because <application>SLIB</application> tries
+          to auto-configure itself for various Schemes that you may
+          not have installed on your system.
+        </para>
+      </sect3>
+      <sect3>
+        <title>Environment</title>
+        <para>
+          Using <application>SLIB</application> in &SISC; requires two
+          Java system properties to be set:
+          <itemizedlist>
+            <listitem>
+              <formalpara>
+                <title><envar>sisc.home</envar></title>
+                <para>
+                  This should (but does not actually
+                  <emphasis>have</emphasis> to) point to the location
+                  where you have installed &SISC;. If you are using
+                  one of the scripts from the binary &SISC;
+                  distribution in order to run &SISC; then this
+                  property will automatically be set to the value of
+                  the <envar>SISC_HOME</envar> environment variable.
+                </para>
+              </formalpara>
+            </listitem>
+            <listitem>
+              <formalpara>
+                <title><envar>sisc.slib</envar></title>
+                <para>
+                  This must point to the location where you installed
+                  <application>SLIB</application>. Other Schemes
+                  supporting <application>SLIB</application> tend to
+                  use an environment variable
+                  <envar>SCHEME_LIBRARY_PATH</envar>, so it is
+                  advisable to define that (if it is not already
+                  defined) and run Java with a
+                  <computeroutput>-Dsisc.slib=...</computeroutput>
+                  option based on the environment variable. If you are
+                  using the scripts from the binary $SISC;
+                  distribution in order to run &SISC; then you can set
+                  the property by adding the
+                  <computeroutput>-Dsisc.slib=...</computeroutput> to
+                  the <envar>JAVAOPT</envar> environment variable.
+                </para>
+              </formalpara>
+              <note>
+                <para>
+                  Note that the value of this property should be a
+                  fully qualified url,
+                  e.g. <computeroutput>file:///usr/share/slib</computeroutput>
+                </para>
+              </note>
+            </listitem>
+          </itemizedlist>
+          You need to ensure that all potential users of
+          <application>SLIB</application> have
+          <emphasis>read</emphasis> permissions to files in the
+          directories referred to by the above system properties.
+        </para>
+      </sect3>
+      <sect3>
+        <title>Building the Catalog</title>
+        <para>
+          Make sure that the above system properties are set and
+          that you have <emphasis>write</emphasis> permissions to the
+          <envar>sisc.home</envar> directory; often this means you
+          need to be logged in as a privileged user.
+        </para>
+        <para>
+          Start &SISC; as you normally would. At the prompt type
+          <programlisting>
+(require-library 'sisc/libs/slib)
+(require 'new-catalog)
+(exit)
+          </programlisting>
+        </para>
+        <para>
+          The above should create a file <filename>slibcat</filename>
+          in the <envar>sisc.home</envar> directory. It is a good idea
+          to check that this has indeed happened.
+        </para>
+      </sect3>
+      <sect3>
+        <title>Using <application>SLIB</application></title>
+        <para>
+          Make sure the above system properties are set. Start
+            &SISC; as you normally would. At the prompt load the
+          &SISC; <application>SLIB</application> as described above, i.e.
+          <programlisting>
+(require-library 'sisc/libs/slib)
+          </programlisting>
+          You can now load <application>SLIB</application> modules
+          using <function>require</function>, e.g.
+          <programlisting>
+(require 'tsort)
+(tsort '((shirt tie belt)
+         (tie jacket)
+         (belt jacket)
+         (watch)
+         (pants shoes belt)
+         (undershorts pants shoes)
+         (socks shoes))
+       eq?)
+          </programlisting>
+          loads the topological sorting module and invokes one of the
+          procedures defined by it.
+        </para>
+        <para>
+          Please refer to the <application>SLIB</application> manual
+          for further details of what modules are available. Note
+          however that, as with most other Schemes supported by
+          <application>SLIB</application>, there will be some modules
+          that are not available or do not work in &SISC;.
+        </para>
+      </sect3>
+    </sect2>
+  </sect1>
+  <sect1 id="CreatingLibraries">
+    <title>Creating Libraries</title>
+    <para>
+      &requires; 
+      <emphasis role="bold">
+        (import <emphasis>libraries</emphasis>)
+      </emphasis>
+    </para>
+    <para>
+      &SISC; allows the creation of <emphasis>compiled libraries</emphasis> 
+      which contain compiled scheme code.  These
+      libraries can then be executed into a running &SISC; session in
+      order to extend the functionality without processing or
+      possessing the original source.  Such libraries can be loaded
+      using <function>load</function> as would any ordinary Scheme
+      source file.
+    </para>
+    <para>
+      Compiled code files (<literal>.scc</literal>) are created using
+      the <function>compile-file</function> function, which takes a
+      Scheme source file and a target output file, and processes the
+      Scheme source through the various expansion and compilation
+      phases, and then serializes the resulting &SISC;
+      microexpressions to the given target file.  The resulting file
+      may then be loaded with <function>load</function> as any
+      ordinary Scheme file would, or can be placed in the library path
+      and resolved using <function>require-library</function>.
+    </para>
+    <para>
+      <blockquote>
+        <para>
+          <indexterm><primary>compile-file</primary>
+          </indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>undefined</type>
+            <methodname>compile-file</methodname>
+            <methodparam><parameter>source-file</parameter></methodparam>
+            <methodparam><parameter>target-file</parameter></methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Compiles the Scheme source present in
+              <parameter>source-file</parameter>, writing the
+              resulting micro-expressions into
+              <parameter>target-file</parameter>, suitable for
+              loading.
+            </para>
+            <para>
+              As a side effect, the micro-expressions are also
+              evaluated, i.e. in effect
+              <function>compile-file</function> compiles <emphasis>and
+                evaluates</emphasis> the
+              <parameter>source-file</parameter>. The latter is
+              necessary because the compilation of an expression may
+              depend on the results of evaluating a previous
+              expression, e.g. as is typically the case for libraries
+              that depend on other libraries.
+            </para>
+          </blockquote>
+        </para>
+      </blockquote>
+    </para>
+    <note>
+      <title><literal>.sll</literal> Deprecation</title>
+      <para>
+        Scheme Loadable Libraries (<literal>.sll</literal> files) were
+        deprecated in version 1.9.
+        This was due to unresolvable incompatibilities in the engine's
+        closure representation and the <literal>.sll</literal>
+        functionality.
+      </para>
+    </note>
+  </sect1>
+</chapter>
+<!-- Keep this comment at the end of the file
+Local variables:
+sgml-parent-document:("sss.xml" "chapter")
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:2
+sgml-indent-data:t
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

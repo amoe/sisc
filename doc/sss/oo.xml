@@ -1,0 +1,2283 @@
+<chapter id="TypesAndOO">
+  <title>Types and Objects</title>
+  <sect1 id="TypeSystem">
+    <title>Type System</title>
+    <para>
+        &requires; 
+      <emphasis role="bold">
+        (import <emphasis>type-system</emphasis>)
+      </emphasis>
+    </para>
+    <para>
+      &SISC;'s extensible type system provides programmatic access to
+      the type information of values and provides a core set of type
+      testing and comparison procedures. The type system is extensible
+      in two ways. Firstly any new native types are recognised
+      automatically. Secondly, hooks are provided for Scheme-level
+      extensions of the type-system.
+    </para>
+    <para>
+      By convention, type names start with <literal>&lt;</literal> and
+      end with <literal>&gt;</literal>, with normal Scheme identifier
+      naming conventions applying for everything in-between, i.e. all
+      lower-case with words separated by dashes. For example,
+      <literal>&lt;foo-bar-baz&gt;</literal>. This convention helps to
+      visually distinguish type names from names of procedures and
+      top-level data bindings.
+    </para>
+    <sect2>
+      <title>Core Procedures and Predicates</title>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>type-of</primary></indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>type</type>
+              <methodname>type-of</methodname>
+              <methodparam><parameter>value</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the type of
+                <parameter>value</parameter>. There is no standard
+                representation for types, leaving type extensions free
+                to choose a representation that suits them most.
+              </para>
+              <para>
+                The procedure is equipped with an extension hook,
+                <function>type-of-hook</function>. See <xref
+                linkend="TypeSystemHooks"/> for more details on
+                hooks. The default implementation of the hook
+                <function>type-of</function> returns a type based on
+                the Java type of the internal representation of
+                <parameter>value</parameter>.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(type-of 1)  &arrow; &num;&lt;scheme sisc.data.Quantity&gt;
+(type-of (lambda (x) x))  &arrow; &num;&lt;scheme sisc.data.Closure&gt;
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>types&lt;=</primary></indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>&t;/&f;</type>
+              <methodname>type&lt;=</methodname>
+              <methodparam><parameter>type1</parameter></methodparam>
+              <methodparam><parameter>type2</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns &t; if <parameter>type1</parameter> is a
+                sub-type of <parameter>type2</parameter>.
+              </para>
+              <para>
+                The predicate is equipped with an extension hook,
+                <function>type&lt;=-hook</function>. See <xref
+                linkend="TypeSystemHooks"/> for more details on
+                hooks. The default implementation of the hook
+                determines sub-typing based on the inheritance
+                relationship of the Java types representing native
+                types.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(type&lt;= (type-of 'a) (type-of 'b))  &arrow; &t;
+(type&lt;= (type-of 'b) (type-of 'a))  &arrow; &t;
+(type&lt;= (type-of 1) (type-of 'a))  &arrow; &f;
+(type&lt;= (type-of 1) &lt;number&gt;)  &arrow; &t;
+(type&lt;= (type-of 'a) &lt;symbol&gt;)  &arrow; &t;
+(type&lt;= &lt;number;&gt; &lt;symbol&gt;)  &arrow; &f;
+(type&lt;= &lt;symbol;&gt; &lt;number&gt;)  &arrow; &f;
+(type&lt;= &lt;number&gt; &lt;value&gt;)  &arrow; &t;
+(type&lt;= &lt;symbol&gt; &lt;value&gt;)  &arrow; &t;
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>compare-types</primary></indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>'equal,'more-specific,'less-specific</type>
+              <methodname>compare-types</methodname>
+              <methodparam><parameter>type1</parameter></methodparam>
+              <methodparam><parameter>type2</parameter></methodparam>
+              <methodparam><parameter>type3</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Determines the relationship of
+                <parameter>type1</parameter> and
+                <parameter>type2</parameter> with respect to
+                <parameter>type3</parameter>. <parameter>type3</parameter>
+                must be a sub-type of <parameter>type1</parameter> and
+                <parameter>type2</parameter>. <parameter>type1</parameter>
+                and <parameter>type2</parameter> are first compared
+                using <function>type&lt;=</function>. If that
+                comparison indicates that the types are disjoint
+                (i.e. <parameter>type1</parameter> is not sub-type of
+                <parameter>type2</parameter>,
+                <parameter>type2</parameter> is not a sub-type of
+                <parameter>type1</parameter> and the types are not
+                equal) then additional information from
+                <parameter>type3</parameter> is taken into account for
+                the comparison.
+              </para>
+              <para>
+                The predicate is equipped with an extension hook,
+                <function>compare-types-hook</function> that is
+                invoked in the case the comparison of
+                <parameter>type1</parameter> with
+                <parameter>type2</parameter> using
+                <function>type&lt;=</function> finds the two types to
+                be disjoint. See <xref
+                  linkend="TypeSystemHooks"/> for more details on
+                hooks. The default implementation of the hook returns
+                an error
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(compare-types &lt;number&gt; &lt;value&gt; &lt;number&gt;)
+  &arrow; 'more-specific
+(compare-types &lt;value&gt; &lt;number&gt; &lt;number&gt;)
+  &arrow; 'less-specific
+(compare-types &lt;number&gt; &lt;number&gt; &lt;number&gt;)
+  &arrow; 'equal
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+      </para>
+    </sect2>
+    <sect2>
+      <title>Derived Procedures and Predicates</title>
+      <para>
+        The type system's derived procedures and predicates are
+        implemented in terms of the core procedures and predicates.
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>instance-of?</primary></indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>&t;/&f;</type>
+              <methodname>instance-of?</methodname>
+              <methodparam><parameter>value</parameter></methodparam>
+              <methodparam><parameter>type</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Determines whether <parameter>value</parameter> is an
+                instance of <parameter>type</parameter>. 
+              </para>
+              <para>
+                The predicate obtains <parameter>value</parameter>'s
+                type using <function>type-of</function> and then
+                compares it to <parameter>type</parameter> using
+                <function>type&lt;=</function>.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(instance-of? 1 &lt;number&gt;)  &arrow; &t;
+(instance-of? 'a &lt;symbol&gt;)  &arrow; &t;
+(instance-of? 1 &lt;symbol&gt;)  &arrow; &f;
+(instance-of? 1 &lt;value&gt;)  &arrow; &t;
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>types=</primary></indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>&t;/&f;</type>
+              <methodname>type=</methodname>
+              <methodparam><parameter>type1</parameter></methodparam>
+              <methodparam><parameter>type2</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Determines whether two types are equal by comparing
+                them using <function>type&lt;=</function>.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(type= (type-of 'a) (type-of 'b))  &arrow; &t;
+(type= (type-of 1) (type-of 'a))  &arrow; &f;
+(type= (type-of 1) &lt;number&gt;)  &arrow; &t;
+(type= (type-of 'a) &lt;symbol&gt;)  &arrow; &t;
+(type= &lt;number;&gt; &lt;symbol&gt;)  &arrow; &f;
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>types&lt;=</primary></indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>&t;/&f;</type>
+              <methodname>types&lt;=</methodname>
+              <methodparam><parameter>type-list1</parameter></methodparam>
+              <methodparam><parameter>type-list2</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Determines whether all of the types in
+                <parameter>type-list1</parameter> are sub-types of the
+                the corresponding (by position) types in
+                <parameter>type-list2</parameter>.
+              </para>
+              <para>
+                A pair-wise comparison of the elements in the two
+                lists using <function>type&lt;=</function> is
+                performed until a test returns &f;, in which case
+                &f; is returned, or one (or both) of the lists has
+                been exhausted, in which case &t; is returned.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(types&lt;= (list &lt;number&gt; &lt;symbol&gt;)
+         (list &lt;value&gt; &lt;value&gt;))  &arrow; &t;
+(types&lt;= (list &lt;number&gt; &lt;symbol&gt;)
+         (list &lt;number&gt; &lt;number&gt;))  &arrow; &f;
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>instances-of?</primary></indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>&t;/&f;</type>
+              <methodname>instances-of?</methodname>
+              <methodparam><parameter>value-list</parameter></methodparam>
+              <methodparam><parameter>type-list</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Determines whether all of the values in
+                <parameter>value-list</parameter> are instances of the
+                the corresponding (by position) types in
+                <parameter>type-list</parameter>.
+              </para>
+              <para>
+                A pair-wise comparison of the elements in the two
+                lists using <function>instance-of?</function> is
+                performed until a test returns &f;, in which case
+                &f; is returned, or one (or both) of the lists has
+                been exhausted, in which case &t; is returned.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(instances-of? (list 1 'a)
+               (list &lt;number&gt; &lt;symbol&gt;))  &arrow; &t;
+(instances-of? (list 1 'a)
+               (list &lt;number&gt; &lt;number&gt;))  &arrow; &f;
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>types=</primary></indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>&t;/&f;</type>
+              <methodname>types=</methodname>
+              <methodparam><parameter>type-list1</parameter></methodparam>
+              <methodparam><parameter>type-list2</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Determines whether all of the types in
+                <parameter>type-list1</parameter> are equal to the
+                the corresponding (by position) types in
+                <parameter>type-list2</parameter>.
+              </para>
+              <para>
+                A pair-wise comparison of the elements in the two
+                lists using <function>type=</function> is
+                performed until a difference is found, in which ase
+                &f; is returned, or one (or both) of the lists has
+                been exhausted, in which case &t; is returned.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(types= (list &lt;number&gt; &lt;symbol&gt;)
+        (list &lt;number&gt; &lt;symbol&gt;))  &arrow; &t;
+(types= (list &lt;number&gt; &lt;symbol&gt;)
+        (list &lt;number&gt; &lt;number&gt;))  &arrow; &f;
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+      </para>
+    </sect2>
+    <sect2 id="TypeSystemHooks">
+      <title>Hooks</title>
+      <indexterm><primary>type-of-hook</primary></indexterm> 
+      <indexterm><primary>type-&lt;=-hook</primary></indexterm> 
+      <indexterm><primary>compare-typess-hook</primary></indexterm> 
+      <para>
+        Hooks are the main mechanism by which Scheme code can extend
+        the default type system. The core type system procedures
+        <function>type-of</function>, <function>type&lt;=</function>
+        and <function>compare-types</function> all provide such
+        hooks, called <function>type-of-hook</function>,
+        <function>type-&lt;=-hook</function>, and
+        <function>compare-types-hook</function> respectively.
+      </para>
+      <para>
+        Extension takes place by installing labelled handler
+        procedures on the hook, which is done by invoking the hook
+        procedure. Installing a handler procedure with a label of an
+        already installed procedure replaces the latter with the
+        former.
+      </para>
+      <para>
+        The handler procedures are called with a
+        <parameter>next</parameter> procedure as the first argument
+        and all the arguments of the call to the hook-providing
+        procedures as the remaining arguments. Typically a handler
+        procedure first determines whether it is applicable, i.e. is
+        capable of performing the requested comparison etc. If not it
+        calls the <parameter>next</parameter> handler procedure, which
+        invokes the next hook or, if no further hooks exist, the
+        default implementation of the hooked procedure.
+      </para>
+      <example>
+        <title>Hook Installation</title>
+        <para>
+          This example shows how &SISC;'s record type module adds
+          record types to the type system by installing handler
+          procedure on <function>type-of-hook</function> and
+          <function>type&lt;=-hook</function>.
+        </para>
+        <programlisting>
+(type-of-hook 'record
+  (lambda (next o)
+    (if (record? o)
+        (record-type o)
+        (next o))))
+
+(type&lt;=-hook 'record
+  (lambda (next x y)
+    (cond [(record-type? x)
+           (if (record-type? y)
+               (eq? x y)
+               (type&lt;= &lt;record&gt; y))]
+          [(record-type? y) #f]
+          [else (next x y)])))
+        </programlisting>
+      </example>
+    </sect2>
+    <sect2>
+      <title>Standard Types</title>
+      <indexterm><primary>&lt;value&gt;</primary></indexterm>
+      <indexterm><primary>&lt;eof&gt;</primary></indexterm>
+      <indexterm><primary>&lt;symbol&gt;</primary></indexterm>
+      <indexterm><primary>&lt;list&gt;</primary></indexterm>
+      <indexterm><primary>&lt;procedure&gt;</primary></indexterm>
+      <indexterm><primary>&lt;number&gt;</primary></indexterm>
+      <indexterm><primary>&lt;boolean&gt;</primary></indexterm>
+      <indexterm><primary>&lt;char&gt;</primary></indexterm>
+      <indexterm><primary>&lt;string&gt;</primary></indexterm>
+      <indexterm><primary>&lt;vector&gt;</primary></indexterm>
+      <indexterm><primary>&lt;input-port&gt;</primary></indexterm>
+      <indexterm><primary>&lt;output-port&gt;</primary></indexterm>
+      <para>
+        The type system pre-defines bindings for the native types
+        corresponding to all the data types defined in R5RS:
+        <literal>&lt;eof&gt;</literal>,
+        <literal>&lt;symbol&gt;</literal>,
+        <literal>&lt;list&gt;</literal>,
+        <literal>&lt;procedure&gt;</literal>,
+        <literal>&lt;number&gt;</literal>,
+        <literal>&lt;boolean&gt;</literal>,
+        <literal>&lt;char&gt;</literal>,
+        <literal>&lt;string&gt;</literal>,
+        <literal>&lt;vector&gt;</literal>,
+        <literal>&lt;input-port&gt;</literal>,
+        <literal>&lt;output-port&gt;</literal>. One notable exception
+        is that pairs and null are combined into a
+        <literal>&lt;list&gt;</literal> type.
+      </para>
+      <para>
+        The type system also defines a
+        <literal>&lt;value&gt;</literal> type that is the base type of
+        all &SISC; values, i.e. all &SISC; values are instances of
+        <literal>&lt;value&gt;</literal> and all types are sub-types
+        of <literal>&lt;value&gt;</literal>.
+      </para>
+      <para>
+        The representations of other native types can be obtained
+        using
+        <blockquote>
+          <para>
+            <indexterm><primary>make-type</primary></indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>type</type>
+              <methodname>make-type</methodname>
+              <methodparam><parameter>symbol</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Constructs a type representing a built-in type. The
+                <parameter>symbol</parameter> must denote a Java class
+                that is a sub-class of <classname>sisc.data.Value</classname>, the base of the &SISC; value type hierarchy.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define &lt;record&gt; (make-type '|sisc.modules.record.Record|))
+(type&lt;= &lt;record&gt; &lt;value&gt;)  &arrow; &t;
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+      </para>
+    </sect2>
+  </sect1>
+  <sect1 id="GenericProcedures">
+    <title>Generic Procedures</title>
+    <para>
+        &requires; 
+      <emphasis role="bold">
+        (import <emphasis>generic-procedures</emphasis>)
+      </emphasis>
+    </para>
+    <para>
+      Generic procedures are procedures that select and execute methods
+      based on the types of the arguments. Methods have a type
+      signature, which generic procedures use for method selection,
+      and contain a procedure which is invoked by generic procedures
+      when the method has been selected for execution.
+    </para>
+    <para>
+      Generic procedures have several advantages over ordinary
+      procedures:
+      <itemizedlist>
+        <listitem>
+          <para>
+            It is not necessary to come up with unique names for
+            procedures that perform the same operation on different
+            types of objects. This avoids cluttering the name
+            space. All these procedures can be defined separately
+            but yet be part of the same, single generic procedure.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            The functionality of a generic procedure can be extended
+            incrementally through code located in different
+            places. This avoids "spaghetti code" where adding a new
+            type of objects requires changes to existing pieces of
+            code in several locations.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            Code using generic procedures has a high degree of
+            polymorphism without having to resort to ugly and
+            hard-to-maintain test-type-and-dispatch branching.
+          </para>
+        </listitem>
+      </itemizedlist>
+    </para>
+    <para>
+      Generic procedures make extensive use of &SISC;s type
+      system. See <xref linkend="TypeSystem"/>.
+    </para>
+    <para>
+      The use of generic procedures proceeds through three stages:
+      <orderedlist>
+        <listitem>
+          <para>definition of the generic procedure</para>
+        </listitem>
+        <listitem>
+          <para>adding of methods to the generic procedure</para>
+        </listitem>
+        <listitem>
+          <para>adding of methods to the generic procedure</para>
+        </listitem>
+      </orderedlist>
+      The adding of methods can be interleaved with invocation,
+      i.e. methods can be added to generic procedures while they are
+      in use.
+    </para>
+    <sect2 id="genprocdef">
+      <title>Defining Generic Procedures</title>
+      <para>
+        There are one procedure and two special forms for defining
+        generic procedures. Typical usage will employ one of the
+        special forms.
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>make-generic-procedure</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>generic-procedure</type>
+              <methodname>make-generic-procedure</methodname>
+              <methodparam rep="repeat"><parameter>generic-procedure</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Creates a generic procedure. If
+                <parameter>generic-procedure</parameter> parameters
+                are specified, then their method lists are merged,
+                in effect combining the generic procedures into
+                one. For more details on generic procedure
+                combination see <xref
+                  linkend="GenericProcedureCombination"/>.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define pretty-print1 (make-generic-procedure))
+(define pretty-print2 (make-generic-procedure))
+&arrow; &lt;procedure&gt;
+(define pretty-print (make-generic-procedure pretty-print1
+                                             pretty-print2))
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>define-generic</primary></indexterm>
+            &syntax;
+            <methodsynopsis language="scheme">
+              <void/>
+              <methodname>define-generic</methodname>
+              <methodparam><parameter>name</parameter></methodparam>
+              <methodparam rep="repeat"><parameter>generic-procedure</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Creates a binding for <parameter>name</parameter> to a
+                new generic procedure.
+              </para>
+              <para>
+                This form is equivalent to
+                <literal>(define
+                </literal><parameter>name</parameter><literal>
+                  (make-generic-procedure
+                </literal><parameter>generic-procedure</parameter><literal> ...))</literal>.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-generic pretty-print1)
+(define-generic pretty-print2)
+(define-generic pretty-print pretty-print1 pretty-print2)
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>define-generics</primary></indexterm>
+            &syntax;
+            <methodsynopsis language="scheme">
+              <void/>
+              <methodname>define-generics</methodname>
+              <methodparam rep="repeat"><parameter>form</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <simplelist>
+                <member>
+                  where <parameter>form</parameter> is of
+                  the form <parameter>name</parameter> or
+                  <literal>(</literal><parameter>name</parameter>
+                  <parameter>generic-procedure</parameter>
+                  <literal>...)</literal>
+                </member>
+              </simplelist>
+              <para>
+                Creates bindings for several new generic procedures.
+              </para>
+              <para>
+                The form expands into several
+                <function>define-generic</function> forms.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-generic pretty-print1)
+(define-generic pretty-print2)
+(define-generics
+  foo
+  (pretty-print pretty-print1 pretty-print2)
+  bar)
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+      </para>
+    </sect2>
+    <sect2>
+      <title>Defining Methods</title>
+      <para>
+        Methods can be define and subsequently added to generic
+        procedures, or the two operations can be combined, which is
+        the typical usage.
+      </para>
+      <para>
+        There is one procedure and one special form to create methods:
+        <blockquote>
+          <para>
+            <indexterm><primary>make-method</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>method</type>
+              <methodname>make-method</methodname>
+              <methodparam><parameter>procedure</parameter></methodparam>
+              <methodparam><parameter>type-list</parameter></methodparam>
+              <methodparam><parameter>rest?</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Creates a new method containing
+                <parameter>procedure</parameter> whose type signature
+                is <parameter>type-list</parameter>. If
+                <parameter>rest?</parameter> is &t; then the procedure
+                can take rest arguments.
+              </para>
+              <para>
+                Generic procedures always invoke method procedures
+                with a special <parameter>next:</parameter> argument
+                as the first parameter (see <xref
+                linkend="GenericProcedureMethodSelection"/>), followed
+                by all the arguments of the generic procedure
+                invocation. Hence <parameter>procedure</parameter>
+                needs to accept <literal>(length
+                </literal><parameter>type-list</parameter><literal>)</literal>+1
+                arguments.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(make-method (lambda (next x y) (next x y))
+             (list &lt;number&gt; &lt;number&gt;)
+             #f)
+  &arrow; &lt;method&gt;
+(make-method (lambda (next x . rest) (apply + x rest))
+             (list &lt;number&gt;)
+             #t)
+  &arrow; &lt;method&gt;
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>method</primary></indexterm>
+            &syntax;
+            <methodsynopsis language="scheme">
+              <type>method</type>
+              <methodname>method</methodname>
+              <methodparam><parameter>signature</parameter></methodparam>
+              <methodparam><parameter>.</parameter></methodparam>
+              <methodparam><parameter>body</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <simplelist>
+                <member>
+                  where <parameter>signature</parameter> is of the
+                  form <literal>(</literal>[<literal>(next:</literal>
+                  <parameter>next</parameter><literal>)</literal>]
+                  <literal>(</literal><parameter>type</parameter>
+                  <parameter>param</parameter><literal>)</literal>
+                  ... [ <literal>.</literal>
+                  <parameter>rest</parameter>]<literal>)</literal>
+                </member>
+                <member>
+                  and <parameter>body</parameter> can contain anything
+                  that is valid inside the body of a
+                  <function>lambda</function>.
+                </member>
+              </simplelist>
+              <para>
+                Creates a method.
+              </para>
+              <para>
+                This form is similar to a <function>lambda</function>
+                form, except that all parameters must be typed. The
+                form expands into an invocation of the
+                <function>make-method</function> procedure.
+              </para>
+              <para>
+                The first parameter name in the method's signature can
+                be the special <literal>next:</literal> parameter. See
+                <xref linkend="GenericProcedureMethodSelection"/>.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(method ((next: next)(&lt;number&gt; x)(&lt;number&gt; y)) (next x y))
+  &arrow; &lt;method&gt;
+(method ((&lt;number&gt; x) . rest) (apply + x rest))
+  &arrow; &lt;method&gt;
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        There are two procedures to add methods to a generic
+        procedure:
+        <blockquote>
+          <para>
+            <indexterm><primary>add-method</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <void/>
+              <methodname>add-method</methodname>
+              <methodparam><parameter>generic-procedure</parameter></methodparam>
+              <methodparam><parameter>method</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Adds <parameter>method</parameter> to
+                <parameter>generic-procedure</parameter>. Any existing
+                method with the same signature as
+                <parameter>method</parameter> is removed.
+              </para>
+              <para>
+                Method addition is thread-safe.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-generic m)
+(add-method m (method ((next: next)(&lt;number&gt; x)(&lt;number&gt; y)) (next x y)))
+(add-method m (method ((&lt;number&gt; x) . rest) (apply + x rest)))
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>add-methods</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <void/>
+              <methodname>add-methods</methodname>
+              <methodparam><parameter>generic-procedure</parameter></methodparam>
+              <methodparam><parameter>method-list</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Adds all methods in <parameter>method-list</parameter>
+                to <parameter>generic-procedure</parameter>. Any
+                existing method with the same signature as one of the
+                methods in <parameter>method-list</parameter> is are
+                removed. When several methods in
+                <parameter>method-list</parameter> have the same
+                signature, only the last of these methods is added.
+              </para>
+              <para>
+                Method addition is thread-safe. Calling
+                <function>add-methods</function> instead of
+                <function>add-method</function> when adding several
+                methods to a generic procedure is more efficient.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-generic m)
+(add-methods m (list (method ((next: next)(&lt;number&gt; x)(&lt;number&gt; y)) (next x y))
+                     (method ((&lt;number&gt; x) . rest) (apply + x rest))))
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        The creation of methods and adding them to generic procedures
+        can be combined using one of two special forms:
+        <blockquote>
+          <para>
+            <indexterm><primary>define-method</primary></indexterm>
+            &syntax;
+            <methodsynopsis language="scheme">
+              <void/>
+              <methodname>define-method</methodname>
+              <methodparam><parameter>(generic-procedure . signature)</parameter></methodparam>
+              <methodparam><parameter>.</parameter></methodparam>
+              <methodparam><parameter>body</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Creates a method and adds it to
+                <parameter>generic-procedure</parameter>.
+              </para>
+              <para>
+                This form is equivalent to
+                <literal>(add-method</literal>
+                <parameter>generic-procedure</parameter>
+                <literal>(method</literal>
+                <parameter>signature</parameter> <literal>.</literal>
+                <parameter>body</parameter><literal>)</literal>
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-generic m)
+(define-method (m (next: next)(&lt;number&gt; x)(&lt;number&gt; y)) (next x y)))
+(define-method (m (&lt;number&gt; x) . rest) (apply + x rest))
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>define-methods</primary></indexterm>
+            &syntax;
+            <methodsynopsis language="scheme">
+              <void/>
+              <methodname>define-methods</methodname>
+              <methodparam><parameter>generic-procedure</parameter></methodparam>
+              <methodparam rep="repeat"><parameter>(signature . body)</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Creates several methods and adds them to
+                <parameter>generic-procedure</parameter>.
+              </para>
+              <para>
+                This form is equivalent to
+                <literal>(add-methods</literal>
+                <parameter>generic-procedure</parameter>
+                <literal>(list (method</literal>
+                <parameter>signature</parameter> <literal>.</literal>
+                <parameter>body</parameter><literal>) ...)</literal>
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-generic m)
+(define-methods m
+  [((next: next)(&lt;number&gt; x)(&lt;number&gt; y)) (next x y)]
+  [((&lt;number&gt; x) . rest) (apply + x rest)])
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        The list of methods contained in a generic procedure
+        can be obtained as follows:
+        <blockquote>
+          <para>
+            <indexterm><primary>generic-procedure-methods</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>method-list</type>
+              <methodname>generic-procedure-methods</methodname>
+              <methodparam><parameter>generic-procedure</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the list of methods currently associated with
+                <parameter>generic-procedure</parameter>.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-generic m)
+(define-methods m
+  [((next: next)(&lt;number&gt; x)(&lt;number&gt; y)) (next x y)]
+  [((&lt;number&gt; x) . rest) (apply + x rest)])
+(generic-procedure-methods m)  &arrow; (&lt;method&gt; &lt;method&gt;)
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+      </para>
+    </sect2>
+    <sect2 id="invokinggenerics">
+      <title>Invoking Generic Procedures</title>
+      <para>
+        Generic procedures are invoked like ordinary procedures. Upon
+        invocation, generic procedures compute a list of applicable
+        methods, ordered by their specificity, based on the types
+        of the parameters supplied in the invocation. If the resulting
+        list is empty an error is raised. Otherwise the first
+        (i.e. most specific) method is invoked. The remaining methods
+        come into play when a method invokes the "next best matching
+        method". See <xref linkend="GenericProcedureMethodSelection"/>
+        for details on the method selection algorithms.
+      </para>
+      <para>
+        The logic by which generic procedures select methods for
+        invocation is made accessible to the programmer through the
+        following procedures:
+        <blockquote>
+          <para>
+            <indexterm><primary>applicable-methods</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>method-list</type>
+              <methodname>applicable-methods</methodname>
+              <methodparam><parameter>generic-procedure</parameter></methodparam>
+              <methodparam><parameter>type-list</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns all methods of
+                <parameter>generic-procedure</parameter> that are
+                applicable, as determined by
+                <function>method-applicable?</function> to parameters
+                of the types specified in
+                <parameter>type-list</parameter>. The methods are
+                returned ordered by their specificity, determined
+                by pair-wise comparison using
+                <function>compare-methods</function>.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-generic m)
+(define-methods m
+  [((next: next)(&lt;number&gt; x)(&lt;number&gt; y)) (next x y)]
+  [((&lt;number&gt; x) . rest) (apply + x rest)])
+(applicable-methods m (list &lt;number&gt; &lt;number&gt;))
+  &arrow; (&lt;method&gt; &lt;method&gt;)
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>method-applicable?</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>&t;/&f;</type>
+              <methodname>method-applicable?</methodname>
+              <methodparam><parameter>method</parameter></methodparam>
+              <methodparam><parameter>type-list</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Determines whether <parameter>method</parameter> is
+                applicable to arguments of the types specified in
+                <parameter>type-list</parameter>.
+              </para>
+              <para>
+                The rules for determining method applicability are
+                defined in <xref
+                  linkend="GenericProcedureMethodSelection"/>.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(method-applicable? (method ((next: next)(&lt;number&gt; x)(&lt;number&gt; y)) (next x y))
+                    (list &lt;number&gt;))
+  &arrow; &f;
+(method-applicable? (method ((&lt;number&gt; x) . rest) (apply + x rest))
+                    (list &lt;number&gt;))
+  &arrow; &t;
+              </programlisting>
+            </informalexample>
+          </para>
+          <para id="comparemethods">
+            <indexterm><primary>compare-methods</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>'equal,'more-specific,'less-specific</type>
+              <methodname>compare-methods</methodname>
+              <methodparam><parameter>method</parameter></methodparam>
+              <methodparam><parameter>method</parameter></methodparam>
+              <methodparam><parameter>type-list</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Determines the relationship of two methods by
+                comparing their type signatures against each other and
+                using the supplied <parameter>type-list</parameter>
+                for disambiguation. Both methods must be applicable to
+                <parameter>type-list</parameter>, as determined by
+                <function>method-applicable?</function>.
+              </para>
+              <para>
+                The comparison algorithm is described in <xref
+                  linkend="GenericProcedureMethodSelection"/>.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(compare-methods (method ((next: next)(&lt;number&gt; x)(&lt;number&gt; y)) (next x y))
+                 (method ((&lt;number&gt; x) . rest) (apply + x rest))
+                 (list &lt;number&gt; &lt;number&gt;))
+                &arrow; 'more-specific
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        Calling a generic will dispatch on the argument types as
+        described above.  This dispatch can change if new methods are
+        added to a generic procedure.  On occasion the programmer may
+        wish to fix the dispatch of a particular generic function,
+        either to guarantee a specific function is called for a given
+        part of a Scheme program, or to improve performance by
+        avoiding the type dispatch at each call.  &SISC; provides a
+        syntactic form which allows the programmer to bind/rebind a
+        generic procedure to a new lexical variable which is the
+        monomorphized variant of the function call.  
+        <blockquote>
+          <para>
+            <indexterm><primary>let-monomorphic</primary></indexterm>
+            &syntax;
+            <methodsynopsis language="scheme">        
+              <void/>
+              <methodname>let-monomorphic</methodname>
+              <methodparam><parameter>bindings</parameter></methodparam>
+              <methodparam
+            rep="repeat"><parameter>expressions</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <simplelist>
+                <member>
+                  where <parameter>bindings</parameter> are of the
+                  form <literal>((<parameter>generic</parameter>
+                  <parameter>type</parameter>...) ...)
+                  </literal>
+                </member>
+                <member>
+                  or <literal>(((<parameter>binding</parameter>
+                    <parameter>generic</parameter>)
+                  <parameter>type</parameter>...) ...)</literal>
+                </member>
+              </simplelist>
+              <para>
+                In the former binding form, the generic procedure
+                specified by <parameter>generic</parameter> is rebound
+                lexically with the same name, and monomorphized to the
+                method which is applicable for the given types.  In
+                the latter form, the generic is rebound lexically to
+                the new name specified by
+                <parameter>binding</parameter>.  Both forms may be
+                used in a given call to <function>let-monomorphic</function>.
+              </para>
+              <para>
+                The bindings are made as if by
+                <function>let</function>, i.e. no assumptions can be
+                made as to the order in which they are bound.  The
+                expressions are evaluated as in <function>let</function>
+                as well, in order using an implicit
+                <function>begin</function>.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(let-monomorphic ([foo-generic &lt;number&gt; &lt;string&gt;]
+                  [(bar bar-generic) &lt;char&gt;])
+  (foo-generic 3 "four")
+  (bar #\x))
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+      </para>
+    </sect2>
+    <sect2>
+      <title>Procedures on Methods</title>
+      <indexterm><primary>&lt;method&gt;</primary></indexterm>
+      <para>
+        Methods are instances of the abstract data type
+        <literal>&lt;method&gt;</literal>, which has range of
+        procedures:
+        <blockquote>
+          <para>
+            <indexterm><primary>method?</primary></indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>&t;/&f;</type>
+              <methodname>method?</methodname>
+              <methodparam><parameter>value</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns &t; if <parameter>value</parameter> is a
+                method, &f; otherwise.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(method? (method ((&lt;number&gt; x) . rest) (apply + x rest)))
+  &arrow; &t;
+(method? (lambda (x) x))
+  &arrow; &f;
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>method-procedure</primary></indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>procedure</type>
+              <methodname>method-procedure</methodname>
+              <methodparam><parameter>method</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns <parameter>method</parameter>'s body as a
+                procedure. Note that a method's procedure always takes
+                a "next method" procedure as the first argument. See
+                <xref linkend="GenericProcedureMethodSelection"/>.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+((method-procedure (method ((&lt;number&gt; x) . rest) (apply + x rest)))
+ #f 1 2 3)
+  &arrow; 6
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>method-types</primary></indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>type-list</type>
+              <methodname>method-types</methodname>
+              <methodparam><parameter>method</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns <parameter>method</parameter>'s type
+                signature, i.e. the types of the declared mandatory
+                parameters.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(method-types (method ((next: next)(&lt;number&gt; x)(&lt;number&gt; y) . rest) (next x y)))
+  &arrow; (&lt;number&gt; &lt;number&gt;)
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>method-rest?</primary></indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>&t;/&f;</type>
+              <methodname>method-rest?</methodname>
+              <methodparam><parameter>method</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns &t; if <parameter>method</parameter> has a
+                rest parameter, &f; otherwise.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(method-rest? (method ((&lt;number&gt; x) . rest) (apply + x rest)))
+  &arrow; &t;
+(method-rest? (method ((next: next)(&lt;number&gt; x)(&lt;number&gt; y) . rest) (next x y)))
+  &arrow; &f;
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>method-arity</primary></indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>number</type>
+              <methodname>method-arity</methodname>
+              <methodparam><parameter>method</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the number of mandatory arguments of
+                <parameter>method</parameter>. Note that the special
+                <literal>next:</literal> parameter is not counted.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(method-arity (method ((&lt;number&gt; x) . rest) (apply + x rest)))
+  &arrow; 1
+(method-arity (method ((next: next)(&lt;number&gt; x)(&lt;number&gt; y) . rest) (next x y)))
+  &arrow; 2
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>method=</primary></indexterm>
+              &procedure;
+            <methodsynopsis language="scheme">
+              <type>&t;/&f;</type>
+              <methodname>method=</methodname>
+              <methodparam><parameter>method</parameter></methodparam>
+              <methodparam><parameter>method</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns &t; if the two methods have identical
+                signatures, i.e. have equal parameter types (as
+                determined by <function>types=</function>) and rest
+                parameter flag. &f; is returned otherwise.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(method= (method ((next: next)(&lt;number&gt; x)(&lt;number&gt; y) . rest) (next x y))
+         (method ((&lt;number&gt; a)(&lt;number&gt; b) . rest) (+ x y)))
+  &arrow; &t;
+(method= (method ((&lt;number&gt; x)(&lt;number&gt; y) . rest) (+ x y))
+         (method ((&lt;number&gt; a)(&lt;number&gt; b)) (+ x y)))
+  &arrow; &f;
+(method= (method ((&lt;number&gt; x)(&lt;value&gt; y)) (+ x y))
+         (method ((&lt;number&gt; a)(&lt;number&gt; b)) (+ x y)))
+  &arrow; &f;
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+      </para>
+    </sect2>
+    <sect2>
+      <title>Miscellaneous</title>
+      <sect3 id="GenericProcedureCombination">
+        <title>Generic Procedure Combination</title>
+        <para>
+          Generic procedure combination merges the method lists of
+          multiple generic procedures. The typical scenario for using
+          this features is when several modules have defined generic
+          procedure (and procedures using these generic procedures)
+          that perform identical operations but on different data
+          types. Generic procedure combination extends to coverage of
+          the individual generic procedures and the dependent
+          procedures to the combined set of data types.  Furthermore,
+          the coverage of the dependent procedures is implicitly
+          extended to the combined set of data types.
+        </para>
+        <informalexample>
+          <para>
+            The following example illustrates how generic procedure
+            combination can be used to combine the functionality of
+            two <function>p-append</function> procedures defined
+            independently by two modules. It also shows how generic
+            procedure combination implicitly extends the coverage of
+            the <function>p-reverse-append</function> and
+            <function>p-repeat</function> procedures defined by the
+            modules.
+          </para>
+          <programlisting>
+(import* misc compose)
+(module foo
+    (p-append p-reverse-append)
+  (define (p-reverse-append . args)
+    (apply p-append (reverse args)))
+  (define-generic p-append)
+  (define-methods p-append
+    [((&lt;list&gt; x) . rest)
+     (apply append x rest)]
+    [((&lt;vector&gt; x) . rest)
+     (list-&gt;vector (apply append
+                          (vector-&gt;list x)
+                          (map vector-&gt;list rest)))]))
+(module bar
+    (p-append p-repeat)
+  (define (p-repeat n x)
+    (let loop ([res '()]
+               [n   n])
+      (if (= n 0)
+          (apply p-append res)
+          (loop (cons x res) (- n 1)))))
+  (define-generic p-append)
+  (define-methods p-append
+    [((&lt;string&gt; x) . rest)
+     (apply string-append x rest)]
+    [((&lt;symbol&gt; x) . rest)
+     (string-&gt;symbol (apply string-append
+                            (symbol-&gt;string x)
+                            (map symbol-&gt;string rest)))]))
+
+(import* foo (p-append1 p-append) p-reverse-append)
+(import* bar (p-append2 p-append) p-repeat)
+(define-generic p-append p-append1 p-append2)
+(define-method (p-append (&lt;procedure&gt; x) . rest)
+  (apply compose x rest))
+
+(p-append '(a b))  &arrow; '(a b)
+(p-append '(a b) '(c d) '(e f))  &arrow; '(a b c d e f)
+(p-append '#(a b))  &arrow; '#(a b)
+(p-append '#(a b) '#(c d) '#(e f))  &arrow; '#(a b c d e f)
+(p-append "ab")  &arrow; "ab"
+(p-append "ab" "cd" "ef")  &arrow; "abcdef"
+(p-append 'ab)  &arrow; 'ab
+(p-append 'ab 'cd 'ef)  &arrow; 'abcdef
+((p-append car cdr cdr cdr) '(1 2 3 4))  &arrow; 4
+
+(p-reverse-append "ab" "cd" "ef")  &arrow; "efcdab"
+(p-repeat 3 '(a b))  &arrow; '(a b a b a b)
+((p-reverse-append cdr cdr cdr car) '(1 2 3 4))  &arrow; 4
+((p-repeat 3 cdr) '(1 2 3 4))  &arrow; (4)
+          </programlisting>
+        </informalexample>
+      </sect3>
+      <sect3 id="GenericProcedureScoping">
+        <title>Scoping Rules</title>
+        <para>
+          Generic procedures are lexically scoped, but their methods
+          are not. Hence defining methods in a local scope is
+          generally a bad idea. One exception are module
+          definitions. It is perfectly safe for modules to define
+          private (i.e. not exported) generic procedures and add
+          methods to them without interfering with other
+          modules. However, care must be taken when generic procedures
+          are imported or exported - methods are added to generic
+          procedures when the module gets <emphasis>defined</emphasis>
+          rather then when it gets imported.
+        </para>
+        <informalexample>
+          <para>
+            The following example illustrates the scoping rules.
+          </para>
+          <programlisting>
+(define-generic m)
+(define-method (m (&lt;value&gt; v)) v)
+(m 1)  &arrow; 1
+(let ([x 1])
+  (define-method (m (&lt;number&gt; v)) (+ x v))
+  (m 1))  &arrow; 2
+(m 1)  &arrow; 2
+
+(module foo
+    (m)
+  (define-generic m)
+  (define-method (m (&lt;value&gt; v)) v))
+(import foo)
+(m 1)  &arrow; 1
+(module bar
+    ()
+  (import foo)
+  (define-method (m (&lt;number&gt; v)) (+ 1 v)))
+(m 1)  &arrow; 2
+          </programlisting>
+        </informalexample>
+      </sect3>
+      <sect3 id="GenericProcedureMethodSelection">
+        <title>Method Selection</title>
+        <para>
+          When generic procedures are invoked they select the most
+          specific applicable method and call it, with the remaining
+          applicable methods being made available to the invoked
+          method via the <parameter>next:</parameter>.
+        </para>
+        <para>
+          Method applicability is determined on the basis of the types
+          of the parameters passed in the invocation of the generic
+          procedure. A method is applicable to a list of parameter
+          types if and only if the following conditions are met:
+          <itemizedlist spacing="compact">
+            <listitem>
+              <para>
+                If the method accepts rest arguments then the length
+                of the list of parameter types must be equal or
+                greater than the method arity (as returned by
+                <function>method-arity</function>).
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                If the method does not accepts rest arguments then the
+                length of the list of parameter types must be equal to
+                the method arity (as returned by
+                <function>method-arity</function>).
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                All the types in the method's type signature (as
+                returned by <function>method-types</function>) must be
+                super-types of the corresponding parameter types. This
+                comparison is performed using the
+                <function>types&lt;=</function> procedure.
+              </para>
+            </listitem>
+          </itemizedlist>
+          This algorithm is encapsulated by the
+          <function>method-applicable?</function> procedure.
+        </para>
+        <para>
+          Method specificity is an ordering relation on applicable
+          methods with respect to a specific list of parameter
+          types. Informally, the relative specificity of two methods
+          is determined by performing a left-to-right comparison of
+          the type signatures of the two methods and the parameter
+          types using <function>compare-types</function>, returning
+          the result of the type comparison at the point of the first
+          discernable difference.
+        </para>
+        <para>
+          More formally, the relative specificity of two applicable
+          methods is computed by a triple-wise comparison on
+          successive elements of the method signatures (as returned by
+          <function>method-types</function>) and actual parameter
+          types, using <function>compare-types</function>, such that
+          <itemizedlist>
+            <listitem>
+              <para>
+                If we run out of elements in both method signatures
+                then
+                <itemizedlist>
+                  <listitem>
+                    <para>
+                      If both or neither method return rest arguments
+                      (as determined by
+                      <function>method-rest?</function>) then the
+                      methods are of equal specificity.
+                    </para>
+                  </listitem>
+                  <listitem>
+                    <para>
+                      If the first method takes rest arguments (as
+                      determined by <function>method-rest?</function>)
+                      then the first method is less specific than the
+                      second.
+                    </para>
+                  </listitem>
+                  <listitem>
+                    <para>
+                      If the second method takes rest arguments (as
+                      determined by <function>method-rest?</function>)
+                      then the first method is more specific than the
+                      second.
+                    </para>
+                  </listitem>
+                </itemizedlist>
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                If we run out of elements in the first method's
+                signature only then the first method is less specific
+                than the second.
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                If we run out of elements in the second method's
+                signature only then the first method is more specific
+                than the second.
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                If <function>compare-types</function> returns
+                <literal>'equal</literal> we proceed to the next
+                triple.
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                If <function>compare-types</function> returns
+                <literal>'less-specific</literal> then the first
+                method is less specific than the second.
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                If <function>compare-types</function> returns
+                <literal>'more-specific</literal> then the first
+                method is more specific than the second.
+              </para>
+            </listitem>
+          </itemizedlist>
+          This algorithm is encapsulated by the
+          <function>compare-methods</function> procedure.
+        </para>
+        <para>
+          The <function>method</function> form and derived forms (i.e.
+          <function>define-method</function> and
+          <function>define-methods</function>) permit the
+          specification of a special first parameter to the method
+          invocation. When a generic procedure invokes a method, this
+          parameter is bound to a procedure that when called will
+          invoke the "next best matching" method. This is the next
+          method in the list of applicable methods returned by
+          <function>applicable-methods</function> when it was called
+          by the generic procedure upon invocation.
+        </para>
+        <para>
+          If no "next best matching" method exists, i.e. the current
+          method is the last in the list, then the next parameter is
+          &f;. This allows methods to invoke the next best matching
+          method selectively depending on whether it is present. This
+          is an important feature since the dynamic nature of method
+          selection makes it impossible to determine at the time of
+          writing the method whether there is going to be a next best
+          matching method.
+        </para>
+        <para>
+          The next best matching method must be invoked with arguments
+          to which the current method is applicable.
+        </para>
+        <informalexample>
+          <para>
+            The following example illustrates the method selection
+            algorithm, and use of the <literal>next:</literal>
+            parameter:
+          </para>
+          <programlisting>
+(define-generic m)
+(define-methods m
+  [((next: next) (&lt;number&gt; x) (&lt;value&gt; y) (&lt;number&gt; z) . rest)
+   (cons 'a (if next (apply next x y z rest) '()))]
+  [((next: next) (&lt;number&gt; x) (&lt;value&gt; y) (&lt;number&gt; z))
+   (cons 'b (if next (next x y z) '()))]
+  [((next: next) (&lt;number&gt; x) (&lt;number&gt; y) . rest)
+   (cons 'c (if next (apply next x y rest) '()))]
+  [((next: next) (&lt;number&gt; x) (&lt;number&gt; y) (&lt;value&gt; z))
+   (cons 'd (if next (next x y z) '()))])
+(m 1 1 1)  &arrow; '(d c b a)
+(m 1 1)  &arrow; '(c)
+(m 1 'x 2)  &arrow; '(b a)
+(m 1 1 'x)  &arrow; '(d c)
+(m 1 'x 'x)  &arrow; error
+          </programlisting>
+        </informalexample>
+      </sect3>
+    </sect2>
+  </sect1>
+  <sect1 id="ObjectSystem">
+    <title>Object System</title>
+    <para>
+        &requires; 
+      <emphasis role="bold">
+        (import <emphasis>oo</emphasis>)
+      </emphasis>
+    </para>
+    <para>
+      Programming in the &SISC; object system usually entailse the
+      definition of generic procedures, so typically one also has to
+      <emphasis role="bold">
+        (import <emphasis>generic-procedures</emphasis>)
+      </emphasis>.
+    </para>
+    <para>
+      The key features of the object system are:
+      <itemizedlist>
+        <listitem>
+          <para>
+            class-based, with a restricted form of multiple
+            inheritance
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            instance variables (aka <emphasis>slots</emphasis>) are
+            accessed and modified via generic procedures
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            generic procedures implement all behaviour; there is no
+            separate notion of <emphasis>methods</emphasis>
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            introspection API
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            complete integration into &SISC;'s extensible type system
+          </para>
+        </listitem>
+      </itemizedlist>
+    </para>
+    <para>
+      The examples in this section follow a few naming conventions:
+      <simplelist>
+        <member>
+            Classes are types in the &SISC; type system and therefore
+            class names follow the naming convention for type names
+            (see
+            <xref linkend="TypeSystem"/>), for example
+            <literal>&lt;foo-bar-baz&gt;</literal>.
+        </member>
+        <member>
+            Generic procedures whose sole purpose it is to access
+            slots of objects have names starting with
+            <literal>:</literal> and otherwise follow the usual Scheme
+            identifier naming conventions, i.e. all lower-case with
+            dashes for separating words. For example
+            <literal>:foo-bar-baz</literal>. This helps to visually
+            distinguish slot access from ordinary procedure
+            invocations and avoids name clashes with other procedures.
+        </member>
+        <member>
+            Generic procedures whose sole purpose it is to modify
+            slots of objects, are named after the corresponding
+            accessor procedure (whether that exists or not) with a
+            <literal>!</literal> appended, thus following the usual
+            Scheme convention of denoting procedures that perform
+            mutations on their arguments. For example
+            <literal>:foo-bar-baz!</literal>.
+        </member>
+      </simplelist>
+    </para>
+    <sect2>
+      <title>Classes</title>
+      <indexterm><primary>&lt;class&gt;</primary></indexterm>
+      <indexterm><primary>&lt;object&gt;</primary></indexterm>
+      <para>
+        Classes have a name, a list of direct superclasses, and a list
+        of direct slot descriptions. All classes are instances of the
+        type &lt;class&gt; and are themselves types in &SISC;'s
+        extensible type system. All classes are direct or indirect
+        sub-classes of the class &lt;object&gt;, except for
+        &lt;object&gt; itself, which has no super-classes.
+      </para>
+      <para>
+        Classes are created as follows:
+        <blockquote>
+          <para>
+            <indexterm><primary>make-class</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>class</type>
+              <methodname>make-class</methodname>
+              <methodparam><parameter>symbol</parameter></methodparam>
+              <methodparam><parameter>class-list</parameter></methodparam>
+              <methodparam><parameter>slot-list</parameter></methodparam>
+              <methodparam choice="opt"><parameter>guid-symbol</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Creates a class named <parameter>symbol</parameter>
+                with the classes in <parameter>class-list</parameter>
+                as its direct super-classes. See <xref
+                  linkend="OOInheritance"/> for restrictions on
+                super-classes. When no super-classes are specified, the
+                superclass is &lt;object&gt;.
+              </para>
+              <para>
+                <parameter>slot-list</parameter> is a list of slot
+                names (symbols).
+              </para>
+              <para>
+                Slots are inherited by sub-classes. For details on
+                slot inheritance see <xref linkend="OOInheritance"/>.
+              </para>
+              <para>
+                If <parameter>guid-symbol</parameter> is specified
+                then the new class is
+                <emphasis>non-generative</emphasis>: if
+                <parameter>guid-symbol</parameter> is already bound to
+                a class then that class is modified, instead of a new
+                class being created. Non-generative classes are
+                serialised specially such that deserialising them also
+                performs this check. By contrast, deserialisation of
+                ordinary, generative classes and their instances
+                results in duplicate types being created, which is
+                usually not desirable.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-generics :x :y :y!)
+(define &lt;foo&gt; (make-class '&lt;foo&gt; '() '()))
+(define &lt;bar&gt; (make-class '&lt;bar&gt; '() '()))
+(define &lt;baz&gt; (make-class '&lt;baz&gt; (list &lt;foo&gt; &lt;bar&gt;)
+                          '(x y)))
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>define-class</primary></indexterm>
+            &syntax;
+            <methodsynopsis language="scheme">
+              <void/>
+              <methodname>define-class</methodname>
+              <methodparam><parameter>name-and-supers</parameter></methodparam>
+              <methodparam rep="repeat"><parameter>slot-def</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <simplelist>
+                <member>
+                  where <parameter>name-and-supers</parameter> is of the
+                  form
+                  <literal>(</literal><parameter>class-name</parameter> <parameter>super-class</parameter> <literal>...)</literal>
+                </member>
+                <member>
+                  and <parameter>slot-def</parameter> is of the form
+                  <literal>(</literal>
+                  <parameter>slot-name</parameter>
+                  [<parameter>accessor</parameter> [<parameter>modifier</parameter>]]
+                  <literal>)</literal>
+                </member>
+              </simplelist>
+              <para>
+                Binds <parameter>class-name</parameter> to a newly
+                created class.
+              </para>
+              <para>
+                This form expands into a definition with call to
+                <function>make-class</function> on the right hand
+                side.
+              </para>
+              <para>
+                <parameter>slot-name</parameter> names a
+                slot. <parameter>accessor</parameter> must be a generic
+                procedure. An accessor method for the slot will be
+                added to it. <parameter>modifier</parameter> must be a
+                generic procedure. A modifier method for the slot will
+                be added to it.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-generics :x :y :y!)
+(define-class (&lt;foo&gt;))
+(define-class (&lt;bar&gt;))
+(define-class (&lt;baz&gt; &lt;foo&gt; &lt;bar&gt;)
+  (x :x)
+  (y :y :y!))
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>define-nongenerative-class</primary></indexterm>
+            &syntax;
+            <methodsynopsis language="scheme">
+              <void/>
+              <methodname>define-nongenerative-class</methodname>
+              <methodparam><parameter>name-and-supers</parameter></methodparam>
+              <methodparam><parameter>guid</parameter></methodparam>
+              <methodparam rep="repeat"><parameter>slot-def</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                This is the same as <function>define-class</function>,
+                except that the resulting class is
+                <emphasis>non-generative</emphasis> with
+                <parameter>guid</parameter>, a symbol, as the unique
+                identifier. The significance of this is explained in
+                <function>make-class</function>.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        One can test whether a particular value is a class:
+        <blockquote>
+          <para>
+            <indexterm><primary>class?</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>&t;/&f;</type>
+              <methodname>class?</methodname>
+              <methodparam><parameter>value</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns &t; if <parameter>value</parameter> is a
+                class, &f; otherwise.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(class? (make-class '&lt;foo&gt; '() '()))  &arrow; &t;
+(class? (lambda (x) x))  &arrow; &f;
+(define-class (&lt;foo&gt;))
+(class? &lt;foo&gt;)  &arrow; &t;
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        The following procedures provide access to the various
+        elements of the &lt;class&gt; abstract data type:
+        <blockquote>
+          <para>
+            <indexterm><primary>class-name</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>symbol</type>
+              <methodname>class-name</methodname>
+              <methodparam><parameter>class</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the name of the class
+                <parameter>class</parameter>.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(class-name (make-class '&lt;foo&gt; '() '()))  &arrow; '&lt;foo&gt;
+(define-class (&lt;foo&gt;))
+(class-name &lt;foo&gt;)  &arrow; '&lt;foo&gt;
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>class-direct-superclasses</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>class-list</type>
+              <methodname>class-direct-superclasses</methodname>
+              <methodparam><parameter>class</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the list of direct super-classes of the class
+                <parameter>class</parameter>.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-class (&lt;foo&gt;))
+(define-class (&lt;bar&gt;))
+(define-class (&lt;baz&gt; &lt;foo&gt; &lt;bar&gt;))
+(map class-name (class-direct-super-classes &lt;foo&gt;)  &arrow; '())
+(map class-name (class-direct-super-classes &lt;baz&gt;)  &arrow; '(&lt;foo&gt; &lt;bar&gt;))
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>class-direct-slots</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>slot-list</type>
+              <methodname>class-direct-slots</methodname>
+              <methodparam><parameter>class</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the list of descriptions of the direct slots
+                of the class <parameter>class</parameter>.
+              </para>
+              <para>
+                Slot descriptions are created by
+                <function>make-class</function> for each slot
+                definitions. The procedures operating on slot
+                descriptions are documented in <xref
+                linkend="OOSlots"/>.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(class-direct-slots (make-class '&lt;foo&gt; '() '()))  &arrow; '()
+(define-generics :x :y :y!)
+(define-class (&lt;baz&gt;)
+  (x :x)
+  (y :y :y!))
+(class-direct-slots &lt;baz&gt; &arrow; (&lt;slot&gt; &lt;slot&gt;))
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+      </para>
+    </sect2>
+    <sect2 id="OOSlots">
+      <title>Slots</title>
+      <indexterm><primary>&lt;slot&gt;</primary></indexterm>
+      <para>
+        Slot descriptions are instances of the abstract data
+        type &lt;slot&gt;. They are created implicitly when classes
+        are created; it is not possible to create them directly.
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>slot?</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>&t;/&f;</type>
+              <methodname>slot?</methodname>
+              <methodparam><parameter>value</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns &t; if <parameter>value</parameter> is a slot
+                description, &f; otherwise.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-class (&lt;baz&gt;) (x) (y))
+(map slot? (class-direct-slots &lt;baz&gt;))  &arrow; '(&t; &t;)
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>slot-name</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>symbol</type>
+              <methodname>slot-name</methodname>
+              <methodparam><parameter>slot</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the name of the slot described by
+                <parameter>slot</parameter>. This is the name given to
+                the slot when its class was created.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-class (&lt;baz&gt;) (x) (y))
+(map slot-name (class-direct-slots &lt;baz&gt;))  &arrow; '(x y)
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>slot-class</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>class</type>
+              <methodname>slot-class</methodname>
+              <methodparam><parameter>slot</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the class to which the slot description
+                <parameter>slot</parameter> belongs.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-class (&lt;baz&gt;) (x) (y))
+(eq? (slot-class (car (class-direct-slots &lt;baz&gt;))) &lt;baz&gt;)  &arrow; &t;
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        Slot definitions can produce procedures that allow access and
+        modification of slots. Since slots can be defined without
+        accessors and modifiers, this may be the only way to
+        access/modify a particular slot.
+        <blockquote>
+          <para>
+            <indexterm><primary>slot-accessor</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>procedure</type>
+              <methodname>slot-accessor</methodname>
+              <methodparam><parameter>slot</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns a procedure than when applied to an instance
+                of <parameter>slot</parameter>'s class, will return
+                the slot's value on that instance.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-class (&lt;baz&gt;) (x))
+(define baz (make &lt;baz&gt;))
+((slot-accessor (car (class-direct-slots &lt;baz&gt;))) baz) &arrow; 1
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>slot-modifier</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>procedure</type>
+              <methodname>slot-modifier</methodname>
+              <methodparam><parameter>slot</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns a procedure than when applied to an instance
+                of <parameter>slot</parameter>'s class and a value,
+                will set the slot's value on that instance to the
+                supplied value.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-generics :x :x!)
+(define-class (&lt;baz&gt;) (x :x))
+(define baz (make &lt;baz&gt;))
+(:x baz)  &arrow; 1
+((slot-modifier (car (class-direct-slots &lt;baz&gt;))) baz 2)
+(:x baz)  &arrow; 2
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        In addition to <emphasis>procedures</emphasis> for slot access
+        and modification, slot definitions can also produce equivalent
+        <emphasis>methods</emphasis>. These are suitable for adding to
+        generic procedures and can, for instance, be used to achieve
+        the same effect as specifying generic procedures for slot
+        access/modification at class creation time.
+        <blockquote>
+          <para>
+            <indexterm><primary>slot-accessor-method</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>method</type>
+              <methodname>slot-accessor-method</methodname>
+              <methodparam><parameter>slot</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                This is the same as
+                <function>slot-accessor</function>, except it
+                returns a method instead of a procedure.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>slot-modifier-method</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>method</type>
+              <methodname>slot-modifier-method</methodname>
+              <methodparam><parameter>slot</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                This is the same as
+                <function>slot-modifier</function>, except it
+                returns a method instead of a procedure.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+    </sect2>
+    <sect2>
+      <title>Instantiation</title>
+      <indexterm><primary>initialize</primary></indexterm>
+      <para>
+        Class instantiation is a two-stage process. First a new object
+        is created whose type is that of the instantiated class. Then
+        the <function>initialize</function> generic procedure is
+        called with the newly created instance and additional
+        arguments. <function>initialize</function> serves the same
+        purpose as constructors in other object systems.
+      </para>
+      <para>
+        All the phases of class instantiation are carried out by a
+        single procedure:
+        <blockquote>
+          <para>
+            <indexterm><primary>make</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>instance</type>
+              <methodname>make</methodname>
+              <methodparam><parameter>class</parameter></methodparam>
+              <methodparam rep="repeat"><parameter>value</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Creates a new object that is an instance of
+                <parameter>class</parameter>. The instance and
+                <parameter>value</parameter>s are then passed as
+                parameters to a call to the
+                <function>initialize</function> generic procedure. The
+                result of calling <function>make</function> is the
+                instance.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-generics :x :x!)
+(define-class (&lt;baz&gt;)
+  (x :x :x!))
+(define-method (initialize (&lt;baz&gt; b) (&lt;number&gt; x)) (:x! b x))
+(define baz (make &lt;baz&gt; 2))
+(:x baz)  &arrow; 2
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        By default the <function>initialize</function> contains a
+        no-op method for initialising objects of type &lt;object&gt;
+        with no further arguments. Since all objects are instances of
+        &lt;object&gt; all classes can be instantiated by calling
+        <literal>(make</literal>
+        <parameter>class</parameter><literal>)</literal>.
+        <informalexample>
+          <programlisting>
+(define-generics :x :x!)
+(define-class (&lt;baz&gt;)
+  (x :x :x!))
+(define baz (make &lt;baz&gt;))
+(:x baz)  &arrow; #f
+          </programlisting>
+        </informalexample>
+      </para>
+    </sect2>
+    <sect2 id="OOInheritance">
+      <title>Inheritance</title>
+      <para>
+        Inheritance is a form of sub-typing. A class is a sub-type of
+        all its direct and indirect superclasses. Method selection in
+        generic procedures (and hence also slot access/modification)
+        is based on a relationship called <emphasis>class
+          precedence</emphasis>; a total order of classes based on the
+        partial orders established by the direct super-classes:
+        <blockquote>
+          <para>
+            <indexterm><primary>class-precedence-list</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>class-list</type>
+              <methodname>class-precedence-list</methodname>
+              <methodparam><parameter>class</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the total order of
+                <parameter>class</parameter> and all direct and
+                indirect super-classes, as determined by the partial
+                orders obtained from calling
+                <function>class-direct-superclasses</function>.
+              </para>
+              <para>
+                The ordering of classes returned by
+                <function>class-direct-superclasses</function> is
+                considered "weak" whereas the ordering of the class
+                itself to its direct super-classes is considered
+                strong. The significance of this is that when
+                computing the class precedence list weak orderings are
+                re-arranged if that is the only way to obtain a total
+                order. By contrast, strong orderings are never
+                rearranged.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-class (&lt;foo&gt;))
+(define-class (&lt;bar&gt; &lt;foo&gt;))
+(define-class (&lt;baz&gt; &lt;foo&gt;))
+(define-class (&lt;boo&gt; &lt;bar&gt; &lt;baz&gt;))
+(define-class (&lt;goo&gt;))
+(define-class (&lt;moo1&gt; &lt;bar&gt; &lt;baz&gt; &lt;goo&gt;))
+(map class-name (class-precedence-list &lt;moo1&gt;))
+  &arrow; (&lt;moo1&gt; &lt;bar&gt; &lt;baz&gt; &lt;goo&gt; &lt;foo&gt; &lt;object&gt;)
+(define-class (&lt;moo2&gt; &lt;bar&gt; &lt;baz&gt; &lt;foo&gt; &lt;goo&gt;))
+(map class-name (class-precedence-list &lt;moo2&gt;))
+  &arrow; (&lt;moo1&gt; &lt;bar&gt; &lt;baz&gt; &lt;foo&gt; &lt;goo&gt; &lt;object&gt;)
+(define-class (&lt;moo3&gt; &lt;baz&gt; &lt;bar&gt; &lt;boo&gt;))
+(map class-name (class-precedence-list &lt;moo3&gt;))
+  &arrow; (&lt;moo3&gt; &lt;boo&gt; &lt;baz&gt; &lt;bar&gt; &lt;foo&gt; &lt;object&gt;)
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        For any two classes in the class precedence list that have
+        direct slots, one must be a sub-class of the other.
+      </para>
+      <para>
+        In effect this enforces single inheritance of slots while
+        still giving control over the order of classes in the
+        class-precedence list.
+      </para>
+      <para>
+        Slots from a superclass are only ever inherited once,
+        regardless of the number of paths in the inheritance graph to
+        that class.
+      </para>
+      <para>
+        If a sub-class defines a slot with the same name as one of its
+        super-classes, instances of the resulting class ends up with
+        <emphasis>two</emphasis> slots of the same name. If the slots
+        are define with different accessors and modifiers then this
+        does not cause any problems at all. If they are not then an
+        invocation of the accessor/modifier will acess/modify the slot
+        of the sub-class. Note that it is still possible to
+        access/modify the slot of the superclass by using
+        procedures/methods obtained from the slot descriptor. See
+        <xref linkend="OOSlots"/>.
+      </para>
+      <para>
+        The following example illustrates the rules governing slot
+        inheritance.
+        <informalexample>
+          <programlisting>
+;;ordinary slot access and modification
+(define-generics
+  :x :x! :y :y! :z :z!
+  :xb :xb! :yb :yb! :zb :zb!)
+(define-class (&lt;foo&gt;)
+  (x :x :x!)
+  (y :y :y!)
+  (z :z))
+(define f (make &lt;foo&gt;))
+(:x f)  &arrow; #f
+(:y f)  &arrow; #f
+(:z f)  &arrow; #f
+(:x! f 2)
+(:y! f 2)
+(:x f)  &arrow; 2
+(:y f)  &arrow; 2
+
+;;overloading slots in sub-class
+(define-class (&lt;bar&gt; &lt;foo&gt;)
+  (x :x :x!)
+  (y :yb :yb!)
+  (zb :zb :zb!))
+(define b (make &lt;bar&gt;))
+(:x b)  &arrow; #f
+(:y b)  &arrow; #f
+(:z b)  &arrow; #f
+(:yb b)  &arrow; #f
+(:zb b)  &arrow; #f
+(:y! b 3)
+(:yb! b 4)
+(:y b)  &arrow; 3
+(:yb b)  &arrow; 4
+
+;;accessing a fully shadowed slot
+(define :foo-x
+  (cdr (assq 'x (map (lambda (x)
+                       (cons (slot-name x) (slot-accessor x)))
+                     (class-direct-slots &lt;foo&gt;)))))
+(:foo-x b)  &arrow; 1
+
+;;inheritance restriction on slots
+(define-class (&lt;boo&gt; &lt;baz&gt;)
+  (yb :yb :yb!))
+(define-class (&lt;goo&gt;))
+(define-class (&lt;moo&gt; &lt;bar&gt; &lt;boo&gt; &lt;goo&gt;))  &arrow; error
+          </programlisting>
+        </informalexample>
+      </para>
+    </sect2>
+  </sect1>
+</chapter>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+sgml-parent-document:("sss.xml" "chapter")
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:2
+sgml-indent-data:t
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

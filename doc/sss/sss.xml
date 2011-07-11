@@ -1,0 +1,466 @@
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+                    "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+ <!ENTITY SISC "<emphasis>SISC</emphasis>">
+ <!ENTITY R5RS "R<superscript>5</superscript>RS">
+ <!ENTITY syntax "<emphasis>syntax: </emphasis>">
+ <!ENTITY returns "<emphasis>returns: </emphasis>">
+ <!ENTITY procedure "<emphasis>procedure: </emphasis> ">
+ <!ENTITY parameter "<emphasis>parameter: </emphasis>">
+ <!ENTITY f "&num;f">
+ <!ENTITY t "&num;t">
+ <!ENTITY arrow ";=&gt;">
+ <!ENTITY requires "<emphasis>Requires: </emphasis>">
+ <!ENTITY intro-chapter SYSTEM "intro.xml">
+ <!ENTITY inst-chapter SYSTEM "inst.xml">
+ <!ENTITY debugging-chapter SYSTEM "debug.xml">
+ <!ENTITY scheme-chapter SYSTEM "scheme.xml">
+ <!ENTITY library-chapter SYSTEM "library.xml">
+ <!ENTITY io-chapter SYSTEM "io.xml">
+ <!ENTITY threads-chapter SYSTEM "threads.xml">
+ <!ENTITY modules-chapter SYSTEM "modules.xml">
+ <!ENTITY extensibility-chapter SYSTEM "extensibility.xml">
+ <!ENTITY oo-chapter SYSTEM "oo.xml">
+ <!ENTITY java-chapter SYSTEM "java.xml">
+ <!ENTITY index SYSTEM "index.xml">
+ <!ENTITY gpl SYSTEM "gpl.xml">
+ <!ENTITY version SYSTEM "version.xml">
+]>
+
+<book lang="en">
+  <!-- DocBook file was created by LyX 1.1
+  See http://www.lyx.org/ for more information -->
+  <bookinfo>
+    <title>
+      &SISC; <emphasis>for Seasoned Schemers</emphasis>
+    </title>
+    <authorgroup>
+      <author>
+	<firstname>Scott</firstname>
+	<othername>G.</othername>
+	<surname>Miller</surname>
+      </author>
+      <author>
+	<firstname>Matthias</firstname>
+	<surname>Radestock</surname>
+<!-- This doesn't render very well -->
+<!--
+	<contrib>
+	  Documentation for hash tables, generic functions and Scheme/Java bridge
+	</contrib>
+-->
+      </author>
+    </authorgroup>
+    <date>
+     February 2006
+    </date>
+    <copyright>
+      <year>2002-2006</year>
+      <holder>Scott G. Miller,</holder>
+      <holder>Matthias Radestock</holder>
+    </copyright>
+    <legalnotice>
+      <para>
+      This documentation is free software; you can redistribute it and/or modify
+      it under the terms of the GNU General Public License as published by
+      the Free Software Foundation; either version 2 of the License, or
+      (at your option) any later version.
+</para>
+      <para>
+      The source code refers to the DocBook XML source files.  The
+      object code refers to the generated HTML, PostScript, PDF, and
+      other forms.
+</para>
+      <para>
+
+      This documentation is distributed in the hope that it will be useful,
+      but WITHOUT ANY WARRANTY; without even the implied warranty of
+      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+      GNU General Public License for more details.
+</para>
+      <para>
+      You should have received a copy of the GNU General Public License (in 
+	<xref linkend="gpl"/>)
+      along with this documentation; if not, write to the Free Software
+      Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+</para>
+    </legalnotice>
+      
+  </bookinfo>
+  &intro-chapter;
+  &inst-chapter;
+  &scheme-chapter;
+  &debugging-chapter;
+  &io-chapter;
+  &threads-chapter;
+  &oo-chapter;
+  &java-chapter;
+  &library-chapter;
+  &modules-chapter;
+  &extensibility-chapter;
+  <appendix id="Errata">
+    <title>Errata</title>
+    <para>
+      This appendix describes where this manual and the implementation
+      of SISC depart.  This section should ideally remain small or empty, 
+      as it is the goal of the system to conform to this document, 
+      not for this document to describe the idiosyncrasies of the system.
+    </para>
+  </appendix>
+  <appendix id="R5RSViolations">
+    <title>&R5RS; Liberties and Violations</title>
+    <para>
+      This section lists all ways in which &SISC; interprets the
+      &R5RS; specification, where the standard is not particular clear.
+      Such interpretations may allow non-portable code to be written
+      and executed on &SISC;. Additionally, all known &R5RS; violations
+      are listed.  Actual violations are considered &SISC; bugs, and
+      have a high priority for being fixed.  Violations of the
+      standard are written in <emphasis role="bold">bold text</emphasis>.
+    </para>
+    <para>
+      <orderedlist>
+	<listitem>
+	  <para>2.3 - 
+	  &SISC; allows identifiers to start with
+	    '+', '-', or '.' if they cannot be read as numbers.
+	  </para>
+	</listitem>
+	<listitem>
+	  <para>2.3 - 
+	    &SISC; uses the reserved characters '[' and ']' as
+	    synonyms for '(' and ')' respectively.
+	  </para>
+	</listitem>
+	<listitem>
+	  <para>2.3 - 
+	    &SISC; does not raise any warning or error when
+	    encountering the reserved characters "[]{}|", and allows
+	    "{}|" to appear in identifiers.
+	  </para>
+	</listitem>
+	<listitem>
+	  <para>4.1.3 - 
+	    &SISC; does not distinguish between () and the quoted
+	    empty list '().  
+	  </para>
+	</listitem>
+	<listitem>
+	  <para>6.2.3 - 
+	    The standard desires that that operations such as
+	    <function>sqrt</function> try to provide exact results
+	    when given exact arguments.  While &SISC; meets the requirement
+for <function>sqrt</function>, it is not clear what other mathematical
+	    functions should have this behavior.  &SISC; takes no
+	    heroic efforts to meet this requirement.
+	  </para>
+	</listitem>
+	<listitem>
+	  <para>6.2.6 - 
+	    &SISC; allows radixes other than those specified in the
+	    contract for <function>number-&gt;string</function> and
+	    <function>string-&gt;number</function>.  In particular,
+	    any radix up to 36 is allowed, and any unsupported value
+	    causes &SISC; to revert to base 10.
+	  </para>
+	</listitem>
+	<listitem>
+	  <para><emphasis role="bold">6.5 - &SISC; currently returns
+          an environment from the <function>scheme-report-environment
+          </function> which contains 
+          four bindings not specified in &R5RS;, bindings which
+          are needed by &R5RS; syntactic keywords.
+         </emphasis></para>
+        </listitem>
+	<listitem>
+	  <para><emphasis role="bold">6.6.2 - &SISC; currently only
+	    warns when end-of-file is reached in
+	    <function>read</function>, rather than signaling an
+	    error.  The unterminated datum is discarded.
+            </emphasis>
+	  </para>
+	</listitem>
+      </orderedlist>
+    </para>
+    <para>
+      All of the liberties described above are implemented for the
+      convenience of the programmer. If desired,
+      <emphasis>strict</emphasis> &R5RS; syntax and semantics may be
+      enabled with the <envar>strictR5RSCompliance</envar>
+      configuration parameter (see <xref
+      linkend="config-parameters"/>), causing &SISC; to raise errors
+      in all &R5RS; situations that result in "an error", as well as
+      respect the lexical syntax's reserved characters. When in
+      <emphasis>strict</emphasis> compliance mode, the above mentioned
+      deviations no longer apply and &SISC; is entirely &R5RS;
+      compliant.
+    </para>
+  </appendix>
+  <appendix>
+    <title>Troubleshooting</title>
+    <para>
+      This appendix covers issues with running &SISC; in certain environments.
+    </para>
+    <sect1 id="Kaffe">
+      <title>Kaffe</title>
+      <para>There is a known limitation with Kaffe, whose default
+      stack size is too small for &SISC; to parse s-expressions. To fix
+      this, either edit the &SISC; startup scripts to pass
+      <literal>-Xss32m</literal>, or set the
+      <literal>JAVAOPT</literal> environment variable to the same.
+      </para>
+    </sect1>
+  </appendix>
+  <appendix>
+    <title>Backend Details</title>
+    <note>
+      <para>
+        This appendix is under development
+      </para>
+    </note>
+    <para>
+      This appendix describes details of &SISC; on particular
+      backends.  This is not intended to guide programming.  The
+      programmer should code according to the main body of this
+      document.  However, this section still describes useful
+      performance tips and limitations of &SISC;'s operation.
+    </para>
+    <sect1 id="Limits">
+      <title>Limits</title>
+      <para>
+        This appendix lays out the various limits in &SISC; running on a
+        JVM backend.  These limits are <emphasis>not</emphasis>
+        specifications for an expected set of limits on all platforms,
+        but serve as a real-world guide.
+      </para>
+      <sect2>
+        <title>Datastructure Limits</title>
+        <para>
+          <table id="JVMLimits">
+            <title>&SISC; Limits</title>
+            <tgroup cols='2' align='left' colsep='1' rowsep='1'>
+              <colspec colname='Description'/>
+              <colspec colname='Limit'/>
+              <thead>
+                <row>
+                  <entry>Description</entry>
+                  <entry>Limit</entry>
+                </row>
+              </thead>
+              <tbody>
+                <row>
+                  <entry>Fixed-point Exact Integers</entry>
+                  <entry>-2<superscript>31</superscript> &lt; n &lt;
+                    +2<superscript>31</superscript>-1</entry>
+                </row>
+                <row>
+                  <entry>AP Exact Integers</entry>
+                  <entry>
+                    -2<superscript>(2<superscript>32</superscript>-1)</superscript>
+                    &lt; x &lt;
+                    +2<superscript>(2<superscript>32</superscript>-1)</superscript>-1.
+                  </entry>
+                </row>
+                <row>
+                  <entry>Inexacts (<literal>32Float</literal>)</entry>
+                  <entry>See IEEE 754-1985 Floating Point Standard</entry>
+                </row>
+                <row>
+                  <entry>Inexacts (<literal>64Float</literal>)</entry>
+                  <entry>See IEEE 754-1985 Floating Point Standard</entry>
+                </row>
+                <row>
+                  <entry>Inexact Mantissa (<literal>APFloat</literal>)</entry>
+                  <entry>same as AP Exact Integers</entry>
+                </row>
+                <row>
+                  <entry>Inexact Exponent
+                    (<literal>APFloat</literal>)</entry>
+                  <entry>same as fixed-point exact integer</entry>
+                </row>
+                <row>
+                  <entry>Max vector elements</entry>
+                  <entry>Same as max fixed-point integer</entry>
+                </row>
+                <row>
+                  <entry>Max string elements</entry>
+                  <entry>Same as max fixed-point integer (?)</entry>
+                </row>
+                <row>
+                  <entry>Representable characters</entry>
+                  <entry>see <xref linkend="Characters"/></entry>
+                </row>
+                <row>
+                  <entry>Maximum formal parameters</entry>
+                  <entry>Same as max fixed-point integer</entry>
+                </row>
+                <row>
+                  <entry>Maximum lexical depth</entry>
+                  <entry>Same as max fixed-point integer</entry>
+                </row>
+                <row>
+                  <entry>Maximum symbolic-environment bindings</entry>
+                  <entry>Same as max fixed-point integer (?)</entry>
+                </row>
+                <row>
+                  <entry>Addressable file size</entry>
+                  <entry>min of 2<superscript>64</superscript>-1 and
+                    operating system limit</entry>
+                </row>
+              </tbody>
+            </tgroup>
+          </table>
+        </para>
+        <para>
+          Arbitrary precision integers aren't quite arbitrary precision.
+          &SISC; has a hard limit to the number of bits in an exact
+          integer and thus to the range of representable numbers.  Exact
+          integers are stored as two's complement signed integers, with
+          a bit limit (including the sign bit) of
+          2<superscript>32</superscript>.  This limits the range of
+          representable exact integers to the numbers quoted above.
+        </para>
+        <para>
+          Likewise, arbitrary precision inexact numbers (when present)
+          have a similar hard limit.  The arbitrary precision inexact is
+          constructed with an arbitrary precision exact number with the
+          limits described above as the number's mantissa, and
+          an exponent whose range is equivalent to that of a  
+          fixed-point exact integer.
+          The inexact is then then
+          <literal>mantissa*10<superscript>exponent</superscript></literal>.
+        </para>
+      </sect2>
+      <sect2>
+        <title>Symbol Uniqueness</title>
+        <para>
+          In order to support compilation in multiple threads, on
+          multiple machines, or in multiple times, generated symbols
+          for module bindings, lexical variables, etc. must be
+          <emphasis>4d-unique</emphasis>, that is they must be unique
+          across space and time.  &SISC; attempts to balance this
+          requirement with the space inefficiency of generating
+          symbols with very long names. 
+        </para>
+        <para> 
+          &SISC;'s unique symbols are generated by creating a number
+          of the form
+          <literal>current-time + (random-16-bit-natural*311040000000)
+            + (counter*155520000000)</literal>.  The current time
+          variable is only updated when the value of counter reaches
+          65536.  In this manner, two entities that generate the same
+          symbol will only generate a colliding symbol if they
+          generate the symbol on the same system millisecond, 
+          with the same counter value, and the same random number,
+          <emphasis>or</emphasis>, if one entity happens to generate
+          the symbol with the same millisecond and does so
+          (counter-1)*50 years, (counter-2)*100 years... in the
+          future, and with the same random or 
+          (random-1)*100 years, (random-2)*200 years, etc
+          in the future.  Only if all of these factors align will 
+          a colliding symbol be generated.  This is not as unlikely
+          as say a Microsoft GUID or Java VMID number, but it should
+          be sufficiently unlikely.  The advantage over other GUID 
+          algorithms is that the value produced by &SISC;'s is
+          significantly smaller (and thus does not bloat expanded
+          code).
+        </para>
+      </sect2>
+    </sect1>
+    <sect1>
+      <title>Performance and Efficiency considerations</title>
+      <sect2>
+        <title>Math</title>
+        <para>
+          The &SISC; numeric library is most efficient when operating
+          on fixed bitlength numbers.  Exact numbers are in their
+          fixed bitlength mode if they are in the representable range
+          for fixed exact integers, as described in <xref
+            linkend="JVMLimits"/>.  Fixed bitlength inexact numbers are
+          only available in the <literal>64Float</literal> and
+          <literal>32Float</literal> libraries.  For &SISC; on Java on
+          the x86 32-bit architecture, the <literal>64Float</literal>
+          library is generally more efficient than the
+          <literal>32Float</literal> library, while both are more
+          efficient than the <literal>APFloat</literal> library.
+        </para>
+        <para>
+          Fixed bitlength exact integers are only used for whole
+          numbers.  Rational numbers use arbitrary precision
+          components and thus are less efficient than whole fixed
+          integers.
+        </para>
+        <para>
+          Arbitrary precision inexact numbers are progressively slower
+          as the bitlength of the mantissa and the scale of the
+          exponent increase.  Using the precision constraints can
+          prevent an unbounded increase in the scale of arbitrary
+          precision inexacts which will very rapidly slow
+          calculations.
+        </para>
+      </sect2>
+      <sect2>
+        <title>Strings</title>
+        <para>
+          At the time of this writing, the Scheme string type can be
+          represented either as a character array, a native string, 
+          or simultaneously as both.  The character array
+          representation allows efficient, constant time modification
+          of a mutable string (using <function>string-set!</function>
+          for example). The native string representation allows
+          efficient output to ports, string comparison, and substring
+          operations.  
+        </para>
+        <para>
+          By default, &SISC; allows the Scheme string to contain both
+          representations simultaneously, ensuring that there is not a 
+          costly representation conversion necessary to perform
+          certain operations.  However, in this default mode, strings
+          may occupy twice the memory as a string in a single
+          representation.  If a program uses many strings or several
+          very large strings, the programmer may wish to create 
+          strings that may only be in one representation at any given 
+          time.  &SISC; provides a parameter to control this behavior.
+        </para>
+        <para>
+	  <blockquote>
+	    <para>
+              <indexterm><primary>compact-string-rep</primary>
+              </indexterm>
+	      &parameter;
+	      <methodsynopsis language="scheme">
+                <type>&num;t/&num;f</type>
+                <methodname>compact-string-rep</methodname>
+                <methodparam choice="opt"> 
+                  <parameter>boolean</parameter>
+                </methodparam>
+              </methodsynopsis>
+              <blockquote>
+                <para>
+                  This parameter, if set <literal>&num;t</literal>,
+                  will force strings to be represented either as a
+                  character array, or as a native string, but never
+                  both.  If false, simultaneous representations are 
+                  possible.
+                </para>
+              </blockquote>
+            </para>
+          </blockquote>
+        </para>
+      </sect2>
+      <sect2>
+        <title>Interrupts</title>
+        <para>
+          Interrupts allow running Scheme code to be forcibly broken 
+          from another thread, causing the Scheme code to raise an
+          error.  The interrupt signal handling code does add an
+          appreciable overhead (usually between 1-5% depending on the
+          JVM) to execution.  It can disabled using the 
+          <envar>sisc.permitInterrupts</envar>
+          system property.
+        </para>
+      </sect2>
+    </sect1>
+  </appendix>
+  &gpl;
+  &index;
+</book>

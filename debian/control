@@ -1,0 +1,29 @@
+Source: sisc
+Section: interpreters
+Priority: optional
+Maintainer: Scott G. Miller <sgmiller@gmail.com>
+Build-Depends: debhelper (>= 4.0.0), java2-compiler, ant (>= 1.6.0), docbook-xml (>= 4.3), docbook-xsl (>= 1.68.0), xsltproc (>= 1.1.0)
+Standards-Version: 3.6.1
+
+Package: sisc
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, java2-runtime
+Recommends: rlwrap
+Suggests: slib
+Description: A Java integrated, fully R5RS compliant Scheme system.
+ SISC is an extensible Java based interpreter of the algorithmic language 
+ Scheme.  SISC uses modern interpretation techniques, and handily outperforms 
+ all existing JVM interpreters (often by more than an order of magnitude).
+ .
+ In addition, SISC is a complete implementation of the language. The entire 
+ R5RS Scheme standard is supported, no exceptions. This includes a full number 
+ tower including complex number support, arbitrary precision integers and 
+ floating  point numbers, as well as hygenic R5RS macros, proper tail
+ recursion,  and first-class continuations (not just the escaping 
+ continuations as in many limited Scheme systems).  SISC also attempts to 
+ implement the standard as correctly as possible, while still providing 
+ exceptional performance.
+ .
+ SISC also provides useful real-world extensions, such as networking, elegant 
+ exception handling, a scope-friendly module system, support for SLIB, 
+ numerous SRFIs, and a Java foreign-function interface.

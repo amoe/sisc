@@ -1,0 +1,1056 @@
+<chapter id="Extensibility">
+  <title>
+    Extensibility
+  </title>
+  <para>
+    Occasionally functionality may be desired that is not easily
+    accomplished at the Scheme level.  A new first-class type may be
+    desired, or efficient access to a Java library.  &SISC; 
+    provides a simple API for such modifications.
+  </para>  
+    <sect1>
+      <title>Adding Types</title>
+      <para>
+        A Scheme value is represented in &SISC; as a subclass of the
+        abstract Java class <classname>sisc.data.Value</classname>. 
+      </para>
+      <sect2>
+        <title>External Representation of Values</title>
+        <para>
+          In order to be able to display the value in the Scheme
+          system, all <type>Value</type>s must implement the
+          <function>display</function> method:
+        </para>
+        <blockquote>
+          <para>
+            <indexterm><primary>display</primary>
+            </indexterm>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <void/>
+              <methodname>display</methodname>
+              <methodparam>
+                <type>sisc.io.ValueWriter</type>
+                <parameter>writer</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Uses the various output methods of
+                <type>sisc.io.ValueWriter</type> to construct an
+                external representation of the given Value
+                suitable for output from the
+                <function>display</function> Scheme function.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+        <para>
+          If the programmer desires the Value to have a different
+          representation when written with <function>write</function>,
+          the <function>write</function> method must be overridden.  If it
+          is not, the output of <function>display</function> is used for
+          <function>write</function> as well.
+        </para>
+        <blockquote>
+          <para>
+            <indexterm><primary>write</primary>
+            </indexterm>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <void/>
+              <methodname>write</methodname>
+              <methodparam>
+                <type>sisc.io.ValueWriter</type>
+                <parameter>writer</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Uses the various output methods of
+                <type>sisc.io.ValueWriter</type> to construct an
+                external representation of the given Value
+                suitable for output from the
+                <function>write</function> Scheme function.
+                If not implemented, the output constructed the by the
+                <function>display</function> method is used as output
+                from <function>write</function>.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+        <para>
+          Finally, if the external representation of a new Value is
+          likely to be long, the programmer should implement the
+          <function>synopsis</function> method, which generates a
+          <emphasis>summary representation</emphasis> of the value.
+        </para>
+        <blockquote>
+          <para>
+            <indexterm><primary>synopsis</primary>
+            </indexterm>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+            <type>String</type>
+            <methodname>synopsis</methodname>
+            <methodparam>
+              <type>int</type>
+              <parameter>limit</parameter>
+            </methodparam>
+          </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns approximately <parameter>limit</parameter>
+                characters from the printable representation of this
+                value as if returned by <function>write</function>.
+                This method is used for displaying the value in error
+                messages where the entire representation may be superfluous.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+        <para>
+          The <type>sisc.io.ValueWriter</type> type that is passed as an
+          argument to both <function>display</function> and
+          <function>write</function> contains a number of methods to
+          generate the representation.  First there are several methods
+          for appending Java Strings, characters, and SISC Values.  In
+          each, the called <type>ValueWriter</type> is returned, to
+          allow for easy chaining of calls.
+        </para>
+        <blockquote>
+          <para>
+            <indexterm><primary>append</primary>
+            </indexterm>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <type>sisc.io.ValueWriter</type>
+              <methodname>append</methodname>
+              <methodparam>
+                <type>char</type>
+                <parameter>c</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Appends a single character to the external
+                representation.  
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <type>sisc.io.ValueWriter</type>
+              <methodname>append</methodname>
+              <methodparam>
+                <type>String</type>
+                <parameter>s</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Appends the contents of a Java String to the external
+                representation.  
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <type>sisc.io.ValueWriter</type>
+              <methodname>append</methodname>
+              <methodparam>
+                <type>sisc.data.Value</type>
+                <parameter>v</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Appends the contents of a Scheme value to the external
+                representation.  The value is converted to an external
+                representation using the print style with which the
+                <type>ValueWriter</type> was constructed (for example,
+                <function>display</function> or <function>write</function>).
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+        <para>
+          In addition to the above <function>append</function> methods, the
+          programmer may wish to force <function>display</function> or
+          <function>write</function> rather than use the same method as
+          the <type>ValueWriter</type>.  To do this, one can call the
+          <function>display</function> or <function>write</function> methods on
+          the <type>ValueWriter</type>.
+        </para>
+        <blockquote>
+          <para>
+            <indexterm><primary>display</primary>
+            </indexterm>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <void/>
+              <methodname>display</methodname>
+              <methodparam>
+                <type>sisc.data.Value</type>
+                <parameter>v</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Appends the external representation of the given value
+                as returned by <function>display</function>.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>write</primary>
+            </indexterm>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <void/>
+              <methodname>write</methodname>
+              <methodparam>
+                <type>sisc.data.Value</type>
+                <parameter>v</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Appends the external representation of the given value
+                as returned by <function>write</function>.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </sect2>
+      <sect2>
+        <title>Equality</title>
+        <para>
+          If the one wants a Value to be comparable for any
+          more than pointer equality, or for the concept of pointer
+          equality to be less strict than actual pointer equality, one
+          or more of the equality methods must be overridden.
+        </para>
+        <blockquote>
+          <para>
+            <indexterm><primary>eq</primary>
+            </indexterm>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <type>boolean</type>
+              <methodname>eq</methodname>
+              <methodparam>
+                <type>Object</type>
+                <parameter>other</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns true if another provided Java object is equal in
+                the sense of <function>eq?</function> to this Value.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+        <blockquote>
+          <para>
+            <indexterm><primary>valueEqual</primary>
+            </indexterm>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <type>boolean</type>
+              <methodname>valueEqual</methodname>
+              <methodparam>
+                <type>Value</type>
+                <parameter>other</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns true if another provided Scheme value is equal in
+                the sense of <function>equal?</function> to this Value.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </sect2>
+      <sect2>
+        <title>Serializable Values</title>
+        <para>
+          If the type that is being added will be serialized in a &SISC;
+          heap, and it contains one or more member variables, the Value
+          must include a default constructor (a constructor with no
+          arguments), and implement the <function>deserialize</function>,
+          <function>serialize</function>, and
+          <function>visit</function> methods described in <xref
+          linkend="serialization"/>.
+        </para>
+      </sect2>
+    </sect1>
+    <sect1>
+      <title>Adding Native Bindings</title>
+      <para>
+        One can add native bindings to the Scheme environment by 
+        implementing a subclass of the abstract class
+        <classname>sisc.nativefun.NativeLibrary</classname>.  Such a
+        subclass needs to implement four methods:
+        <blockquote>
+          <para>
+            <indexterm><primary>getLibraryName</primary>
+            </indexterm>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <type>String</type>
+              <methodname>getLibraryName</methodname>        
+              <void/>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the name of this library.  The name should also
+                be acceptable for use in filenames.
+              </para>
+            </blockquote>
+            <indexterm><primary>getLibraryVersion</primary>
+            </indexterm>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <type>float</type>
+              <methodname>getLibraryVersion</methodname>        
+              <void/>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the version of this library.
+              </para>
+            </blockquote>
+            <indexterm><primary>getLibraryBindingNames</primary>
+            </indexterm>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <type>sisc.data.Symbol[]</type>
+              <methodname>getLibraryBindingNames</methodname>        
+              <void/>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns an array of the names of the bindings
+                exported by this library.  Each name is a Scheme symbol.
+              </para>
+            </blockquote>
+            <indexterm><primary>getBindingValue</primary>
+            </indexterm>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <type>Value</type>
+              <methodname>getBindingValue</methodname>        
+              <methodparam>
+                <type>sisc.data.Symbol</type>
+                <parameter>name</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the value of a given binding exported by this library.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+      <sect2>
+        <title>Native Procedures</title>
+        <para>
+	  It is possible to implement Scheme functions whose behavior
+	  is implemented natively in Java code.  Many of &SISC;'s
+	  procedures are implemented this way.  Native procedures extend
+	  the <classname>sisc.nativefun.NativeProcedure</classname>
+	  abstract class.  Working NativeProcedure subclasses must
+	  implement the <function>doApply</function> method, as
+          described below.
+	</para>
+	<blockquote>
+	  <para>
+	    <indexterm><primary>doApply</primary>
+	     </indexterm>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <type>Value</type>
+              <methodname>doApply</methodname>        
+              <methodparam>
+                <type>sisc.interpreter.Interpreter</type>
+                <parameter>interp</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+	        Perform the necessary computations of the
+		NativeProcedure, returning a Value as the result of
+		the procedure call.  The arguments to the procedure
+                can be found in the value rib array field,
+                <literal>vlr</literal>, of the Interpreter passed 
+                as an argument.  The number of arguments to the
+                procedure can be found from the length of the array
+                (<literal>vlr.length</literal>).
+              </para>
+            </blockquote>
+           </para>
+         </blockquote>
+        <para> 
+	  If the native procedure wishes to raise an error, it may do
+          so by throwing any Java runtime exception (subclass of
+	  <classname>java.lang.Runtime</classname>).
+	  For a more descriptive error, one may raise a &SISC; error 
+	  using any of a number of <function>error</function>
+	  forms in <classname>sisc.util.Util</classname>.  Consult the
+	  source of Util or inquire on the sisc-devel mailinglist for
+          assistance.
+       </para>
+     </sect2>
+     <sect2>
+        <title>Fixable Native Procedures</title>
+        <para>
+         Often it is unnecessary to have access to the full Interpreter
+         context to implement a native procedure.  If the 
+         arguments to the procedure are sufficient and the procedure
+         is purely functional (causes no side effects), it is recommended
+         that the programmer create a <emphasis>fixable</emphasis>
+         native procedure.  These native procedures may be inlined
+         into generated code when enabled, allowing much faster
+         execution.  In addition, the fixable native procedure
+         interface is simpler to use. 
+        </para>
+        <para>The
+         <literal>FixableProcedure</literal> abstract class consists
+         of five methods which may or may not be subclassed.  These
+         five methods correspond to the case of calling the
+         procedure with no, one, two, three, and more than three
+         arguments respectively.  Not overriding one of these methods
+         will cause a call to the fixable procedure to throw the
+         invalid number of arguments error to the caller.
+       </para>
+	<blockquote>
+	  <para>
+	    <indexterm><primary>apply</primary>
+	     </indexterm>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <type>Value</type>
+              <methodname>apply</methodname>        
+              <void/>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+	        Perform the necessary computations of the
+		FixableNativeProcedure, returning a Value as the result of
+		the procedure call.  No argument variant.
+              </para>
+            </blockquote>
+           </para>
+	  <para>
+	    <indexterm><primary>apply</primary>
+	     </indexterm>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <type>Value</type>
+              <methodname>apply</methodname>        
+              <methodparam>
+                <type>Value</type>
+                <parameter>v1</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+	        Perform the necessary computations of the
+		FixableNativeProcedure, returning a Value as the result of
+		the procedure call.  One argument variant.
+              </para>
+            </blockquote>
+           </para>
+	  <para>
+	    <indexterm><primary>apply</primary>
+	     </indexterm>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <type>Value</type>
+              <methodname>apply</methodname>        
+              <methodparam>
+                <type>Value</type>
+                <parameter>v1</parameter>
+              </methodparam>
+              <methodparam>
+                <type>Value</type>
+                <parameter>v2</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+	        Perform the necessary computations of the
+		FixableNativeProcedure, returning a Value as the result of
+		the procedure call.  Two argument variant.
+              </para>
+            </blockquote>
+           </para>
+	  <para>
+	    <indexterm><primary>apply</primary>
+	     </indexterm>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <type>Value</type>
+              <methodname>apply</methodname>        
+              <methodparam>
+                <type>Value</type>
+                <parameter>v1</parameter>
+              </methodparam>
+              <methodparam>
+                <type>Value</type>
+                <parameter>v2</parameter>
+              </methodparam>
+              <methodparam>
+                <type>Value</type>
+                <parameter>v3</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+	        Perform the necessary computations of the
+		FixableNativeProcedure, returning a Value as the result of
+		the procedure call.  Three argument variant.
+              </para>
+            </blockquote>
+           </para>
+	  <para>
+	    <indexterm><primary>apply</primary>
+	     </indexterm>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <type>Value</type>
+              <methodname>apply</methodname>        
+              <methodparam>
+                <type>Value[]</type>
+                <parameter>v</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+	        Perform the necessary computations of the
+		FixableNativeProcedure, returning a Value as the result of
+		the procedure call.  More than three argument variant.
+              </para>
+            </blockquote>
+           </para>
+         </blockquote>
+      </sect2>
+     <sect2>
+      <title>Indexed Native Libraries</title>
+      <para>
+        In the most common case, a Library is created to define several
+        bindings, including procedures whose implementations are in Java
+        code.  For this common case, a skeleton subclass of
+	<classname>NativeLibrary</classname>,
+	<classname>sisc.nativefun.IndexedLibraryAdapter</classname>
+	is provided.  The IndexedLibraryAdapter class provides
+	implementations for all four required NativeLibrary methods, and
+	introduces a new abstract method which must be implemented, called
+	<function>construct</function>.  In addition, the method
+	<function>define</function> is provided.
+       </para>
+      <para>
+        In an indexed native library, each binding is associated with
+        a Java <literal>int</literal> unique to that binding within
+	the library.  The IndexedLibraryAdapter subclass should in its
+	constructor call <function>define</function> for each
+	binding provided by the library, according to the
+	contract of the method:
+	<blockquote>
+	  <para>
+	    <indexterm><primary>define</primary>
+            </indexterm>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <type>void</type>
+              <methodname>define</methodname>        
+              <methodparam>
+                <type>String</type>
+                <parameter>name</parameter>
+              </methodparam>
+              <methodparam>
+                <type>int</type>
+                <parameter>id</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+	        Register the native binding with the given name,
+                and assign it the given library-unique id.
+              </para>
+            </blockquote>
+          </para>
+	</blockquote>
+      </para>
+      <para>
+        In implementing the
+	<function>getBindingValue</function> method of the 
+	<classname>NativeLibrary</classname> class, an
+	<classname>IndexedLibraryAdapter</classname> will call the
+	abstract method <function>construct</function> 
+	required by the its subclasses:
+	<blockquote>
+	  <para>
+	    <indexterm><primary>construct</primary>
+            </indexterm>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <type>sisc.data.Value</type>
+              <methodname>construct</methodname>        
+              <methodparam>
+                <type>int</type>
+                <parameter>id</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+	        Return an instance of the indexed binding.
+              </para>
+            </blockquote>
+          </para>
+	</blockquote>
+      </para>
+      <para>
+        Most frequently, the bindings created in an indexed library
+	are native procedures.  In such a case, a second class is
+        created which subclasses
+	<classname>sisc.nativefun.IndexedProcedure</classname>.
+	IndexedProcedure is subclass of
+	<classname>NativeProcedure</classname>.
+	An IndexedProcedure subclass' constructor must call the
+	superconstructor with an <literal>int</literal>, the unique id
+	for that binding.  That <literal>int</literal> is stored in
+	the <literal>id</literal> field of
+	<classname>IndexedProcedure</classname>.  A subclass can 
+	then use the <literal>id</literal> instance variable to
+	dispatch to many native procedures in the body of the
+	<function>doApply</function> method required by native 
+	procedures.
+      </para>
+      <para>
+        So, typically, an IndexedNativeLibrary subclass is created
+	whose <function>construct</function> method creates 
+	instances of IndexedProcedure subclasses.  The
+	IndexedNativeLibrary subclass its itself nested in the
+	IndexedProcedure class which it is constructing.  See the
+	various indexed libraries in
+	<classname>sisc.modules</classname>
+	for concrete examples.
+      </para>
+     </sect2>
+    </sect1>
+    <sect1 id="serialization">
+      <title>Serialization</title>
+      <para>
+        &SISC; provides an API for serializing the state of a running
+        Interpreter.  The &SISC; heap is a dump of the state of an
+        Interpreter with the necessary code to implement &R5RS;
+        Scheme, for example.  In order to facilitate this
+        serialization, &SISC; Expressions and Values can implement
+        helper methods to define the serialization of the object.
+        If the Expression or Value contains no internal state that
+        need be serialized, the serialization methods may be ignored.
+        If not, the Expression or Value must contain a default (no
+        argument) constructor, and implement the following three methods:
+        <blockquote>
+          <para>
+            <indexterm><primary>serialize</primary>
+            </indexterm>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <void/>
+              <methodname>serialize</methodname>
+              <methodparam>
+                <type>sisc.ser.Serializer</type>
+                <parameter>serializer</parameter>
+              </methodparam>
+              <exceptionname>java.io.IOException</exceptionname>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Serializes the contents of the Expression to
+                the given Serialization context.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>deserialize</primary>
+            </indexterm>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <void/>
+              <methodname>deserialize</methodname>
+              <methodparam>
+                <type>sisc.ser.Deserializer</type>
+                <parameter>deserializer</parameter>
+              </methodparam>
+              <exceptionname>java.io.IOException</exceptionname>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Sets the state of the Expression to the serialized
+                data read from <parameter>deserializer</parameter>.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>visit</primary>
+            </indexterm>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <type>boolean</type>
+              <methodname>visit</methodname>
+              <methodparam>
+                <type>sisc.util.ExpressionVisitor</type>
+                <parameter>visitor</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                When called, the Expression should call
+                <literal>visitor.visit(n)</literal> on any nested
+                Expressions.  
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        The <classname>Serializer</classname> and
+        <classname>Deserializer</classname> objects implement Java's
+        <classname>java.io.DataOutput</classname> and
+        <classname>java.io.DataInput</classname> interfaces,
+        respectively.  This means that you can use any of the
+        write/read functions in those interfaces to serialize the
+        state of your Expression or Value.  In addition, a
+        number of methods are provided that are helpful for this
+        domain.
+      </para>
+      <para>
+        The <type>ExpressionVisitor</type> passed to visit contains
+        only one method, <function>visit</function>, which bears the
+        same contract as the <function>visit</function> above.  When
+        called, an Expression would then call the
+        ExpressionVisitor's <function>visit</function> method once for
+        each nested Expression.  This method is used during
+        serialization and during printing to detect cycles in data
+        and code structures.
+      </para>
+      <sect2>
+        <title>Deserializer methods</title>
+        <para>
+          <blockquote>
+            <para>
+              <indexterm><primary>readBigInteger</primary>
+              </indexterm>
+              <methodsynopsis language="java">
+                <modifier>public</modifier>
+                <type>BigInteger</type>
+                <methodname>readBigInteger</methodname>
+                <void/>
+                <exceptionname>java.io.IOException</exceptionname>
+              </methodsynopsis>          
+              <blockquote>
+                <para>
+                  Reads a BigInteger from the stream.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>readBigDecimal</primary>
+              </indexterm>
+              <methodsynopsis language="java">
+                <modifier>public</modifier>
+                <type>BigDecimal</type>
+                <methodname>readBigDecimal</methodname>
+                <void/>
+                <exceptionname>java.io.IOException</exceptionname>
+              </methodsynopsis>          
+              <blockquote>
+                <para>
+                  Reads a BigDecimal from the stream.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>readClass</primary>
+              </indexterm>
+              <methodsynopsis language="java">
+                <modifier>public</modifier>
+                <type>Class</type>
+                <methodname>readClass</methodname>
+                <void/>
+                <exceptionname>java.io.IOException</exceptionname>
+              </methodsynopsis>          
+              <blockquote>
+                <para>
+                  Reads a Java Class object from the stream.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>readExpression</primary>
+              </indexterm>
+              <methodsynopsis language="java">
+                <modifier>public</modifier>
+                <type>Expression</type>
+                <methodname>readExpression</methodname>
+                <void/>
+                <exceptionname>java.io.IOException</exceptionname>
+              </methodsynopsis>          
+              <blockquote>
+                <para>
+                  Reads a &SISC; Expression from the stream.
+                </para>
+              </blockquote>
+            </para>
+
+            <para>
+              <indexterm><primary>readInitializedExpression</primary>
+              </indexterm>
+              <methodsynopsis language="java">
+                <modifier>public</modifier>
+                <type>Expression</type>
+                <methodname>readInitializedExpression</methodname>
+                <void/>
+                <exceptionname>java.io.IOException</exceptionname>
+              </methodsynopsis>          
+              <blockquote>
+                <para>
+                  Reads a &SISC; Expression from the stream, fully
+                  initialized. This method should
+                  <emphasis>only</emphasis> be used if fields internal
+                  to the Expression returned must be available during
+                  deserialization.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>readExpressionArray</primary>
+              </indexterm>
+              <methodsynopsis language="java">
+                <modifier>public</modifier>
+                <type>sisc.data.Expression[]</type>
+                <methodname>readExpressionArray</methodname>
+                <void/>
+                <exceptionname>java.io.IOException</exceptionname>
+              </methodsynopsis>          
+              <blockquote>
+                <para>
+                  Reads an array of <classname>Expression</classname>s from the stream.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>readValueArray</primary>
+              </indexterm>
+              <methodsynopsis language="java">
+                <modifier>public</modifier>
+                <type>sisc.data.Value[]</type>
+                <methodname>readValueArray</methodname>
+                <void/>
+                <exceptionname>java.io.IOException</exceptionname>
+              </methodsynopsis>          
+              <blockquote>
+                <para>
+                  Reads an array of <classname>Value</classname>s from the stream.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>readSymbolicEnvironment</primary>
+              </indexterm>
+              <methodsynopsis language="java">
+                <modifier>public</modifier>
+                <type>SymbolicEnvironment</type>
+                <methodname>readSymbolicEnvironment</methodname>
+                <void/>
+                <exceptionname>java.io.IOException</exceptionname>
+              </methodsynopsis>          
+              <blockquote>
+                <para>
+                  Reads a &SISC; Symbolic Environment from the stream.
+                </para>
+              </blockquote>
+            </para>
+          </blockquote>
+        </para>
+      </sect2>
+      <sect2>
+        <title>Serializer methods</title>
+        <para>
+          <blockquote>
+            <para>
+              <indexterm><primary>writeBigInteger</primary>
+              </indexterm>
+              <methodsynopsis language="java">
+                <modifier>public</modifier>
+                <type>void</type>
+                <methodname>writeBigInteger</methodname>
+                <methodparam>
+                  <type>BigInteger</type>
+                  <parameter>bigint</parameter>
+                </methodparam>
+                <exceptionname>java.io.IOException</exceptionname>
+              </methodsynopsis>          
+              <blockquote>
+                <para>
+                  Writes a BigInteger to the stream.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>writeBigDecimal</primary>
+              </indexterm>
+              <methodsynopsis language="java">
+                <modifier>public</modifier>
+                <type>void</type>
+                <methodname>writeBigDecimal</methodname>
+                <methodparam>
+                  <type>BigDecimal</type>
+                  <parameter>bigdecim</parameter>
+                </methodparam>
+                <exceptionname>java.io.IOException</exceptionname>
+              </methodsynopsis>          
+              <blockquote>
+                <para>
+                  Writes a BigDecimal to the stream.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>writeClass</primary>
+              </indexterm>
+              <methodsynopsis language="java">
+                <modifier>public</modifier>
+                <type>void</type>
+                <methodname>writeClass</methodname>
+                <methodparam>
+                  <type>Class</type>
+                  <parameter>clazz</parameter>
+                </methodparam>
+                <exceptionname>java.io.IOException</exceptionname>
+              </methodsynopsis>          
+              <blockquote>
+                <para>
+                  Writes a Java Class object to the stream.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>writeExpression</primary>
+              </indexterm>
+              <methodsynopsis language="java">
+                <modifier>public</modifier>
+                <type>void</type>
+                <methodname>writeExpression</methodname>
+                <methodparam>
+                  <type>Expression</type>
+                  <parameter>expr</parameter>
+                </methodparam>
+                <exceptionname>java.io.IOException</exceptionname>
+              </methodsynopsis>          
+              <blockquote>
+                <para>
+                  Writes a &SISC; Expression to the stream.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>writeInitializedExpression</primary>
+              </indexterm>
+              <methodsynopsis language="java">
+                <modifier>public</modifier>
+                <type>void</type>
+                <methodname>writeInitializedExpression</methodname>
+                <methodparam>
+                  <type>Expression</type>
+                  <parameter>expr</parameter>
+                </methodparam>
+                <exceptionname>java.io.IOException</exceptionname>
+              </methodsynopsis>          
+              <blockquote>
+                <para>
+                  Writes a &SISC; Expression to the stream.
+                  This method should
+                  <emphasis>only</emphasis> be used if fields internal
+                  to the Expression returned must be available during
+                  deserialization.         
+                </para>
+              </blockquote>
+            </para>
+
+            <para>
+              <indexterm><primary>writeExpressionArray</primary>
+              </indexterm>
+              <methodsynopsis language="java">
+                <modifier>public</modifier>
+                <type>void</type>
+                <methodname>writeExpressionArray</methodname>
+                <methodparam>
+                  <type>sisc.data.Expression[]</type>
+                  <parameter>ary</parameter>
+                </methodparam>
+                <exceptionname>java.io.IOException</exceptionname>
+              </methodsynopsis>          
+              <blockquote>
+                <para>
+                  Writes an array of <classname>Expression</classname>s to the stream.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>writeValueArray</primary>
+              </indexterm>
+              <methodsynopsis language="java">
+                <modifier>public</modifier>
+                <type>void</type>
+                <methodname>writeValueArray</methodname>
+                <methodparam>
+                  <type>sisc.data.Value[]</type>
+                  <parameter>ary</parameter>
+                </methodparam>
+                <exceptionname>java.io.IOException</exceptionname>
+              </methodsynopsis>          
+              <blockquote>
+                <para>
+                  Writes an array of <classname>Value</classname>s to the stream.
+                </para>
+              </blockquote>
+            </para>
+            <para>
+              <indexterm><primary>writeSymbolicEnvironment</primary>
+              </indexterm>
+              <methodsynopsis language="java">
+                <modifier>public</modifier>
+                <type>void</type>
+                <methodname>writeSymbolicEnvironment</methodname>
+                <methodparam>
+                  <type>SymbolicEnvironment</type>
+                  <parameter>e</parameter>
+                </methodparam>
+                <exceptionname>java.io.IOException</exceptionname>
+              </methodsynopsis>          
+              <blockquote>
+                <para>
+                  Writes a &SISC; Symbolic Environment to the
+                  stream.
+                </para>
+              </blockquote>
+            </para>
+          </blockquote>
+        </para>
+      </sect2>
+    </sect1>
+</chapter>
+<!-- Keep this comment at the end of the file
+Local variables:
+sgml-parent-document:("sss.xml" "chapter")
+End:
+-->

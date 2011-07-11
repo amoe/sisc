@@ -1,0 +1,32 @@
+<project 
+    xmlns:ant="jelly:ant"
+    default="jar:install">
+  <goal name="sisc:build-heap">
+    <ant:java classname="sisc.boot.GenerateHeap"
+          classpath="${maven.build.dest}"
+          dir="${maven.src.dir}/sisc/boot"
+          fork="yes">
+      <arg value="-out"/>
+      <arg value="${maven.build.dest}/sisc/boot/sisc.shp"/>
+      <arg value="-files"/>
+      <arg value="file:init.sce"/>
+      <arg value="file:compat.sce"/>
+      <arg value="file:psyntax.sce"/>
+      <arg value="file:analyzer.sce"/>
+      <arg value="file:eval.sce"/>
+      <arg value="file:init2.scm"/>
+      <arg value="file:repl.scm"/>
+    </ant:java>
+  </goal>
+
+  <preGoal name="java:compile">
+      <ant:copy 
+          overwrite="true"
+          tofile="${basedir}/src/sisc/data/Quantity.java"
+          file="${basedir}/src/sisc/data/Quantity-apfloat.java.tmpl" />
+  </preGoal>
+
+  <preGoal name="java:jar-resources">
+  	<attainGoal name="sisc:build-heap" />
+  </preGoal>
+</project>

@@ -1,0 +1,94 @@
+This table indicates the current and planned support for SRFIs in SISC.
+
+0   "Feature-based conditional expansion construct"     implemented
+1   "List Library"                                      implemented
+2   "AND-LET*"                                          implemented
+3   "List-Set Library"                                  withdrawn
+4   "Homogeneous numeric vector datatypes"              won't implement
+5   "A let form with signatures and rest arguments"     implemented
+6   "Basic String Ports"                                implemented
+7   "Feature-based program configuration language"      implemented
+8   "receive: Binding to multiple values"               implemented
+9   "Defining Record Types"                             implemented
+10  "Sharp-Comma External Form"                         won't implement
+11  "Syntax for receiving multiple values"              implemented
+12  "Exception Handling"                                withdrawn
+13  "String Library"                                    implemented
+14  "Character-Set Library"                             implemented
+15  "Syntax for dynamic scoping"                        withdrawn
+16  "Syntax for procedures of variable arity"           implemented
+17  "Generalized set!"                                  won't implement
+18  "Multithreading support"                            implemented
+19  "Time Data Types and Procedures"                    implemented
+20  "Simple object system"                              withdrawn
+21  "Real-time multithreading support"                  won't implement
+22  "Running Scheme Scripts on Unix"                    implemented
+23  "Error reporting mechanism"                         implemented
+24  "Define-syntax in local lexical scopes"             withdrawn
+25  "Multi-dimensional Array Primitives"                implemented
+26  "Notation for Specializing Parameters w/o Currying" implemented
+27  "Sources of Random Bits"                            implemented
+28  "Basic Format Strings"                              implemented
+29  "Localization"                                      implemented
+30  "Nested Multi-line Comments"                        implemented
+31  "A special form for recursive evaluation"           implemented
+32  "Sort Libraries"                                    withdrawn
+33  "Integer Bitwise-operation Library"                 withdrawn
+34  "Exception Handling for Programs"                   implemented
+35  "Conditions"                                        implemented
+36  "I/O Conditions"                                    won't implement
+37  "args-fold: a program argument processor"           implemented
+38  "External Rep for Data With Shared Structure"       implemented
+39  "Parameter objects"                                 implemented
+40  "A Library of Streams"                              implemented
+41                                                      nonexistent
+42  "Eager Comprehensions"                              implemented
+43  "Vector Library"                                    implemented
+44  "Collections"                                       won't implement
+45  "Primitives for iterative lazy algorithms"          implemented
+46  "Basic Syntax-rules Extensions"                     won't implement
+47  "Array"                                             won't implement
+48  "Intermediate Format Strings"                       implemented
+49  "Indentation-sensitive syntax"                      won't implement
+50  "Mixing Scheme and C"                               withdrawn
+51  "Handling rest list"                                implemented
+52  "Permitting and Supporting Extended Character Sets" withdrawn
+53  "Syntactic computations with computation-rules"     withdrawn
+54  "Formatting"                                        implemented
+55  "require-extension"                                 implemented
+56  "Binary I/O"                                        withdrawn
+57  "Records"                                           won't implement
+58  "Array Notation"                                    won't implement
+59  "Vicinity"                                          implemented
+60  "Integers as Bits"                                  implemented
+61  "A more general cond clause"                        implemented
+62  "S-expression comments"                             implemented
+63  "Homogeneous and Heterogeneous Arrays"              won't implement
+64  "A Scheme API for test suites"                      draft
+65  "define-immutable"                                  withdrawn
+66  "Octet Vectors"                                     implemented
+67  "Compare Procedures"                                implemented
+68  "Comprehensive I/O"                                 withdrawn
+69  "Basic hash tables"                                 implemented
+70  "Numbers"                                           won't implement
+71  "LET-syntax for multiple values"                    won't implement
+72  "Simple hygienic macros"                            won't implement
+73  "Exact Infinities"                                  withdrawn
+74  "Octet-Addressed Binary Blocks"                     won't implement
+75  "R6RS Unicode data"                                 draft
+76  "R6RS Records"                                      draft
+77  "Preliminary Proposal for R6RS Arithmetic"          draft
+78  "Lightweight testing"                               implemented
+79  "Primitive I/O"                                     draft
+80  "Stream I/O"                                        draft
+81  "Port I/O"                                          draft
+82  "Stream Ports"                                      draft
+83  "R6RS Library Syntax"                               draft
+84  "Universal Identifiers"                             draft
+85  "Recursive Equivalence Predicates"                  draft
+86  "MU and NU simulating VALUES & CALL-WITH-VALUES"    draft
+87  "=> in case clauses"                                draft
+88  "Keyword Objects"                                   draft
+89  "Optional parameters"                               draft
+90  "Extensible hash table constructor"                 draft
+91  "Extended ports"                                    draft

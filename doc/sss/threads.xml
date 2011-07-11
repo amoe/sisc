@@ -1,0 +1,1033 @@
+<chapter id="Threads">
+  <title>
+    Threads and Concurrency
+  </title>
+  <para>
+    &requires; 
+    <emphasis role="bold">
+      (import <emphasis>threading</emphasis>)
+    </emphasis>
+  </para>
+  <para>
+    &SISC; provides a comprehensive library for executing Scheme
+    code in parallel in multiple concurrent threads.  This allows
+    code for simple code for handling blocking I/O sources (such as
+    network servers) or for the ability to do parallel computation
+    across multiple processors.
+  </para>
+  <para>
+    In addition, functions are provided to ensure mutually exclusive
+    access to data (mutexes), to assign priorities to Scheme
+    threads, and for inter-thread signaling and synchronization.
+  </para>
+  <sect1 id="threadsemantics">
+    <title>
+      Scheme Thread Semantics
+    </title>
+    <para>
+      Care has been taken to ensure that Scheme code executing
+      concurrently in two or more threads does not result in
+      unpredictable behavior.  Assuming the executing threads do not
+      share data, executing code in multiple threads should behave
+      just as executing the code in a single thread.  
+    </para>
+    <para>
+      All threads executing in the system share some resources.  The
+      top-level and symbolic environments are shared by all
+      threads.  If a thread makes a change to these environments,
+      the change will be visible in all other threads.  
+      Unless changed by the thread, all threads share the same
+      console input and output ports.  As threads originate from a
+      thunk created in the primordial thread or a child thread, the
+      lexical environment captured by the thunk may include some
+      lexical variables from the parent thread.  These variables
+      will be visible by both the parent and child threads.  The
+      lexical environments created in an executing thread are
+      visible by that thread only (unless that thread spawns a child
+      thread whose thunk binds its parent's lexicals).  
+    </para>
+    <para>
+      Some resources can be shared but may also be distinct from
+      thread to thread.  These resources are inherited from the
+      parent thread, but may be changed by the child or parent
+      without affecting the other.  The dynamic environment 
+      (including the console input and output port, parameters, etc.)
+      are inherited from the parent, as is the dynamic-wind
+      stack.  
+    </para>
+    <para>
+      When a thread begins, it is considered to be isolated from its
+      parent in terms of the dynamic-wind stack.  If a parent spawns
+      a thread in the <emphasis>during</emphasis> section of a
+      dynamic-wind call, the spawned thread
+      <emphasis>escapes</emphasis> the restrictions of the
+      dynamic-wind call.  This is logical, as the parent thread may
+      then exit from the dynamic extent even as the child thread
+      executes, or may remain there waiting for the child thread to
+      finish, in which case the parent has not left the
+      dynamic extent of the call.  In short, the dynamic-wind is
+      protecting only the parent thread. 
+    </para>
+    <para>
+      It is possible for more than one thread to access the same
+      memory location (be it a lexical variable or a named variable
+      in the top-level or another symbolic environment), it is also
+      possible that interactions on shared variables can have
+      unpredictable results.  As in any multi-threaded language,
+      unprotected access to shared variables can result in race
+      conditions and other concurrency mishaps.  If the programmer
+      anticipates concurrent access to a shared variable and if
+      any thread is to write to the variable, sections of code that
+      access the variable should use a protection mechanism from
+      <xref linkend="Synchronization"/>.
+    </para>
+    <para>
+      A thread can complete in one of two ways.  If the thunk
+      that contains the thread's code exits, the thread will
+      terminate and the thread handle will contain the return value
+      of the thunk.  This completion condition is called a
+      <emphasis>clean</emphasis> exit.  If during the execution of
+      the thunk's body an error is raised and is not subsequently
+      caught, the thread will terminate and the thread handle will 
+      trap the error.  The error will be raised to any caller that
+      attempts to retrieve the return value of the thread. 
+    </para>
+    <para>
+      It is perfectly legal for a thunk to both capture and invoke
+      continuations, even continuations created by other threads.
+      When applying a continuation captured outside of the thread,
+      the resources of the executing thread are used, though the
+      thread may be accessing lexical environments created by other
+      threads.  
+    </para>
+    <para>
+      Once created, a thread can be in one of four states:
+      <emphasis>ready</emphasis>, <emphasis>running</emphasis>, 
+      <emphasis>finished</emphasis>, or
+      <emphasis>finished-with-error</emphasis>.  The first two
+      states indicate a newly created thread and a running thread,
+      repectively.  The last two represent the end stages of a thread,
+      <emphasis>finished</emphasis> indicating a thread that has
+      exited cleanly, and <emphasis>finished-with-error</emphasis>
+      indicating exit with an error.
+    </para>
+    <para>
+      There are no guarantees that a Scheme thread will ever exit.
+      It is perfectly valid for a thread to execute indefinitely.
+      Furthermore, the &SISC; environment will not exit until all threads
+      have completed, either cleanly or with a failure, unless all
+      remaining threads are so-called <emphasis>daemon</emphasis>
+      threads.  Daemon threads are threads that may run indefinitely
+      but will be forcibly terminated if no non-daemon threads (of
+      which the primordial thread is one) are still running.
+      Termination of a daemon thread when no non-daemon threads
+      exist is the <emphasis>only</emphasis> instance where a thread
+      can be forcibly terminated.  <emphasis role="bold">There is no
+      guaranteed thread stop or destroy operation.</emphasis>
+    </para>
+  </sect1>
+  <sect1>
+    <title>
+      Basic Thread Operations
+    </title>
+    <para>
+      This section describes the basic, low-level operations on
+      threads, including how to create a thread, how to start it,
+      how to wait for it to terminate, and how to retrieve its
+      result.  A thread is managed in Scheme by its <emphasis>thread
+	handle</emphasis>, an opaque value that is used to identify
+      the thread.  A thread handle is present as an argument to most
+      of the thread library functions.
+    </para>
+    <para>
+      Threads are created with
+      <function>thread/new</function>.  This function
+      takes as its sole argument a thunk.  The body of the thunk is
+      the code that the thread will execute when started.  
+    </para>
+    <blockquote>
+      <para>
+        <indexterm><primary>thread?</primary>
+        </indexterm>
+        &procedure;
+        <methodsynopsis language="scheme">
+          <type>&num;t/&num;f</type>
+          <methodname>thread?</methodname>
+          <methodparam><parameter>value</parameter>
+          </methodparam>
+        </methodsynopsis>
+        <blockquote>
+          <para>
+            Returns true if and only if the provided value is a thread handle.
+          </para>
+        </blockquote>
+      </para>
+      <para id="func-thread-new">
+        <indexterm><primary>thread/new</primary>
+        </indexterm>
+        &procedure;
+        <methodsynopsis language="scheme">
+          <type>thread-handle</type>
+          <methodname>thread/new</methodname>
+          <methodparam>
+            <parameter>thunk</parameter>
+          </methodparam>
+        </methodsynopsis>
+        <blockquote>
+          <para>
+            Creates a new thread handle whose code is defined in the
+            provided <parameter>thunk</parameter>.
+          </para>
+        </blockquote>
+      </para>
+    </blockquote>
+    <para>
+      Once a thread-handle is created, the thread is in the ready
+      state, and can be started at any time by calling
+      <function>thread/start</function>.  At this point one can also
+      set various thread parameters, such as thread priority and
+      daemon status.
+    </para>
+    <blockquote>
+      <para id="func-thread-start">
+        <indexterm><primary>thread/start</primary>
+        </indexterm>
+        &procedure;
+        <methodsynopsis language="scheme">
+          <type>undefined</type>
+          <methodname>thread/start</methodname>
+          <methodparam>
+            <parameter>thread-handle</parameter>
+          </methodparam>
+        </methodsynopsis>
+        <blockquote>
+          <para>
+            Starts the thread identified by
+            <parameter>thread-handle</parameter>.  The thread must be
+            in the ready state.  It is an error to start a thread in
+            any other state.
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        <indexterm><primary>thread/daemon!</primary>
+        </indexterm>
+        &procedure;
+        <methodsynopsis language="scheme">
+          <type>undefined</type>
+          <methodname>thread/daemon!</methodname>
+          <methodparam>
+            <parameter>thread-handle</parameter>
+          </methodparam>
+          <methodparam>
+            <parameter>boolean</parameter>
+          </methodparam>
+        </methodsynopsis>
+        <blockquote>
+          <para>
+            Sets the daemon status of a thread.  It is an error to
+            change the status of a thread that is not in the
+            <literal>'ready</literal> state.
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        <indexterm><primary>thread/daemon?</primary>
+        </indexterm>
+        &procedure;
+        <methodsynopsis language="scheme">
+          <type>#t/#f</type>
+          <methodname>thread/daemon?</methodname>
+          <methodparam>
+            <parameter>thread-handle</parameter>
+          </methodparam>
+        </methodsynopsis>
+        <blockquote>
+          <para>
+            Returns <literal>#t</literal> if the given thread is a
+            daemon thread.
+          </para>
+        </blockquote>
+      </para>
+    </blockquote>
+    <para>
+      It is common pattern to create a thread and immediately start
+      it. The convenience method <function>thread/spawn</function>
+      encapsulates this operation.
+    </para>
+    <blockquote>
+      <para id="func-thread-spawn">
+        <indexterm><primary>thread/spawn</primary>
+        </indexterm>
+        &procedure;
+        <methodsynopsis language="scheme">
+          <type>thread-handle</type>
+          <methodname>thread/spawn</methodname>
+          <methodparam>
+            <parameter>thunk</parameter>
+          </methodparam>
+        </methodsynopsis>
+        <blockquote>
+          <para>
+            Creates a new thread handle whose code is defined in the
+            provided <parameter>thunk</parameter>, and starts the
+            thread.
+          </para>
+        </blockquote>
+      </para>
+    </blockquote>
+    <para>
+      Once started, the thread will be in the running state.  The
+      body of the thunk is now being evaluated in parallel to the
+      parent thread.  The thread will remain in the running state
+      until it completes and enters one of the two finished states.
+      The state can be read using <function>thread/state</function>.
+    </para>
+    <blockquote>
+      <para id="func-thread-state">
+        <indexterm><primary>thread/state</primary>
+        </indexterm>
+        &procedure;
+        <methodsynopsis language="scheme">
+          <type>symbol</type>
+          <methodname>thread/state</methodname>
+          <methodparam>
+            <parameter>thread-handle</parameter>
+          </methodparam>
+        </methodsynopsis>
+        <blockquote>
+          <para>
+            Returns the state of the thread identified by 
+            <parameter>thread-handle</parameter>.  The state is one of
+            <literal>'ready</literal>, <literal>'running</literal>, 
+            <literal>'finished</literal>, or
+            <literal>'finished-with-error</literal>.
+          </para>
+        </blockquote>
+      </para>
+    </blockquote>
+    <para>
+      The parent thread may continue executing its own code, or may
+      attempt to <emphasis>join</emphasis> the child thread.
+      To join another thread is to wait until the other thread has
+      completed.  The parent thread can join a child using
+      <function>thread/join</function>.  The parent can
+      wait indefinitely or may specify a timeout, after which the
+      <function>thread/join</function> command will
+      return with <literal>&num;f</literal>.
+    </para>
+    <blockquote>
+      <para>
+        <indexterm><primary>thread/join</primary>
+        </indexterm>
+        &procedure;
+        <methodsynopsis language="scheme">
+          <type>boolean</type>
+          <methodname>thread/join</methodname>
+          <methodparam>
+            <parameter>thread-handle</parameter>
+          </methodparam>
+          <methodparam choice="opt">
+            <parameter>timeout</parameter>
+          </methodparam>
+        </methodsynopsis>
+        <blockquote>
+          <para>
+            Attempts to join with the indicated thread.  If the thread
+            terminates, thread/join will return
+            a non-false value.  If a timeout is specified
+            thread/join will only wait <parameter>timeout</parameter>
+            milliseconds for the thread to complete.  If the thread
+            does not terminate before the timeout,
+            <literal>&num;f</literal> will be returned.
+          </para>
+        </blockquote>
+      </para>
+    </blockquote>
+    <para>
+      It is possible to join on an already completed thread.  In
+      such a case the join will immediately return &num;t.
+      The behavior of a join on a thread in the ready state is
+      unspecified, and may cause an error.  Finally, it is possible
+      that a join may return <literal>&num;f</literal>, even if no timeout is
+      specified.  Though unlikely, programmers who wish to wait
+      indefinitely for a thread to complete should check the return
+      value of <function>thread/join</function> and
+      repeat the join until <literal>&num;t</literal> is returned.
+    </para>
+    <para>
+      If enabled (using the <envar>permitInterrupts</envar>
+      configuration parameter, see <xref
+      linkend="config-parameters"/>), running threads may be
+      interrupted at both the host language level and when executing
+      Scheme code with the <function>thread/interrupt</function>
+      function.  If disabled (the default), only a host-language
+      interrupt signal can be sent.
+    </para>
+    <blockquote>
+      <para>
+        <indexterm><primary>thread/interrupt</primary>
+        </indexterm>
+        &procedure;
+        <methodsynopsis language="scheme">
+          <type>undefined</type>
+          <methodname>thread/interrupt</methodname>
+          <methodparam>
+            <parameter>thread-handle</parameter>
+          </methodparam>
+        </methodsynopsis>
+        <blockquote>
+          <para>
+            Sends an interrupt signal to the given thread.  This will 
+            cause an error to be raised from Scheme code, and a thread
+            interrupt in the host language.  
+          </para>
+        </blockquote>
+      </para>
+    </blockquote>
+    <para>
+      When invoked, a signal is sent to the running thread which will
+      cause an error to be raised from some point in its execution.
+      If not caught, the thread will terminate in the
+      <emphasis>finished-with-error</emphasis> state, and the
+      raised error will be rethrown if
+      <function>thread/result</function> is called.  The error-continuation
+      of the error thrown inside the thread, when invoked with no arguments,
+      will restart the computation exactly where it left off.  A thread may 
+      not properly resume if its code calls back into Scheme using any of the
+      mechanisms described in <xref linkend="JavaToScheme"/>.
+    </para>
+    <warning>
+      <title>Final Continuation of a Thread</title>
+      <para>
+        If a thread is interrupted and later its computation is
+        resumed by calling the error-continuation, the thread that
+        hosts the resumed computation will exit when the computation
+        terminates. As a consequence, if a computation that ran in a
+        separate thread is resumed in the primordial thread (that
+        usually hosts the REPL), the primordial thread will terminate
+        as soon as the computation completes. This will circumvent the
+        REPL entirely and cause &SISC; to exit if no non-daemon
+        threads remain. In general, interrupted threads should be
+        resumed in a newly created thread to avoid this scenario.
+      </para>
+    </warning>
+    <para>
+      It is important to note that
+      <function>thread/interrupt</function> does
+      <emphasis>not</emphasis> guarantee the termination of a thread.
+      A thread may still capture the error at the scheme level with a
+      <function>with/fc</function>, or catch the interrupt signal if
+      executing in the host language.  In either case, the running
+      code is not required to rethrow the error.
+    </para>
+    <para>
+      Once a thread has completed, the parent thread may wish to
+      retrieve the result of the thread's thunk, be it an error or a
+      valid result.  This can be done with the
+      <function>thread/result</function> function.  
+    </para>
+    <blockquote>
+      <para id="func-thread-result">
+        <indexterm><primary>thread/result</primary>
+        </indexterm>
+        &procedure;
+        <methodsynopsis language="scheme">
+          <type>value</type>
+          <methodname>thread/result</methodname>
+          <methodparam>
+            <parameter>thread-handle</parameter>
+          </methodparam>
+        </methodsynopsis>
+        <blockquote>
+          <para>
+            Returns the return value from a completed thread.  If the
+            thread completed with error, that error is raised from this
+            call.
+          </para>
+        </blockquote>
+      </para>
+    </blockquote>
+    <para>
+      An error will be raised if an attempt is made to retrieve the
+      result of a thread before that thread has completed.  
+    </para>
+  </sect1>
+  <sect1>
+    <title>
+      High-level Functions
+    </title>
+    <para>
+      In addition to the basic thread operations, some high level
+      syntax is provided to simplify some general case thread use.
+    </para>
+    <blockquote>
+      <para id="func-parallel">
+        <indexterm><primary>parallel</primary>
+        </indexterm>
+        &procedure;
+        <methodsynopsis language="scheme">
+          <type>multiple values</type>
+          <methodname>parallel</methodname>
+          <methodparam>
+            <parameter>thunk1</parameter>
+          </methodparam>
+          <methodparam>
+            <parameter>thunk2</parameter>
+          </methodparam>
+          <methodparam choice="opt" rep="repeat">
+            <parameter>thunks</parameter>
+          </methodparam>
+        </methodsynopsis>
+        <blockquote>
+          <para>
+            Executes each thunk in its own thread in parallel.  The call
+            to parallel blocks until all the threads have finished.  
+            If all threads completed without error, the results of each
+            thunk are returned as multiple values.  If any thread raised
+            an error, that error is raised from the call to parallel.  The
+            error is raised only after all other thunks have also
+            completed.  If more than one thunk raises an error, it is
+            undefined which error will be raised to the caller.
+          </para>
+        </blockquote>
+      </para>
+    </blockquote>
+  </sect1>
+  <sect1>
+    <title>
+      Thread Scheduling
+    </title>
+    <para>
+      All Scheme threads created in &SISC; are preemptive and
+      managed by a scheduler.  It is possible for a program to
+      manage the priorities of threads in order to give execution
+      preference to higher priority threads.  It is also possible
+      for threads to give up their execution time to other blocked
+      threads.
+    </para>
+    <para>
+      The priority of a thread is represented by an integer.  The
+      range of priorities and the default priority of a thread is
+      unspecified and may be platform specific.  Larger integers
+      represent higher priorities then smaller integers.  If a higher 
+      or lower priority thread is desired, the recommended procedure
+      is to get the current priority of a thread and increment or
+      decrement it.  Though unspecified, it is possible that an
+      error will be raised if a priority level outside the platform
+      specific range is selected.
+    </para>
+    <para>
+      Though not guaranteed, the behavior of the scheduler when two 
+      threads, one with higher priority than another are both
+      runnable but only one processor is available to run a thread,
+      is that the higher priority thread will be selected.  If only equal
+      priority threads are available to be run, the scheduler can choose any
+      thread to run.  No guarantees are made about latency or fairness.
+    </para>
+    <para>
+      Thread priorities can be set by the parent thread or the
+      thread itself.  The behavior of a child thread attempting to
+      set the parent's priority, or a sibling's priority is
+      undefined.
+    </para>
+    <blockquote>
+      <para id="func-thread-priority">
+        <indexterm><primary>thread/priority</primary>
+        </indexterm>
+        &procedure;
+        <methodsynopsis language="scheme">
+          <type>integer</type>
+          <methodname>thread/priority</methodname>
+          <methodparam>
+            <parameter>thread-handle</parameter>
+          </methodparam>
+        </methodsynopsis>
+        <blockquote>
+          <para>
+            Retrieves the current priority of the given thread.
+          </para>
+        </blockquote>
+      </para>
+      <para id="func-thread-priority-bang">
+        <indexterm><primary>thread/priority!</primary>
+        </indexterm>
+        &procedure;
+        <methodsynopsis language="scheme">
+          <type>undefined</type>
+          <methodname>thread/priority!</methodname>
+          <methodparam>
+            <parameter>thread-handle</parameter>
+          </methodparam>
+          <methodparam>
+            <parameter>new-priority</parameter>
+          </methodparam>
+        </methodsynopsis>
+        <blockquote>
+          <para>
+            Attempts to set the given thread's priority to the integer
+           <parameter>new-priority</parameter>.
+          </para>
+        </blockquote>
+      </para>
+    </blockquote>
+    <para>
+      In addition to setting priority levels, a program may wish to
+      yield its execution time temporarily to other threads.
+      Performing a yield allows the scheduler to select a thread to
+      run on the processor of the thread that just yielded control.
+      It is possible that the yielding thread may be selected again,
+      or another thread may be chosen.
+    </para>
+    <blockquote>
+      <para id="func-thread-yield">
+        <indexterm><primary>thread/yield</primary>
+        </indexterm>
+        &procedure;
+        <methodsynopsis language="scheme">
+          <type>undefined</type>
+          <methodname>thread/yield</methodname>
+          <void/>
+        </methodsynopsis>
+        <blockquote>
+          <para>
+            Causes the currently executing thread to yield to other
+            threads.
+          </para>
+        </blockquote>
+      </para>
+    </blockquote>
+    <para>
+      Finally, a thread (including the main thread) may sleep for
+      a specified amount of time, allowing other threads to 
+      execute in the mean time.  If no other threads are running, 
+      sleeping effectively pauses the program for the given time period.
+    </para>
+    <blockquote>
+      <para id="func-sleep">
+        <indexterm><primary>sleep</primary>
+        </indexterm>
+        &procedure;
+        <methodsynopsis language="scheme">
+          <type>undefined</type>
+          <methodname>sleep</methodname>
+          <methodparam><parameter>milliseconds</parameter></methodparam>
+        </methodsynopsis>
+        <blockquote>
+          <para>
+            Causes the currently executing thread to sleep for the
+            given number of milliseconds, specified as an exact integer.
+          </para>
+        </blockquote>
+      </para>
+    </blockquote>
+  </sect1>
+  <sect1 id="Synchronization">
+    <title>
+      Synchronization Primitives
+    </title>
+    <para>
+      &SISC; provides an implementation of mutexes and condition variables
+      designed to support a wide range of synchronization models, including the
+      monitor paradigm previously found in &SISC;.  The implementation provides
+      both a <emphasis>mutex</emphasis> and
+      <emphasis>condition-variable</emphasis> first-class value for
+      concurrency protection and inter-thread communication.
+      Mutexes provide mutual exclusion locking, while condition
+      variables faciliate synchronization of threads with the change
+      in state of monitored data.  
+      &SISC;'s mutexes are reentrant, that is, if a thread locks a
+      mutex and then attempts to lock it again, the lock is granted
+      immediately- it does not block.  Correspondingly, the mutex is
+      not unlocked until the same number of unlock operations as
+      previous lock operations are performed by the owning thread.
+    </para>
+    <para>
+      &SISC;'s synchronization primitives map very closely to SRFI-18,
+      which is supported by &SISC;.  In fact, it is recommended that
+      programmers write to SRFI-18 if at all possible, as they will
+      gain maximum portability with little or no loss in efficiency on
+      &SISC;.
+    </para>
+    <para>
+      Throughout the following sections, a thread is often said to
+      <emphasis>block</emphasis> because of some circumstance.
+      While a thread is blocked on some resource, other threads are
+      allowed to execute freely, at the discretion of the scheduler.
+    </para>
+    <para>
+      Several functions exist for performing low level operations 
+      such as creating mutexes and condition variables.  All require
+      the mutex or condition variable as the first parameter.
+      Mutexes are represented in Scheme as opaque values displayed as
+      <literal>&num;&lt;mutex&gt;</literal> while condition variables
+      are represented as
+      <literal>&num;&lt;condition-variable&gt;</literal>.  
+      It is important to understand that all the synchronization 
+      operations depend on the same mutex and/or condition variable 
+      being shared between any threads using the functionality.
+    </para>
+    <sect2>
+      <title>
+	Mutex Operations
+      </title>
+      <para>
+	In order to protect a segment of Scheme code from concurrent
+	access, one can create a mutex that is shared by all
+	threads that may access the segment.  When entering the
+	contested region of code (the <emphasis>critical
+	  section</emphasis>), a thread would call
+	<function>mutex/lock</function>.  Upon exiting
+	the region, <function>mutex/unlock</function>
+	is called.
+      </para>
+      <blockquote>
+        <para>
+          <indexterm><primary>mutex?</primary>
+          </indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>&num;t/&num;f</type>
+            <methodname>mutex?</methodname>
+            <methodparam><parameter>value</parameter>
+            </methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns true if and only if the provided value is a mutex.
+            </para>
+          </blockquote>
+        </para>
+        <para id="func-mutex-new">
+          <indexterm><primary>mutex/new</primary>
+          </indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>mutex</type>
+            <methodname>mutex/new</methodname>
+            <void/>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Creates and returns a new mutex object.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+          <indexterm><primary>mutex-of</primary>
+          </indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>mutex</type>
+            <methodname>mutex-of</methodname>
+            <methodparam>
+              <parameter>value</parameter>
+            </methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns a mutex that is uniquely associated to the given
+              value.  Subsequent (or concurrent) calls to this function
+              are guaranteed to return the same mutex if given the
+              same value.
+            </para>
+          </blockquote>
+        </para>
+      </blockquote>
+      <blockquote>
+        <para id="func-mutex-lock">
+          <indexterm><primary>mutex/lock!</primary>
+          </indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>undefined</type>
+            <methodname>mutex/lock!</methodname>
+            <methodparam>
+              <parameter>mutex</parameter>
+            </methodparam>            
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Attempts to acquire the lock on the given mutex.  Returns
+              only when the lock has been successfully acquired.
+            </para>
+          </blockquote>
+        </para>
+        <para id="func-mutex-unlock">
+          <indexterm><primary>mutex/unlock!</primary>
+          </indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>undefined</type>
+            <methodname>mutex/unlock!</methodname>
+            <methodparam>
+              <parameter>mutex</parameter>
+            </methodparam>            
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Releases the lock on the given mutex.  The behavior when
+              unlocking a mutex when the running thread does not have
+              the lock is undefined, and may raise an error.
+            </para>
+          </blockquote>
+        </para>
+      </blockquote>
+      <para> 
+	The semantics of
+	<function>mutex/lock!</function> ensure that
+	only one thread can execute beyond the lock call at any one
+	time.  The first thread that reaches the call
+	<emphasis>acquires</emphasis> the lock on the mutex.  Any
+        later threads will block at the call to
+        <function>mutex/lock!</function> until the
+        thread that owns the lock releases the lock with
+        <function>mutex/unlock!</function>.  
+      </para>
+    </sect2>
+    <sect2>
+      <title>
+        Condition Variable Operations
+      </title>
+      <para>
+        A condition variable allows one thread
+        to sleep until another wakes it.  A common situation is for
+        one thread to check the status of a variable, and sleep if
+        the <emphasis>condition</emphasis> is not met.  While the
+        thread sleeps, one or more separate threads may execute and
+        satisfy the condition (by changing the state of the
+        variable) and then <emphasis>notify</emphasis> the sleeping
+        thread via the condition variable.  
+        The thread then awakes, checks the state variable, and
+        proceeds if the condition is met.  If not, it sleeps again.  
+        This construct allows for cooperation between multiple threads
+        on a computation.
+      </para>
+      <para>
+        To wait on a condition variable, the
+        <function>mutex/unlock!</function> function is again used with 
+        a condition variable as an additional argument.
+        applied to a monitor.  This will cause the thread to unlock 
+        the given mutex, then block until notified by another thread.  
+        When it is notified, or the provided timeout expires, the lock
+        is <emphasis>not</emphasis> reacquired.
+      </para>
+      <blockquote>
+        <para id="condvarq">
+          <indexterm><primary>condvar?</primary>
+          </indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>&num;t/&num;f</type>
+            <methodname>condvar?</methodname>
+            <methodparam>
+              <parameter>value</parameter>
+            </methodparam>            
+          </methodsynopsis>
+          <blockquote>
+            <para>
+		      Returns true if the provided value is a condition variable.
+            </para>
+          </blockquote>
+        </para>
+        <para id="condvar-new">
+          <indexterm><primary>condvar/new</primary>
+          </indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>condition variable</type>
+            <methodname>condvar/new</methodname>
+            <void/>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+	          Creates a new condition variable.
+            </para>
+          </blockquote>
+        </para>
+        <para id="func-mutex-wait">
+          <indexterm><primary>mutex/unlock!</primary>
+          </indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>&num;t/&num;f</type>
+            <methodname>mutex/unlock!</methodname>
+            <methodparam>
+              <parameter>mutex</parameter>
+            </methodparam>            
+            <methodparam>
+              <parameter>condvar</parameter>
+            </methodparam>            
+            <methodparam choice="opt">
+              <parameter>timeout</parameter>
+            </methodparam>            
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Causes the thread to sleep until notified on the
+              provided condition variable by another
+              thread.  This call will not return until notified, unless
+              the optional timeout is specified and
+              <parameter>timeout</parameter> milliseconds have elapsed
+              without a notification.  Before blocking, the lock on
+              <parameter>mutex</parameter> is released.
+              If the timeout is reached
+              before notification, <literal>&num;f</literal> is
+              returned, otherwise <literal>&num;t</literal> is returned.
+            </para>
+          </blockquote>
+        </para>
+      </blockquote>
+      <para>
+        Another thread may wake a single waiting thread with the
+        <function>condvar/notify</function> operation.
+        When called, one thread waiting on the condition variable is
+        woken.  If no threads are waiting this call has no effect.
+        If more than one thread is waiting, exactly one will
+        be woken.  Which is woken is unspecified.  If a thread
+        wishes to wake <emphasis>all</emphasis> threads waiting on a
+        given monitor, it may use the
+        <function>condvar/notify-all</function> function.
+      </para>
+      <blockquote>
+        <para id="func-condvar-notify">
+          <indexterm><primary>condvar/notify</primary>
+          </indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>undefined</type>
+            <methodname>condvar/notify</methodname>
+            <methodparam>
+              <parameter>condvar</parameter>
+            </methodparam>            
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Wakes exactly one thread waiting on the condition variable, if any such
+              threads exist.  If the notifying thread holds the lock
+              on <parameter>condvar</parameter>, the waiting thread
+              will not proceed until the notifying thread releases the lock.
+            </para>
+          </blockquote>
+        </para>
+        <para id="func-condvar-notify-all">
+          <indexterm><primary>condvar/notify-all</primary>
+          </indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>undefined</type>
+            <methodname>condvar/notify-all</methodname>
+            <methodparam>
+              <parameter>condvar</parameter>
+            </methodparam>            
+          </methodsynopsis>
+          <blockquote>
+            <para>	  
+              Wakes all threads waiting on the condition variable, if any waiting
+              threads exist.  If the notifying thread holds the lock
+              on <parameter>condvar</parameter>, the waiting thread
+              will not procede until the notifying thread releases the lock.
+            </para>
+          </blockquote>
+        </para>
+      </blockquote>
+      </sect2>
+      <sect2 id="highlevelconcurrency">
+	<title>
+	  High-level Concurrency
+	</title>
+	<para>
+	  In addition to the low-level operations on mutexes and
+	  condition variables, two
+	  library functions are provided to greatly ease the
+	  construction and readability of thread-safe code.
+	</para>
+      <blockquote>
+        <para id="func-mutex-synchronize">
+          <indexterm><primary>mutex/synchronize</primary>
+          </indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>value</type>
+            <methodname>mutex/synchronize</methodname>
+            <methodparam>
+              <parameter>mutex</parameter>
+            </methodparam>            
+            <methodparam>
+              <parameter>thunk</parameter>
+            </methodparam>            
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Protects execution of thunk as a critical section by holding the
+              mutex's lock during evaluation of the thunk.  The
+              result of the thunk's evaluation becomes the result of
+              the <function>mutex/synchronize</function> expression.
+            </para>
+          </blockquote>
+        </para>
+        <para id="func-mutex-synchronize-unsafe">
+          <indexterm><primary>mutex/synchronize-unsafe</primary>
+          </indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>value</type>
+            <methodname>mutex/synchronize-unsafe</methodname>
+            <methodparam>
+              <parameter>mutex</parameter>
+            </methodparam>            
+            <methodparam>
+              <parameter>thunk</parameter>
+            </methodparam>            
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Behaves exactly as mutex/synchronize without automatic
+              unlocking when an error is raised or a continuation escapes when
+              executing thunk.
+            </para>
+          </blockquote>
+        </para>
+      </blockquote>
+      <para>
+        <function>mutex/synchronize</function> locks
+        the mutex while the thunk provided is being
+        executed.  The lock is automatically released when the
+        expression has completed.  Also, if an error is raised or a
+        continuation is invoked that escapes the call to
+        <function>mutex/synchronize</function>, the
+        lock is automatically released.
+      </para>
+      <para>
+        The added safety provided by 
+        <function>mutex/synchronize</function> may
+        slow the execution of code that repeatedly calls a critical
+        section.  If the programmer is absolutely sure that no error
+        can be raised and that no continuations will be applied to
+        escape the call,
+        <function>mutex/synchronize-unsafe</function>
+        may be used.  It provides no safety guarantees in those
+        situations.  If an error is raised or an escaping
+        continuation invoked, the mutex will remain locked which
+        could cause a deadlock if another thread attempts to acquire
+        the lock.  
+      </para>
+    </sect2>
+  </sect1>
+</chapter>
+<!-- Keep this comment at the end of the file
+Local variables:
+sgml-parent-document:("sss.xml" "chapter")
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:2
+sgml-indent-data:t
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

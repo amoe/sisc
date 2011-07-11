@@ -1,0 +1,326 @@
+Generic Procedures
+==================
+
+Generic procedures are procedures that select & execute methods based
+on the types of the arguments to the generic procedure
+invocation. Methods have a type signature, which generic procedures
+use for method selection, and contain a procedure which is invoked by
+generic procedures when the method has been selected for execution.
+
+
+Methods
+-------
+
+Methods are records of type <method>.
+
+
+MAKE-METHOD <procedure> <list types> <rest?> => <method>
+Creates a new method containing procedure <procedure> whose type
+signature is <types>. If <rest?> is #t then the procedure can take
+rest arguments.
+
+Generic procedures always invoke methods with a special "next:"
+argument as the first parameter, followed by all the arguments of the
+generic procedure invocation. For more details on the next: parameter
+see below.
+
+
+METHOD? <value> => #t/#f
+Determines whether <value> is a method.
+
+
+METHOD-PROCEDURE <method> => <procedure>
+Returns the procedure associated with <method>
+
+
+METHOD-TYPES <method> => <list types>
+Returns the type signature of <method>
+
+
+METHOD-REST? <method> => #t/#f
+Determines whether <method> has a rest parameter.
+
+
+METHOD-ARITY <method> => <number>
+Determines the number of mandatory arguments to the method. Note that
+the special "next:" argument is not counted in this.
+
+
+METHOD= <method1> <method2> => #t/#f
+Determines whether two methods have identical signatures, i.e. have
+equal types (as determined by the TYPES= procedure) and rest parameter
+flag.
+
+
+METHOD-APPLICABLE? <method> <list types> => #t/#f
+Determines whether <method> is applicable to arguments of types
+<types>. For this procedure to return #t the following conditions must
+be met:
+
+* If the method accepts rest arguments then <types> must contain
+at least as many elements as the <method>'s type signature.
+
+* If the method does not accepts rest arguments then <types> must
+contain exactly as many elements as the <method>'s type signature.
+
+* All the types in the method's <type> signature must be supertypes of
+the corresponding types in <types>. This comparison is performed using
+the TYPES<= procedure.
+
+
+COMPARE-METHODS <method1> <method2> <list types>
+=> equal, more-specific, less-specific
+Determines the relationship of two methods by comparing their type
+signatures against each other and using the supplied <types> for
+disambiguation. <types> must be applicable (as determined by
+METHOD-APPLICABLE?) to both <method1> and <method2>.
+
+The result is computed by a triple-wise comparison on successive
+elements of the method signatures and <types>, using the COMPARE-TYPES
+procedure:
+
+* If we run out of elements in both method signatures then
+  - if both or neither method return rest arguments then we return
+    'equal
+  - if <method1> takes rest arguments then we return 'less-specific
+  - if <method2> takes rest arguments then we return 'more-specific
+
+* If we run out of elements in <method1>'s signature only then we
+return 'less-specific.
+
+* If we run out of elements in <method2>'s signature only then we
+return 'more-specific.
+
+* If COMPARE-TYPES returns 'equal we proceed to the next triple.
+
+* If COMPARE-TYPES returns 'less-specific we return 'less-specific.
+
+* If COMPARE-TYPES returns 'more-specific we return 'more-specific.
+
+Informally, the above performs a left-to-right match, returning the
+result of the type comparison at the point of the first discernible
+difference.
+
+
+METHOD ([(next: ?next)] (<type> ?arg) ... [. ?rest]) . ?body
+=> <method>
+Creates a method. This syntactic form is similar to the LAMBDA form,
+except that all parameters must be typed and that an optional leading
+special "next:" parameter can be present.
+
+
+Procedures
+----------
+
+Generic procedures are invoked like ordinary procedures. They contain
+a list of methods from which the method that is most applicable to the
+arguments is selected and invoked.
+
+
+MAKE-GENERIC-PROCEDURE [<generic-proc> ...] => <generic-proc>
+Creates a generic procedure. If <generic-proc>s are specified then
+their method lists are combined, in effect merging the generic
+procedures into one.
+
+The typical scenario for using method list merging is when several
+modules have defined generic functions (and procedures using these
+functions) that perform identical operations but on different data
+types. Method list merging allows the generic procedures to be
+combined, covering the combination of data types, and
+extended. Furthermore, the coverage of the dependent procedures is
+implicitly extended to the combined set of data types.
+
+
+GENERIC-PROCEDURE-METHODS <generic-proc> => <list methods>
+Returns the list of methods currently contained in <generic-proc>.
+
+
+ADD-METHOD <generic-proc> <method>
+Adds <method> to <generic-proc>. Any existing method with the same
+signature as <method> is removed.
+
+Method addition is thread-safe.
+
+
+ADD-METHODS <generic-proc> <list methods>
+Adds <methods> to <generic-proc>. This is more efficient than calling
+ADD-METHOD on each individual method.
+
+
+APPLICABLE-METHODS <generic-proc> <list types> => <list method>
+Returns all methods of <generic-proc> that are applicable, as
+determined by METHOD-APPLICABLE?, to <types>. The result is computed
+by pair-wise method comparison using COMPARE-METHODS.
+
+The applicable methods are ordered by their specificity.
+
+
+Syntax
+------
+
+DEFINE-GENERIC ?name [<generic-proc> ...]
+Creates a binding for ?name to a new generic procedure.
+
+This form is equivalent to
+  DEFINE ?name (MAKE-GENERIC-PROCEDURE <generic-proc> ...)
+
+
+DEFINE-GENERICS [?name | (?name <generic-proc> ...)] ...
+Creates bindings for several new generic procedures.
+
+This form expands into several DEFINE-GENERIC forms.
+
+
+DEFINE-METHOD (<generic-proc> . ?signature) . ?body
+Creates a method and adds it to <generic-proc>.
+
+This form is equivalent to
+  ADD-METHOD <generic-proc> (METHOD ?signature . ?body)
+
+
+DEFINE-METHODS <generic-proc> (?signature . ?body) ...
+Creates several methods and adds them to <generic-proc>.
+
+This form is equivalent to
+  ADD-METHODS <generic-proc> (LIST (METHOD ?signature . ?body) ...)
+
+
+"next:" method parameter
+------------------------
+The METHOD form and derived forms (e.g. DEFINE-METHOD and
+DEFINE-METHODS), permit the specification of a special first parameter
+to the method invocation. When a generic procedure invokes a method,
+this parameter is bound to a procedure that when called will invoke
+the "next best matching" method. This is the next method in the list
+of applicable methods returned by APPLICABLE-METHODS when it was
+called by the generic procedure upon invocation.
+
+If no "next best matching" method exists, i.e. the current method is
+the last in the list, then the next parameter is #f. This allows
+methods to invoke the next best matching method selectively depending
+on whether it is present. This is an important feature since the
+dynamic nature of method selection makes it impossible to determine
+at the time of writing the method whether there is going to be a next
+best matching method.
+
+The next best matching method must be invoked with arguments to which
+the current method is applicable.
+
+
+Examples
+--------
+
+Method selection, rest arguments, next: parameter:
+
+(define-generic m)
+(define-methods m
+  [((next: next) (<number> x) (<value> y) (<number> z) . rest)
+   (cons 'a (if next (apply next x y z rest) '()))]
+  [((next: next) (<number> x) (<value> y) (<number> z))
+   (cons 'b (if next (next x y z) '()))]
+  [((next: next) (<number> x) (<number> y) . rest)
+   (cons 'c (if next (apply next x y rest) '()))]
+  [((next: next) (<number> x) (<number> y) (<value> z))
+   (cons 'd (if next (next x y z) '()))])
+(m 1 1 1) ;=> '(d c b a)
+(m 1 1) ;=> '(c)
+(m 1 'x 2) ;=> '(b a)
+(m 1 1 'x) ;=> '(d c)
+(m 1 'x 'x) ;=> error
+
+Method list merging:
+
+(import* misc compose)
+(module foo
+    (p-append p-reverse-append)
+  (define (p-reverse-append . args)
+    (apply p-append (reverse args)))
+  (define-generic p-append)
+  (define-methods p-append
+    [((<list> x) . rest)
+     (apply append x rest)]
+    [((<vector> x) . rest)
+     (list->vector (apply append
+                          (vector->list x)
+                          (map vector->list rest)))]))
+(module bar
+    (p-append p-repeat)
+  (define (p-repeat n x)
+    (let loop ([res '()]
+               [n   n])
+      (if (= n 0)
+          (apply p-append res)
+          (loop (cons x res) (- n 1)))))
+  (define-generic p-append)
+  (define-methods p-append
+    [((<string> x) . rest)
+     (apply string-append x rest)]
+    [((<symbol> x) . rest)
+     (string->symbol (apply string-append
+                            (symbol->string x)
+                            (map symbol->string rest)))]))
+
+(import* foo (p-append1 p-append) p-reverse-append)
+(import* bar (p-append2 p-append) p-repeat)
+(define-generic p-append p-append1 p-append2)
+(define-method (p-append (<procedure> x) . rest)
+  (apply compose x rest))
+
+(p-append '(a b)) ;=> '(a b)
+(p-append '(a b) '(c d) '(e f)) ;=> '(a b c d e f)
+(p-append '#(a b)) ;=> '#(a b)
+(p-append '#(a b) '#(c d) '#(e f)) ;=> '#(a b c d e f)
+(p-append "ab") ;=> "ab"
+(p-append "ab" "cd" "ef") ;=> "abcdef"
+(p-append 'ab) ;=> 'ab
+(p-append 'ab 'cd 'ef) ;=> 'abcdef
+((p-append car cdr cdr cdr) '(1 2 3 4)) ;=> 4
+
+(p-reverse-append "ab" "cd" "ef") ;=> "efcdab"
+(p-repeat 3 '(a b)) ;=> '(a b a b a b)
+((p-reverse-append cdr cdr cdr car) '(1 2 3 4)) ;=> 4
+((p-repeat 3 cdr) '(1 2 3 4)) ;=> (4)
+
+
+What's Changed?
+---------------
+
+The major changes in the generic procedure system since the previous
+version are as follows:
+
+* The code and module have been disentangled from that of the type
+system, object system and Java FFI.
+
+* There is a clear internal separation between code that deals with
+methods and code that deals with generic procedures.
+
+* The new extensible type system is used for all type-related
+operations.
+
+* There is a new METHOD form for creating methods. It's main purpose
+is to simplify the construction of derived syntax.
+
+* Methods now have a distinct type, <method>.
+
+* The new ADD-METHOD procedure facilitates the adding of multiple
+methods to a generic procedure. This is more efficient than using
+individual calls to ADD-METHOD.
+
+* The new DEFINE-GENERICS form provides a concise syntax for the
+creation of bindings to multiple new generic procedures.
+
+* Generic procedures can be merged. This is useful in situations where
+several independently developed modules define generic procedures for
+identical purposes and an application needs to use and extend both.
+
+* Generic procedures can no longer be chained. Chaining makes it
+impossible to meaningfully and safely use the "next best matching
+method" invocation facility of generic procedures since it results in
+methods being incapable of discerning whether there *is* a next best
+matching method.
+
+* A "left-to-right" rule in the method selection logic simplifies the
+algorithm and results in elimination of ambiguity. See COMPARE-METHODS
+for details.
+
+* Improved error reporting.

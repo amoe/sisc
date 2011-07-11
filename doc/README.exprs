@@ -1,0 +1,82 @@
+Expressions
+-----------
+   Expressions and values form the atomic elements that the Interpreter 
+mainloop evaluates to produce more values.  SISC Expressions come in two
+forms.  The first, "*Exp" are expressions that set up the interpreter to 
+evaluate one or more expressions, and "*Eval" expressions that represent 
+the post-processing of the evaluated expressions.
+
+AppExp:                   
+  An AppExp sets up the interpreter for the evaluation of an application.
+This entails pushing an AppEval, the rator, and a FillRibExp onto the stack,
+then setting the next expression to the last rand.  FillRibExp will in turn
+evaluate the remaining rands, placing the results into the value-rib
+register.  After the rator is evaluated, the AppEval will be evaluated, 
+which actually performs the application of the rator to the rands.
+
+AppEval:
+  AppEval takes the procedure stored in the accumulator, and applies it to 
+the values stored in the value rib.
+
+ApplyValuesContEval:
+  ApplyValuesContEval is initialized with a procedure.  When it is
+evaluated, it expects to find multiple values in the accumulator.  It 
+applies the procedure to the values in the accumulator, treating each value 
+as a separate argument to the procedure.
+
+EvalExp:
+  An EvalExp is a generic expression that will evaluate one expression,
+called the pre-expression, and push another, called the post-expression,
+onto the stack.  The effect is that the post-expression gets evaluated 
+with the results of the pre-expression in the accumulator.  An EvalExp
+is usually paired with a *Eval expression as the post-expression.
+
+DefineEval:
+  DefineEval sets or defines a toplevel binding it is constructed with
+to a value in the accumulator.
+
+FillRibExp:
+  FillRibExp takes a rib-address, a next expression, and a value expression.
+It first stores the value in the accumulator into the value rib at its
+constructed rib address.  Then it pushes the next expression onto the
+stack and sets the nxp register to the value expression.  
+
+FreeReferenceExp:
+  A FreeReferenceExp sets the accumulator to the result of looking up a 
+symbol in a symbolic environment.  If the variable is not bound, an error
+is raised.
+
+FreeSetEval:
+  A FreeSetEval is initialized with a symbol.  When evaluated, it expects a
+processed right-hand-side to be in the accumulator.  It then sets the
+top-level binding of the left-hand-side to the value in the accumulator.
+
+IfEval:
+  An IfEval expression expects the accumulator to contain the value
+resulting from the processing of a test expression.  If the value in 
+the accumulator is non-false, it sets the next-expression register to be the
+true-expression.  Otherwise the false-expression is selected.
+
+LambdaExp:
+  The LambdaExp is initialized with the formal parameters, body, and
+arity (fixed or infinite) of a procedure.  When evaluated, it captures the
+lexical environment in a Closure and puts the new closure in the
+accumulator.
+
+LetrecExp:
+  Behaves like AppExp, except that it creates a LexicalEnvironment
+that contains a number of uninitialized values that will be visible
+when evaluating its arguments, and that its last expression is LetrecEval
+rather than AppEval.
+
+LetrecEval:
+  Sets the values of the bindings created by LetrecExp to the values
+present in the value rib.
+
+LexicalReferenceExp:
+  The LexicalReferenceExp looks up a lexical reference in the current
+lexical environment, and sets the accumulator to the result.
+
+LexicalSetEval:
+  The LexicalSetEval sets a lexical reference to the value stored in the
+accumulator.

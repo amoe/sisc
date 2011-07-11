@@ -1,0 +1,3412 @@
+<chapter id="JavaInteraction">
+  <title>Java Interaction</title>
+  <para>
+    &SISC; can be used as a scripting language for Java, or Java may be
+    used to provide functionality to Scheme. Such activity is collectively
+    termed 'bridging'. In &SISC; bridging is accomplished by a Java API
+    for executing Scheme code and evaluating Scheme expressions, and a
+    module that provides Scheme-level access to Java objects and
+    implementation of Java interfaces in Scheme.
+  </para>
+  <sect1 id="JavaToScheme">
+    <title>Calling Scheme from Java</title>
+    <para>
+      Calling programmer-defined Scheme code from Java is
+      a simple process, but requires some initialization 
+      before proceeding.  Depending on the use case of &SISC;,
+      the initialization may be largely automatic.  
+      Any Scheme call first requires four resources:
+      <orderedlist>
+        <listitem>
+          <para>
+            An Application Context (<classname>AppContext</classname>),
+            which encapsulates the entirety of a single application's 
+            interactions with &SISC;.  This is initialized with ...
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            A Heap, which provides the environments and base code
+            to execute programs using ...
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            A Dynamic Environment, which contains thread specific
+            values such as the current I/O ports, and
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            An <classname>Interpreter</classname>, which provides
+            the engine and API for actually evaluating Scheme code.
+          </para>
+        </listitem>
+      </orderedlist>
+      Each resource is described in the sections below.  The gateway
+      for interacting with these resources is primarily the 
+      <classname>sisc.interpreter.Context</classname> utility class.
+    </para>
+    <sect2 id="appcontexts">
+      <title>Application Contexts</title>
+      <para>
+        The Application Context, represented by the class
+        <classname>sisc.interpreter.AppContext</classname>, holds
+        references to the top-level environment, global configuration
+        properties, and other resources which are unique to a
+        single usage of &SISC;.  This should not be confused
+        with multiple threads or invocations into the same
+        application. 
+      </para>
+      <para>
+        An AppContext is created simply using the default constructor,
+        or a constructor which takes a Java
+        <classname>Properties</classname> class with overrides
+        for global Scheme properties as described throughout
+        this manual.
+      </para>
+      <para>
+        The application context is the token used
+        by most of the API for calling Scheme from Java code,
+        though many of the API calls can either infer the
+        <classname>AppContext</classname> from the currently
+        executing thread, or defer to a default context.
+      </para>
+      <para>
+        A default application context may be necessary when Scheme code
+        is called through callbacks or other Java mechanisms in 
+        code which is not aware of &SISC; or the Scheme code
+        which is being called.  The default application context
+        can be set explicitly after creating the context,
+        but is also set implicitly by &SISC; if there is not
+        already a default context when one is needed.
+        To set the default application context, use the following
+        method from <classname>Context</classname>:
+      </para>
+      <para id="func_set_default_app_context">
+        <methodsynopsis language="java">
+          <modifier>public</modifier>
+           <void/>
+           <methodname>setDefaultAppContext</methodname>
+           <methodparam>
+             <type>sisc.interpreter.AppContext</type>
+             <parameter>ctx</parameter>
+           </methodparam>
+        </methodsynopsis>
+        <blockquote>
+          <para>
+            Set the default <classname>AppContext</classname>
+            to the instance provided.
+          </para>
+        </blockquote>
+      </para>                   
+      <para id="func_get_default_app_context">
+        <methodsynopsis language="java">
+          <modifier>public</modifier>
+          <type>sisc.interpreter.AppContext</type>
+          <methodname>getDefaultAppContext</methodname>    
+          <void/>    
+        </methodsynopsis>
+        <blockquote>
+          <para>
+            Retrieves the current default <classname>AppContext</classname>,
+            possibly creating and initializing one using the default
+            heap if no default was set.
+          </para>
+        </blockquote>
+      </para>             
+      <para>
+        Remember that an application context is nearly always useless
+        until initialized with a heap, as described in the next
+        section.
+      </para>
+    </sect2>
+    <sect2>
+      <title>The &SISC; Heap</title>
+      <para>
+        The heap is a serialization of all the pre-compiled code which
+        makes up both the base Scheme language provided by &SISC;, and
+        many of its libraries.  Distributions of &SISC; come with a
+        prepackaged heap which is sufficient for most usages, and
+        customizing a heap should be viewed as a last resort, as 
+        precompiled libraries usually solve the same problem.
+      </para>
+      <para>
+        A heap is a randomly accessed structure which must be loaded
+        into an application context.  The heap can be automatically
+        located if it is in the directory pointed to by the
+        <literal>SISC_HOME</literal> environment variable, the
+        current directory, or on the Java classpath.  In the last case
+        however, it will be loaded into memory entirely, rather than
+        read in as needed.  The automatic heap location involves
+        calling <function>addDefaultHeap</function> on the 
+        <classname>AppContext</classname>, and is used
+        when an application context is created implicitly.
+      </para>
+      <blockquote>
+        <para>
+          <indexterm><primary>addDefaultHeap</primary>
+          </indexterm>
+          <methodsynopsis language="java">
+            <modifier>public</modifier>
+            <void/>
+            <methodname>addDefaultHeap</methodname>
+            <void/>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Uses <function>findHeap</function>, <function>openHeap</function>,
+              and <function>addHeap</function> to find and register 
+              a default heap with this application context
+            </para>
+          </blockquote>
+        </para>
+      </blockquote>
+      <para>
+        The URL that is produced through this discovery can be 
+        obtained using the <function>findHeap</function> method in 
+        <classname>AppContext</classname>:
+      </para>
+      <blockquote>
+        <para>
+          <indexterm><primary>findHeap</primary>
+          </indexterm>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <modifier>static</modifier>
+            <type>java.net.URL</type>
+            <methodname>findHeap</methodname>
+            <methodparam choice="opt">
+              <type>String</type>
+              <parameter>heapName</parameter>
+            </methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Searches for the heap with the given name, or
+              if null, <literal>sisc.shp</literal> in several candidate locations.
+              If a heap is found, a URL pointing to it is returned,
+              otherwise null is returned.
+            </para>
+          </blockquote>
+        </para>
+      </blockquote>
+      <para>
+        One of the locations searched is the classpath, by searching for a 
+        <emphasis>heap anchor</emphasis>, and loading the heap file from the 
+        same package.  To do this, the heap must be on the classpath in the
+        same location as <literal>HeapAnchor.class</literal>.  A utility
+        script, <literal>build-heapjar.scm</literal>, 
+        executed as an SRFI-22 script, is included in the <literal>
+        scheme-src</literal> directory of the full distribution.  It is 
+        invoked from the directory containing the heap, and will by default
+        emit <literal>sisc-heap.jar</literal> into the current directory.
+        If that jar file is on the classpath, <function>findHeap</function>
+        will locate it automatically.
+      </para>
+      <para>
+        Once located, the heap is opened and registered with the
+        <classname>AppContext</classname>, allowing the context
+        to then be used for Scheme evaluation.  This is done
+        with the <function>openHeap</function> and <function>addHeap</function>
+        methods:
+      </para>
+      <blockquote>
+        <para>
+          <indexterm><primary>openHeap</primary>
+          </indexterm>
+          <methodsynopsis language="java">
+            <modifier>public</modifier>
+            <modifier>static</modifier>
+            <type>sisc.ser.SeekableInputStream</type>
+            <methodname>openHeap</methodname>
+            <methodparam>
+              <type>java.net.URL</type>
+              <parameter>heapURL</parameter>
+            </methodparam>
+          </methodsynopsis>
+        </para>
+        <blockquote>
+          <para>
+            Opens the heap pointed to by the given
+            URL, returning an appropriate random
+            access input stream suitable for passing
+            to <function>addHeap</function>.
+          </para>
+        </blockquote>
+      </blockquote>
+      <blockquote>
+        <para>
+          <indexterm><primary>addHeap</primary>
+          </indexterm>
+          <methodsynopsis language="java">
+            <modifier>public</modifier>
+            <type>boolean</type>
+            <methodname>addHeap</methodname>
+            <methodparam>
+              <type>sisc.ser.SeekableInputStream</type>
+              <parameter>heap</parameter>
+            </methodparam>
+          </methodsynopsis>
+        </para>
+        <blockquote>
+          <para>
+            Registers the given heap stream with the
+            application context.  Returns true 
+            if the registration is successful, false
+            otherwise.
+          </para>
+        </blockquote>
+      </blockquote>
+    </sect2>
+    <sect2>
+      <title>The Dynamic Environment</title>
+      <para>
+        The dynamic environment, represented by the
+        <classname>sisc.env.DynamicEnvironment</classname> class, 
+        is the datastructure which stores dynamic
+        variables.  That is, variables whose values are not
+        scoped lexically and are associated with threads rather than
+        code.  This includes such values as the current input and
+        output ports, Scheme parameters, and the class path.  
+      </para>
+      <para>
+        Each interpreter contains a reference to its current dynamic 
+        environment, and the dynamic environment cannot be shared
+        between two threads, or by more than one application context 
+        called in the same thread.  They should be shared across
+        call boundaries in a single thread and single application, but
+        must be created anew for external calls and cross application
+        calls, and cloned for new threads.
+      </para>
+      <para> 
+        It should seem obvious, then, that maintaining the correct
+        dynamic environment in all call situations can be tricky.
+        Fortunately, the supported API calls in
+        <classname>Context</classname> detect and do the Right Thing
+        in most situations.
+      </para>
+    </sect2>
+    <sect2>
+      <title>The Interpreter</title>
+      <para>
+        The <classname>Interpreter</classname> class contains the
+        engine for evaluating Scheme code, and API methods for
+        triggering that evaluation.  Each thread of execution 
+        must have its own <classname>Interpreter</classname> instance.
+        Interpreters are obtained before one or more calls into
+        Scheme, and using methods on the
+        <classname>Context</classname> helper class depending on
+        whether the call is an <emphasis>Internal</emphasis> or
+        <emphasis>External</emphasis> call.
+      </para>
+      <para>      
+        A Scheme application can execute in multiple threads. Each thread must
+        have its own dynamic environment, containing entities such as the current
+        input and output ports. Dynamic environments are represented by
+        instances of the
+        <classname>sisc.env.DynamicEnvironment</classname> class.       
+      </para>
+      <para>
+        Internal calls need to create fresh interpreters in order to
+        preserve and subsequently restore the state of the surrounding
+        Scheme execution. Thus a single thread may be home to several
+        interpreters.
+      </para>        
+      <warning>
+        <para>
+          In <emphasis>any</emphasis> case, the programmer must ensure
+          that all calls to an interpreter are made by the same thread.
+          If another thread wishes to execute Scheme code, it must
+          follow the API below to obtain a different interpreter.
+        </para>
+      </warning>
+      <sect3>
+        <title>External Calls</title>
+        <para>
+          An external call is a call made from Java to Scheme with no
+          preceding call from Scheme to Java, in other words, the call
+          is entirely external to the Scheme environment.  For
+          example, this may occur as a result of a timer expiration or
+          a thread created by Java.  In this case, the application
+          context must be specified, and a new dynamic environment
+          (containing thread specific information such as the current
+          input and output ports) must be created.  The preferred
+          method for an external call is called a <emphasis>managed
+          external call</emphasis>, and uses the visitor pattern with
+          one of the following methods in the <classname>Context</classname>
+          class:
+        </para>
+        <blockquote>
+          <para>
+            <indexterm><primary>execute</primary>
+            </indexterm>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <modifier>static</modifier>
+              <type>Object</type>
+              <methodname>execute</methodname>
+              <methodparam choice="opt">
+                <type>sisc.interpreter.AppContext</type>
+                <parameter>ctx</parameter>
+              </methodparam>
+              <methodparam>
+                <type>sisc.interpreter.SchemeCaller</type>
+                <parameter>caller</parameter>
+              </methodparam>
+              <exceptionname>sisc.interpreter.SchemeException</exceptionname>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Creates an Interpreter context for the application context
+                if provided, or the default application context
+                if <parameter>ctx</parameter> is null, and calls
+                <parameter>execute</parameter> in the caller with the new
+                Interpreter.  When the caller returns, the Interpreter
+                is freed, and the return value of the caller is returned.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>execute</primary></indexterm>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <modifier>static</modifier>
+              <type>Object</type>
+              <methodname>execute</methodname>
+              <methodparam>
+                <type>sisc.interpreter.SchemeCaller</type>
+                <parameter>caller</parameter>
+              </methodparam>
+              <exceptionname>sisc.interpreterSchemeException</exceptionname>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Creates an Interpreter context for the default
+                application context, loading the default heap if
+                necessary, and calls the <function>execute</function>
+                method of the <function>caller</function> object
+                with the new Interpreter (that is, it is equivalent to
+                <function>execute(null, caller)</function>).  This simple
+                interface is the one you should use if you do not have
+                a particular reason to use a non-default
+                application context.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+        <para>
+          The visitor instances implement
+          <classname>sisc.interpreter.SchemeCaller</classname>
+          and are responsible for implementing the following method:
+        </para>        
+        <blockquote>
+          <para>
+            <indexterm><primary>execute</primary>
+            </indexterm>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <type>Object</type>
+              <methodname>execute</methodname>
+              <methodparam>
+                <type>sisc.interpreter.Interpreter</type>
+                <parameter>r</parameter>
+              </methodparam>
+              <exceptionname>sisc.interpreter.SchemeException</exceptionname>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Utilizes the given Interpreter to make Java to Scheme
+                calls.  Any Object may be returned.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+        <para>
+          As an alternative to this managed external call, a
+          call from Java to Scheme can be made by using the
+          <function>enter</function> method of
+          <classname>Context</classname> to obtain an interpreter,
+          then making several calls to the interpreter, then releasing
+          it using <function>exit</function>.  This has some
+          weaknesses, however.  Because this pair of calls cannot enforce that
+          all intervening calls to the Interpreter run in the same thread,
+          subtle issues can arrise if the Interpreter context is saved as a reference
+          in a program and used by competing threads.  Other, more subtle
+          issues exist, such as the association of a thread handle (as retrievable
+          using SRFI-18) in Scheme with the Java thread which is making the call.
+          For this reason, the managed external call form is preferred
+          whenever possible.  
+        </para>
+        <blockquote>
+          <para>
+            <indexterm><primary>enter</primary>
+            </indexterm>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <type>sisc.interpreter.Interpreter</type>
+              <methodname>enter</methodname>
+              <methodparam choice="opt">
+                <type>sisc.interpreter.AppContext</type>
+                <parameter>ctx</parameter>
+              </methodparam>  
+              <methodparam choice="opt">
+                <type>sisc.env.DynamicEnvironment</type>
+                <parameter>ctx</parameter>
+              </methodparam>  
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Obtains an instance of Interpreter for the provided
+                application context if provided, the current or default
+                otherwise.  If provided, the given dynamic environment
+                is used rather than the environment selected
+                automatically for the type of call.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+        <para>
+          The dynamic environment optional argument in the
+          <function>enter</function> method may be specified if 
+          one wants to use a different mechanism for
+          finding applications and dynamic environments. For instance,
+          threads created from Scheme should probably execute within
+          the application that created them and using a dynamic
+          environment that is cloned from the dynamic environment
+          present when the thread is started. The
+          <function>enter</function> method can therefore be used as
+          general mechanism for obtaining a new interpreter that uses
+          a specific application and dynamic environment.
+        </para>
+        <para>
+          When the Interpreter is no longer by the current thread
+          needed it <emphasis>must</emphasis> be released using:
+        </para>
+        <blockquote>
+          <para>
+            <indexterm><primary>exit</primary>
+            </indexterm>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <void/>
+              <methodname>exit</methodname>
+              <void/>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Release the resources of the current interpreter.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </sect3>
+      <sect3>
+        <title>Internal Calls</title>
+        <para>
+          Internal calls are calls to Scheme made from Java,
+          from a previous call into Java from Scheme.  In other
+          words, the call to Scheme is made internally from 
+
+          other Scheme code. 
+          One can determine if a call is internal in the following manner:
+          <programlisting>
+Interpreter current = Context.currentInterpreter();
+if (current == null) { ...make external call...}
+else { ...make internal call... }
+          </programlisting>
+        </para>
+        <para>
+          This case is more complex, as it
+          requires maintaining the correct dynamic environment
+          and Interpreter instance to preserve return context.
+          When making an internal call, one typically wants to make 
+          the call in an interpreter that shares the same application 
+          context and dynamic enviornment as the calling interpreter.
+        </para>
+        <para>
+          Fortunately, the details are managed by the
+          <classname>Context</classname> helper class.
+          The same calling mechanisms are used as in an external call,
+          but the application context is ommited as a parameter to the
+          functions.
+        </para>
+      </sect3>
+      <sect3>
+        <title>The Interpreter API</title>
+        <para>
+          No matter which mechanism is used, the
+          <classname>Interpreter</classname> is eventually used to
+          call Scheme code, using any of the following methods:
+        </para>
+        <indexterm><primary>eval</primary>
+        </indexterm>
+        <itemizedlist>
+          <listitem>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <type>Value</type>
+              <methodname>eval</methodname>
+              <methodparam>
+                <type>String</type>
+                <parameter>expr</parameter>
+              </methodparam>
+              <exceptionname>sisc.interpreter.SchemeException</exceptionname>
+              <exceptionname>java.io.IOException</exceptionname>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Evaluates expressions read from a string, returning
+                the result of the evaluation of the last
+                expression.
+              </para>
+            </blockquote>
+          </listitem>
+          <listitem>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <type>Value</type>
+              <methodname>eval</methodname>
+              <methodparam>
+                <type>InputStream</type>
+                <parameter>stream</parameter>
+              </methodparam>
+              <methodparam>
+                <type>String</type>
+                <parameter>sourceId</parameter>
+              </methodparam>
+              <exceptionname>sisc.interpreter.SchemeException</exceptionname>
+              <exceptionname>java.io.IOException</exceptionname>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Evaluates expressions read from an input stream, returning
+                the result of the evaluation of the last
+                expression. The <parameter>sourceId</parameter>
+                identifies the source of the stream for display
+                purposes.
+              </para>
+            </blockquote>
+          </listitem>
+          <listitem>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <type>Value</type>
+              <methodname>eval</methodname>
+              <methodparam>
+                <type>Value</type>
+                <parameter>val</parameter>
+              </methodparam>
+              <exceptionname>sisc.interpreter.SchemeException</exceptionname>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                This is the same as calling <literal>(eval
+                </literal><parameter>val</parameter><literal>)
+                </literal> in Scheme.
+              </para>
+            </blockquote>
+          </listitem>
+          <listitem>
+            <methodsynopsis language="java">
+              <modifier>public</modifier>
+              <type>Value</type>
+              <methodname>eval</methodname>
+              <methodparam>
+                <type>Procedure</type>
+                <parameter>proc</parameter>
+              </methodparam>
+              <methodparam>
+                <type>Value[]</type>
+                <parameter>args</parameter>
+              </methodparam>
+              <exceptionname>sisc.interpreter.SchemeException</exceptionname>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                This is the same as calling
+                <literal>(</literal><parameter>proc</parameter>
+                <parameter>arg</parameter> ...<literal>) </literal> in
+                Scheme.  This is the most efficient type of call, as
+                it requires no parsing or compilation.
+              </para>
+            </blockquote>
+          </listitem>
+        </itemizedlist>
+        <para>
+          Several such calls can be made consecutively on the same
+          interpreter.  A <classname>SchemeException</classname> may
+          be thrown by any of these methods if an error occurs in the
+          Scheme code.  
+        </para>
+      </sect3>
+    </sect2>
+    <sect2>
+      <title>Miscellaneous Features</title>
+      <sect3 id="JErrorHandling">
+        <title>Error Handling</title>
+        <para>
+          <literal>Interpreter.eval()</literal> throws a
+          <classname>sisc.interpreter.SchemeException</classname> when an evaluation
+          causes an exception that is not caught inside the
+          evaluation. When making internal calls the exception can be
+          propagated to the calling interpreter in one of four ways:
+          <itemizedlist>
+            <listitem>
+              <para>
+                by throwing a <classname>RuntimeException</classname>
+                - this will be reported as<literal>"Error in
+                "</literal><parameter>prim-name</parameter><literal>:
+                </literal><parameter>description</parameter><literal>"</literal>.
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                by calling
+                <literal>Module.throwPrimException("</literal><parameter>description</parameter><literal>")</literal>
+                - this will be
+                reported as <literal>"Error in
+                </literal><parameter>prim-name</parameter><literal>:
+                </literal><parameter>description</parameter><literal>"</literal>.
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                by calling
+                <literal>throwNestedPrimException("</literal><parameter>description</parameter><literal>",
+                </literal><parameter>schemeException</parameter><literal>)</literal>
+                - this will be reported as <literal>"Error in
+                </literal><parameter>prim-name</parameter><literal>:
+                </literal><parameter>description</parameter><literal>\n</literal><parameter>nested-description</parameter><literal>"</literal>.
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                by calling
+                <literal>throwNestedPrimException(</literal><parameter>schemeException</parameter><literal>)</literal>
+                - this will be reported as <literal>"Error in
+                </literal><parameter>prim-name</parameter><literal>:
+                exception during nested
+                call\n</literal><parameter>nested-description</parameter><literal>"</literal>.
+              </para>
+            </listitem>
+          </itemizedlist>
+        </para>
+        <para>
+          Scheme code can throw Java exceptions (see <xref
+          linkend="JavaExceptions"/>). The
+          <classname>sisc.modules.s2j.Util</classname> class contains
+          a static method
+          <literal>javaException(</literal><parameter>schemeException</parameter><literal>)</literal>
+          that extracts the Java exception from a
+          <literal>SchemeException</literal>, or, if no Java exception
+          is present, returns the <literal>SchemeException</literal>.
+        </para>
+      </sect3>
+      <sect3 id="JContinuations">
+        <title>Continuations</title>
+        <para>
+          Continuations do not cross the Scheme/Java boundary. In the
+          embedded call scenario invoking a continuation inside the
+          embedded call will not discard the computation of the
+          caller. The embedded call will return when the continuation
+          returns. If the continuation contains the read-eval-print
+          loop the return will never happen. Similarly, capturing a
+          continuation inside a call (embedded or external) will only
+          capture the continuation to point where the call was made.
+        </para>
+        <para>
+          Capturing and invoking a continuation within the
+          <emphasis>same</emphasis> call works correctly.
+        </para>
+      </sect3>
+      <sect3 id="SchemePortsInJava">
+        <title>Scheme I/O</title>
+        <para>
+          Scheme ports are thin wrappers around the Java I/O
+          hierarchy, adding some functionality needed by Scheme. 
+          As such, it is trivial to obtain Java compatible I/O objects
+          from Scheme ports.  For information on obtaining Scheme and
+          Java compatible I/O objects in Scheme, see the Java I/O
+          module described in <xref linkend="JavaPorts"/>.
+        </para>
+        <para>
+          Scheme ports are encapsulated in the
+          <classname>SchemeBinaryInputPort</classname>,
+          <classname>SchemeBinaryOutputPort</classname>,
+          <classname>SchemeCharacterInputPort</classname>,
+          <classname>SchemeCharacterOutputPort</classname> classes
+          in the <classname>sisc.data</classname> package.  An
+          instance of a port class contains an accessor which returns 
+          the relevant Java I/O type, as described for each class below.
+        </para>
+        <blockquote>
+          <classsynopsis language="java" class="class">
+            <ooclass>
+              <modifier>public</modifier>
+              <classname>sisc.data.SchemeBinaryInputPort</classname>
+            </ooclass>
+          <indexterm><primary>getInputStream</primary></indexterm>
+          <methodsynopsis>
+            <modifier>public</modifier>
+            <type>java.io.InputStream</type>
+            <methodname>getInputStream</methodname>
+            <void/>
+          </methodsynopsis>
+        </classsynopsis>
+          <blockquote>
+            <para>
+              Return a Java <classname>InputStream</classname> for
+              accessing this Scheme port.
+            </para>
+          </blockquote>
+          <classsynopsis language="java" class="class">
+            <ooclass>
+              <modifier>public</modifier>
+              <classname>sisc.data.SchemeBinaryOutputPort</classname>
+            </ooclass>
+          <indexterm><primary>getOutputStream</primary></indexterm>
+            <methodsynopsis>
+              <modifier>public</modifier>
+              <type>java.io.OutputStream</type>
+              <methodname>getOutputStream</methodname>
+              <void/>
+            </methodsynopsis>
+          </classsynopsis>
+          <blockquote>
+            <para>
+              Return a Java <classname>OutputStream</classname> for
+              accessing this Scheme port.
+            </para>
+          </blockquote>
+          <classsynopsis language="java" class="class">
+            <ooclass>
+              <modifier>public</modifier>
+              <classname>sisc.data.SchemeCharacterInputPort</classname>
+            </ooclass>
+            <indexterm><primary>getReader</primary></indexterm>
+            <methodsynopsis>
+              <modifier>public</modifier>
+              <type>java.io.Reader</type>
+              <methodname>getReader</methodname>
+              <void/>
+            </methodsynopsis>
+          </classsynopsis>
+          <blockquote>
+            <para>
+              Return a Java <classname>Reader</classname> for
+              accessing this Scheme port.
+            </para>
+          </blockquote>
+          <classsynopsis language="java" class="class">
+            <ooclass>
+              <modifier>public</modifier>
+              <classname>sisc.data.SchemeCharacterOutputPort</classname>
+            </ooclass>
+            <indexterm><primary>getWriter</primary></indexterm>
+            <methodsynopsis>
+              <modifier>public</modifier>
+              <type>java.io.Writer</type>
+              <methodname>getWriter</methodname>
+              <void/>
+            </methodsynopsis>
+          </classsynopsis>
+          <blockquote>
+            <para>
+              Return a Java <classname>Writer</classname> for
+              accessing this Scheme port.
+            </para>
+          </blockquote>
+        </blockquote>
+      </sect3>
+    </sect2>
+    <sect2>
+      <title>Quick Reference</title>
+      <para>
+        The tables below cover the most common use cases for calling
+        Scheme from Java, and provide simple pseudocode examples.
+      </para>
+      <para>
+        <table frame="all">
+          <title>Typical Java to Scheme, External Calls</title>
+          <tgroup cols="2" align="left">
+            <colspec colname='situation'/>
+            <colspec colname='code'/>
+            <thead>
+              <row>
+                <entry align="center">Situation</entry>
+                <entry align="center">Code</entry>
+              </row>
+            </thead>
+            <tbody>
+              <row>
+                <entry namest="situation" nameend="code" align="center">
+                  <emphasis>Default Application Context</emphasis>
+                </entry>
+              </row>
+              <row>
+                <entry>
+                  <para>Heap can be located automatically...</para>
+                </entry>
+                <entry><emphasis>No action required.</emphasis></entry>
+              </row>
+              <row>
+                <entry>
+                  <para>...or, with a custom heap</para>
+                </entry>
+                <entry>
+                  <programlisting>
+AppContext ctx=new AppContext();
+SeekableInputStream myHeap=AppContext.openHeap(myHeapURL);
+ctx.addHeap(myHeap);
+Context.setDefaultAppContext(ctx);
+                  </programlisting>
+                </entry>
+              </row>
+              <row>
+                <entry><para>Then, making the external call.</para>
+                </entry>
+                <entry>
+                  <programlisting>
+Context.execute(mySchemeCaller);
+                  </programlisting>
+                </entry>
+              </row>
+              <row>
+                <entry namest="situation" nameend="code" align="center">
+                  <emphasis>Custom Application Context</emphasis>
+                </entry>
+              </row>
+              <row>
+                <entry><para>Creating the context.</para>
+                </entry>
+                <entry>
+                  <programlisting>
+AppContext ctx=new AppContext(myProperties);
+                  </programlisting>
+                </entry>
+              </row>
+              <row>
+                <entry>
+                  <para>Heap can be located automatically ...</para>
+                </entry>
+                <entry>
+                  <programlisting>
+ctx.addDefaultHeap();
+                  </programlisting>
+                </entry>                    
+              </row>
+              <row>
+                <entry>
+                  <para>... or, with a custom heap</para>
+                </entry>
+                <entry>
+                  <programlisting>
+SeekableInputStream myHeap=AppContext.openHeap(myHeapURL);
+ctx.addHeap(myHeap);
+                  </programlisting>
+                </entry>
+              </row>
+              <row>
+                <entry><para>Then, making the external call.</para>
+                </entry>
+                <entry>
+                  <programlisting>
+Context.execute(ctx, mySchemeCaller);
+                  </programlisting>
+                </entry>
+              </row>
+            </tbody>
+          </tgroup>
+        </table>
+
+        <table frame="all">
+          <title>Typical Java to Scheme, Internal Calls</title>
+          <tgroup cols="2" align="left">
+            <colspec colname='situation'/>
+            <colspec colname='code'/>
+            <thead>
+              <row>
+                <entry align="center">Situation</entry>
+                <entry align="center">Code</entry>
+              </row>
+            </thead>
+            <tbody>
+              <row>
+                <entry><para>Making the internal call.</para>
+                </entry>
+                <entry>
+                  <programlisting>
+Context.execute(mySchemeCaller);
+                  </programlisting>
+                </entry>
+              </row>
+            </tbody>
+          </tgroup>
+        </table>
+      </para>
+    </sect2>
+  </sect1>
+  <sect1 id="SchemeToJava">
+    <title>Calling Java from Scheme</title>
+    <para>
+      &requires; 
+      <emphasis role="bold">
+        (import <emphasis>s2j</emphasis>)
+      </emphasis>
+    </para>
+    <para>
+      The High-Level S2J API allows Scheme code to instantiate Java
+      classes, call methods on Java objects, access/modify fields of
+      Java objects and implement Java interfaces that delegate to
+      Scheme code.
+    </para>
+    <sect2 id="JavaClasses">
+      <title>Classes</title>
+      <para>
+        Java classes are types in &SISC;'s extensible type system (see
+        <xref linkend="TypeSystem"/>). They are made accessible to
+        Scheme code by one of the following procedures / special
+        forms:
+        <blockquote>
+          <para>
+            <indexterm><primary>java-class</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>jclass</type>
+              <methodname>java-class</methodname>
+              <methodparam><parameter>symbol</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the Java class of name
+                <parameter>symbol</parameter>, which can also be the
+                name of a primitive type or an array type.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(java-class '|java.lang.String|)  &arrow; &lt;jclass&gt;
+(define &lt;java.io.object-input-string/get-field**&gt;
+  (java-class '|java.io.ObjectInputStream$GetField[][]|))
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>define-java-class</primary></indexterm>
+            &syntax;
+            <methodsynopsis language="scheme">
+              <void/>
+              <methodname>define-java-class</methodname>
+              <methodparam><parameter>scheme-name</parameter></methodparam>
+              <methodparam choice="opt"><parameter>java-name</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Binds <parameter>scheme-name</parameter> to the Java
+                class named by <parameter>java-name</parameter>, or,
+                if no such parameter is supplied, by the mangled
+                <parameter>scheme-name</parameter>.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-java-class &lt;jstring&gt; |java.lang.String|)
+(define-java-class &lt;java.io.object-input-string/get-field**&gt;)
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>define-java-classes</primary></indexterm>
+            &syntax;
+            <methodsynopsis language="scheme">
+              <void/>
+              <methodname>define-java-classes</methodname>
+              <methodparam rep="repeat"><parameter>form</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <simplelist>
+                <member>
+                  where <parameter>form</parameter> is of
+                  the form <parameter>scheme-name</parameter> or
+                  <literal>(</literal><parameter>scheme-name</parameter>
+                  <parameter>java-name</parameter>
+                  <literal>)</literal>
+                </member>
+              </simplelist>
+              <para>
+                Creates bindings for several Java classes.
+              </para>
+              <para>
+                The form expands into several
+                <function>define-java-class</function> forms.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-java-classes
+  (&lt;jstring&gt; |java.lang.String|)
+  &lt;java.io.object-input-string/get-field**&gt;)
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+        Mangling of class names allows classes to be identified more
+        schemely,
+        e.g. <literal>&lt;java.io.object-input-stream/get-field**&gt;</literal>
+        corresponds to the Java type
+        <classname>java.io.ObjectInputStream.GetField[][]</classname>
+        (note that GetField is a nested class). More formally,
+        mangling of class names checks for the presence of angle
+        brackets (<literal>&lt;&gt;</literal>) around the
+        <parameter>scheme-name</parameter>. If they are present they
+        are stripped.  All the identifiers between the dots
+        (<literal>.</literal>) are passed through field name mangling
+        (see <xref linkend="JavaFields"/>). The character following
+        the last dot is upcased. A slash (<literal>/</literal>) is
+        treated as a nested class indicator; it is replaced with
+        dollar (<literal>$</literal> and the character following it is
+        upcased. Trailing stars (<literal>*</literal>) characters are
+        replaced with pairs of brackets (<literal>[]</literal>).
+      </para>
+      <para>
+        There are predicates for determining whether a Scheme value is
+        a Java class or interface. All Java interfaces are also Java
+        classes.
+        <blockquote>
+          <para>
+            <indexterm><primary>java-class?</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>&t;/&f;</type>
+              <methodname>java-class?</methodname>
+              <methodparam><parameter>value</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns &t; if <parameter>value</parameter> is a Java
+                class, &f; otherwise.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(java-class? (java-class '|java.lang.String|)  &arrow; &t;
+(define &lt;java-io-object-input-string/get-field**&gt;
+  (java-class '|java.io.ObjectInputStream$GetField[][]|))
+(java-class? &lt;java.io.object-input-string/get-field**&gt;)  &arrow; &t;
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>java-interface?</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>&t;/&f;</type>
+              <methodname>java-interface?</methodname>
+              <methodparam><parameter>value</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns &t; if <parameter>value</parameter> is a Java
+                interface, &f; otherwise.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(java-interface? (java-class '|java.util.Map|))  &arrow; &t;
+(java-interface? (java-class '|java.lang.String|)  &arrow; &f;
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        Java classes are serializable by the &SISC; runtime.
+      </para>
+    </sect2>
+    <sect2 id="JavaMethods">
+      <title>Methods</title>
+      <para>
+        Java methods are made accessible to Scheme code as procedures
+        that can invoke any method of a given name on any Java
+        object. Method selection is performed based on the types of
+        the arguments to the procedure call. Static Java methods can
+        be invoked by passing an instance of the appropriate class or
+        an appropriately typed null object (see <xref
+        linkend="JavaInstances"/>) as the first argument to the
+        procedures.
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>generic-java-method</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>procedure</type>
+              <methodname>generic-java-method</methodname>
+              <methodparam><parameter>symbol</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns a procedure that when invoked with a Java
+                object as the first argument and Java values as the
+                remaining arguments, invokes the best matching named
+                method named <parameter>symbol</parameter> on the Java
+                object and returns the result.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(generic-java-method '|getURL|)  &arrow; &lt;jmethod&gt;
+(define empty-list? (generic-java-method '|isEmptyList|))
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>define-generic-java-method</primary></indexterm>
+            &syntax;
+            <methodsynopsis language="scheme">
+              <void/>
+              <methodname>define-generic-java-method</methodname>
+              <methodparam><parameter>scheme-name</parameter></methodparam>
+              <methodparam choice="opt"><parameter>java-name</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Binds <parameter>scheme-name</parameter> to the
+                generic Java method named by
+                <parameter>java-name</parameter>, or, if no such
+                parameter is supplied, by the mangled
+                <parameter>scheme-name</parameter>.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-generic-java-method get-url |getURL|)
+(define-generic-java-method empty-list?)
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>define-generic-java-methods</primary></indexterm>
+            &syntax;
+            <methodsynopsis language="scheme">
+              <void/>
+              <methodname>define-generic-java-methods</methodname>
+              <methodparam rep="repeat"><parameter>form</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <simplelist>
+                <member>
+                  where <parameter>form</parameter> is of
+                  the form <parameter>scheme-name</parameter> or
+                  <literal>(</literal><parameter>scheme-name</parameter>
+                  <parameter>java-name</parameter>
+                  <literal>)</literal>
+                </member>
+              </simplelist>
+              <para>
+                Creates bindings for several generic Java methods.
+              </para>
+              <para>
+                The form expands into several
+                <function>define-generic-java-method</function> forms.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-generic-java-methods
+  (get-url |getURL|)
+  empty-list?)
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+        Method name mangling allows methods to be identified more
+        schemely, e.g. <function>empty-list?</function> corresponds to
+        the Java method name
+        <methodname>isEmptyList</methodname>. More formally, mangling
+        of method names removes trailing exclamation marks
+        (<literal>!</literal>) and replaces trailing question marks
+        (<literal>?</literal>) with a leading
+        <literal>is-</literal>. The result of this mangling is passed
+        through field mangling (see <xref linkend="JavaFields"/>).
+      </para>
+      <para>
+        Generic Java methods are serializable by the &SISC; runtime.
+      </para>
+    </sect2>
+    <sect2 id="JavaFields">
+      <title>Fields</title>
+      <para>
+        Fields are made accessible to Scheme code as procedures that
+        can get / set any field of a given name on any Java object.
+        If several fields of the same name are present in the object
+        due to the object class's inheritance chain, the most specific
+        field, i.e. the one bottommost in the inheritance hierarchy,
+        is selected. Static Java fields can be accessed / modified by
+        passing an instance of the appropriate class or an
+        appropriately typed null object (see <xref
+        linkend="JavaInstances"/>) as the first argument to the
+        procedures.
+      </para>
+      <para>
+        Generic Java field accessors, i.e. procedures that allow
+        Scheme code to obtain the value of a Java field, can be
+        defined as follows:
+        <blockquote>
+          <para>
+            <indexterm><primary>generic-java-field-accessor</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>procedure</type>
+              <methodname>generic-java-field-accessor</methodname>
+              <methodparam><parameter>symbol</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns a procedure that when invoked with a Java
+                object as the first argument, retrieves the value of
+                the Java field named <parameter>symbol</parameter> in
+                the Java object.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(generic-java-field-accessor '|currentURL|)  &arrow; &lt;jfield&gt;
+(define :current-input-port (generic-java-field-accessor '|currentInputPort|))
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>define-generic-java-field-accessor</primary></indexterm>
+            &syntax;
+            <methodsynopsis language="scheme">
+              <void/>
+              <methodname>define-generic-java-field-accessor</methodname>
+              <methodparam><parameter>scheme-name</parameter></methodparam>
+              <methodparam choice="opt"><parameter>java-name</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Binds <parameter>scheme-name</parameter> to the
+                generic Java field accessor for fields named
+                <parameter>java-name</parameter>, or, if no such
+                parameter is supplied, the mangled
+                <parameter>scheme-name</parameter>.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-generic-java-field-accessor :current-url |currentURL|)
+(define-generic-java-field-accessor :current-input-port)
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>define-generic-java-field-accessors</primary></indexterm>
+            &syntax;
+            <methodsynopsis language="scheme">
+              <void/>
+              <methodname>define-generic-java-field-accessors</methodname>
+              <methodparam rep="repeat"><parameter>form</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <simplelist>
+                <member>
+                  where <parameter>form</parameter> is of
+                  the form <parameter>scheme-name</parameter> or
+                  <literal>(</literal><parameter>scheme-name</parameter>
+                  <parameter>java-name</parameter>
+                  <literal>)</literal>
+                </member>
+              </simplelist>
+              <para>
+                Creates bindings for several generic Java field
+                accessors.
+              </para>
+              <para>
+                The form expands into several
+                <function>define-generic-java-field-accessor</function>
+                forms.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-generic-java-field-accessor
+  (:current-url |currentURL|)
+  :current-input-port)
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        Generic Java field modifiers, i.e. procedures that allow
+        Scheme code to set the value of a Java field, can be
+        defined as follows:
+        <blockquote>
+          <para>
+            <indexterm><primary>generic-java-field-modifier</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>procedure</type>
+              <methodname>generic-java-field-modifier</methodname>
+              <methodparam><parameter>symbol</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns a procedure that when invoked with a Java
+                object as the first argument and a Java value as the
+                second argument, sets the value of the Java field
+                named <parameter>symbol</parameter> in the Java object
+                to that value.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(generic-java-field-modifier '|currentURL|)  &arrow; &lt;jfield&gt;
+(define :current-input-port! (generic-java-field-modifier '|currentInputPort|))
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>define-generic-java-field-modifier</primary></indexterm>
+            &syntax;
+            <methodsynopsis language="scheme">
+              <void/>
+              <methodname>define-generic-java-field-modifier</methodname>
+              <methodparam><parameter>scheme-name</parameter></methodparam>
+              <methodparam choice="opt"><parameter>java-name</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Binds <parameter>scheme-name</parameter> to the
+                generic Java field modifier for fields named
+                <parameter>java-name</parameter>, or, if no such
+                parameter is supplied, the mangled
+                <parameter>scheme-name</parameter>.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-generic-java-field-modifier :current-url! |currentURL|)
+(define-generic-java-field-modifier :current-input-port!)
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>define-generic-java-field-modifiers</primary></indexterm>
+            &syntax;
+            <methodsynopsis language="scheme">
+              <void/>
+              <methodname>define-generic-java-field-modifiers</methodname>
+              <methodparam rep="repeat"><parameter>form</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <simplelist>
+                <member>
+                  where <parameter>form</parameter> is of
+                  the form <parameter>scheme-name</parameter> or
+                  <literal>(</literal><parameter>scheme-name</parameter>
+                  <parameter>java-name</parameter>
+                  <literal>)</literal>
+                </member>
+              </simplelist>
+              <para>
+                Creates bindings for several generic Java field
+                modifiers.
+              </para>
+              <para>
+                The form expands into several
+                <function>define-generic-java-field-modifier</function>
+                forms.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-generic-java-field-modifier
+  (:current-url! |currentURL|)
+  :current-input-port!)
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        The mangling of field names allows fields to be identified
+        more schemely. By convention field accessors should be named
+        with a leading colon (<literal>:</literal>) followed by the
+        field name, and field modifiers with a leading colon
+        (<literal>:</literal>) followed by the field name followed by
+        an exclamation mark (<literal>!</literal>),
+        e.g. <literal>:foo-bar</literal> and
+        <literal>:foo-bar!</literal> are the names of the accessor and
+        modifier for Java fields named
+        <literal>fooBar</literal>. Mangling of field names upcases any
+        character following a dash (<literal>-</literal>) and removes
+        all characters that are not legal as part of Java
+        identifiers.
+      </para>
+      <para>
+        Generic Java field accessors and modifiers are serializable by
+        the &SISC; runtime.
+      </para>
+    </sect2>
+    <sect2 id="JavaInstances">
+      <title>Instances</title>
+      <para>
+        Scheme code can instantiate Java classes with a call to the
+        following procedure:
+        <blockquote>
+          <para>
+            <indexterm><primary>java-new</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>jobject</type>
+              <methodname>java-new</methodname>
+              <methodparam><parameter>jclass</parameter></methodparam>
+              <methodparam rep="repeat"><parameter>jobject</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Selects a constructor of <parameter>jclass</parameter>
+                based on the types of the
+                <parameter>jobject</parameter>s and calls it, returning
+                the newly created object.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-java-class &lt;java.util.linked-hash-set&gt;)
+(java-new &lt;java.util.linked-hash-set&gt; (-&gt;jint 100))  &arrow; &lt;jobject&gt;
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        There is a predicate for determining whether a value is a Java
+        object:
+        <blockquote>
+          <para>
+            <indexterm><primary>java-object?</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>&t;/&f;</type>
+              <methodname>java-object?</methodname>
+              <methodparam><parameter>value</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns &t; if <parameter>value</parameter> is a Java
+                object, &f; otherwise.
+              </para>
+              <para>
+                Note that, unlike in Java, instances of primitive Java
+                types are considered to be Java objects.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-java-class &lt;java.util.linked-hash-set&gt;)
+(define hs (java-new &lt;java.util.linked-hash-set&gt; (-&gt;jint 100)))
+(java-object? hs)  &arrow; &t;
+(java-object? (-&gt;jint 100))  &arrow; &t;
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        Unlike in Java, null objects are typed. Typed null objects
+        play a key role in invoking static methods an accessing /
+        modifying static fields.
+        <blockquote>
+          <para>
+            <indexterm><primary>java-null</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>jnull</type>
+              <methodname>java-null</methodname>
+              <methodparam><parameter>jclass</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns a Java null object of type
+                <parameter>jclass</parameter>.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-java-class &lt;java.util.linked-hash-set&gt;)
+(java-null &lt;java.util.linked-hash-set&gt;)  &arrow; &lt;jnull&gt;
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+        There is a predicate for determining whether a value is a Java
+        null. All nulls are also Java objects.
+        <blockquote>
+          <para>
+            <indexterm><primary>java-null?</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>&t;/&f;</type>
+              <methodname>java-null?</methodname>
+              <methodparam><parameter>value</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns &t; if <parameter>value</parameter> is a Java
+                null object, &f; otherwise.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-java-class &lt;java.util.linked-hash-set&gt;)
+(java-null? (java-null &lt;java.util.linked-hash-set&gt;))  &arrow; &t;
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+        <indexterm><primary>jnull</primary></indexterm> For
+        convenience, <literal>jnull</literal> is bound to the typed
+        null object obtained by calling <function>java-null</function>
+        on <classname>java.lang.Object</classname>.
+      </para>
+      <para>
+        Any invocation of a Java method, or access to a Java fields
+        that returns a Java null does so typed based on the declared
+        return / field type.
+      </para>
+      <para>
+        Comparison of Java objects using <function>eqv?</function>
+        compares the objects using Java's <function>==</function>
+        comparison. <function>equal?</function>, on the other hand,
+        compares the objects using Java's <function>equals</function>
+        method. <function>eq?</function> uses pointer equality on the
+        Scheme objects representing the Java objects and is therefore
+        not generally useful.  Applying <function>eq?</function>,
+        <function>eqv?</function> or <function>equal?</function> to a
+        mixture of Java objects and other Scheme values returns
+        &f;.
+      </para>
+      <para>
+        Java objects are only serializable by the &SISC; runtime if
+        they support Java serialization. Java nulls are always
+        serializable.
+      </para>
+    </sect2>
+    <sect2 id="JavaArrays">
+      <title>Arrays</title>
+      <para>
+        Scheme code can create Java arrays with a call to the
+        following procedure:
+        <blockquote>
+          <para>
+            <indexterm><primary>java-array-new</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>jarray</type>
+              <methodname>java-array-new</methodname>
+              <methodparam><parameter>jclass</parameter></methodparam>
+              <methodparam><parameter>size</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Creates an array of component type
+                <parameter>jclass</parameter> with dimensions
+                <parameter>size</parameter>, which can be a number
+                (for a single-dimensional array), or a vector / list
+                of numbers (for multi-dimensional arrays).
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(java-array-new &lt;jint&gt; 2)  &arrow; &lt;jarray&gt;
+(define-java-class &lt;java.lang.string&gt;)
+(java-array-new &lt;java.lang.string&gt; '#(2 2 2))  &arrow; &lt;jarray&gt;
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        There is a predicate for determining whether a value is a Java
+        array. All Java arrays are also Java objects.
+        <blockquote>
+          <para>
+            <indexterm><primary>java-array?</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>&t;/&f;</type>
+              <methodname>java-array?</methodname>
+              <methodparam><parameter>value</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns &t; if <parameter>value</parameter> is a Java
+                array, &f; otherwise.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(java-array? (java-array-new &lt;jint&gt; 2))  &arrow; &t;
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        Elements of arrays are accessed and modified with:
+        <blockquote>
+          <para>
+            <indexterm><primary>java-array-ref</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>jobject</type>
+              <methodname>java-array-ref</methodname>
+              <methodparam><parameter>jarray</parameter></methodparam>
+              <methodparam><parameter>index</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the element at index
+                <parameter>index</parameter> of
+                <parameter>jarray</parameter>. <parameter>index</parameter>
+                can be a number, for indexing into the first dimension
+                of the array, or vector / list of numbers for
+                multi-dimensional indexing.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define a (-&gt;jarray (map -&gt;jint (iota 10)) &lt;jint&gt;))
+(java-array-ref a 1)  &arrow; &lt;java int 1&gt;
+(java-array-ref a '(1))  &arrow; &lt;java int 1&gt;
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>java-array-set!</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <void/>
+              <methodname>java-array-set!</methodname>
+              <methodparam><parameter>jarray</parameter></methodparam>
+              <methodparam><parameter>index</parameter></methodparam>
+              <methodparam><parameter>jobject</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Sets the element at index <parameter>index</parameter>
+                of <parameter>jarray</parameter> to
+                <parameter>jobject</parameter>. <parameter>index</parameter>
+                can be a number, for indexing into the first dimension
+                of the array, or vector / list of numbers for
+                multi-dimensional indexing.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define a (-&gt;jarray (map -&gt;jint (iota 10)) &lt;jint&gt;))
+(java-array-set! a 1 (->jint 2))
+(java-array-ref a 1)  &arrow; &lt;java int 2&gt;
+(define a (java-array-new &lt;jint&gt; '#(2 2 2)))
+(java-array-set! a '#(1 1 1) (-&gt;jint 1))
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        The length of a Java array can be determined with
+        <blockquote>
+          <para>
+            <indexterm><primary>java-array-length</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>number</type>
+              <methodname>java-array-length</methodname>
+              <methodparam><parameter>jarray</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the length of <parameter>jarray</parameter>.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define a (-&gt;jarray (map -&gt;jint (iota 10)) &lt;jint&gt;))
+(java-array-length a)  &arrow; 10
+(define a (java-array-new &lt;jint&gt; '#(2 3 4)))
+(java-array-length a)  &arrow; 2
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        Scheme vectors and lists can be converted to Java array and vice
+        versa.
+        <blockquote>
+          <para>
+            <indexterm><primary>-&gt;list</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>list</type>
+              <methodname>-&gt;list</methodname>
+              <methodparam><parameter>jarray</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Creates a list containing the elements of
+                <parameter>jarray</parameter>.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define a (-&gt;jarray (map -&gt;jint (iota 5)) &lt;jint&gt;))
+(map -&gt;number (-&gt;list a))  &arrow; '(0 1 2 3 4)
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>-&gt;vector</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>vector</type>
+              <methodname>-&gt;vector</methodname>
+              <methodparam><parameter>jarray</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Creates a vector containing the elements of
+                <parameter>jarray</parameter>.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define a (-&gt;jarray (map -&gt;jint (iota 5)) &lt;jint&gt;))
+(map -&gt;number (vector-&gt;list (-&gt;vector a)))  &arrow; '(0 1 2 3 4)
+              </programlisting>
+            </informalexample>
+          </para>
+          <para>
+            <indexterm><primary>-&gt;jarray</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>jarray</type>
+              <methodname>-&gt;jarray</methodname>
+              <methodparam><parameter>list-or-vector</parameter></methodparam>
+              <methodparam><parameter>jclass</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Creates a one-dimensional array of type
+                <parameter>jclass</parameter> and fills it with the
+                values obtained from the Scheme vector or list.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define a (-&gt;jarray (map -&gt;jint (iota 5)) &lt;jint&gt;))
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+      </para>
+    </sect2>
+    <sect2 id="JavaProxies">
+      <title>Proxies</title>
+      <para>
+        Scheme code cannot create sub-classes of existing Java
+        classes. It is, however, possible to create classes
+        implementing existing Java interfaces. These classes are
+        called proxies. Calling a method on a proxy invokes a
+        user-definable Scheme procedure, based on the name of the
+        method, passing the proxy object and the parameters of the
+        method invocation as arguments. The result of the invocation
+        is returned as the result of the method call.
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>define-java-proxy</primary></indexterm>
+            &syntax;
+            <methodsynopsis language="scheme">
+              <void/>
+              <methodname>define-java-proxy</methodname>
+              <methodparam><parameter>signature</parameter></methodparam>
+              <methodparam><parameter>interfaces</parameter></methodparam>
+              <methodparam rep="repeat"><parameter>method</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <simplelist>
+                <member>
+                  where <parameter>signature</parameter> is of the
+                  form <literal>(</literal><parameter>name</parameter>
+                  <parameter>param</parameter>
+                  <literal>...)</literal>,
+                </member>
+                <member>
+                  <parameter>interfaces</parameter> is of the form
+                  <literal>(</literal><parameter>interface</parameter>
+                  <literal>...)</literal>, and
+                </member>
+                <member>
+                  <parameter>method</parameter> is of the form
+                  <literal>(define</literal>
+                  <parameter>method-name</parameter>
+                  <parameter>procedure</parameter><literal>)</literal>, or <literal>(define (</literal> <parameter>method-name</parameter> <parameter>method-arg</parameter> <literal>...) . </literal> <parameter>body</parameter><literal>)</literal>
+                </member>
+              </simplelist>
+              <para>
+                Creates a proxy generator procedure and binds it to
+                <parameter>name</parameter>. A proxy class is created
+                that implements all the
+                <parameter>interface</parameter>s. When the generator
+                is invoked, an instance of the proxy class is returned
+                that delegates all method invocations to the Scheme
+                procedures in the method definition list, based on the
+                names of the methods.
+              </para>
+              <para>
+                The first kind of definition form defines
+                <parameter>procedure</parameter> to be the method
+                handler for the java method named
+                <parameter>method-name</parameter>. <parameter>method-name</parameter>
+                undergoes name mangling as described in <xref
+                linkend="JavaMethods"/>.  Note that
+                <parameter>procedure</parameter> is inside the lexical
+                scope of the generator procedure, so
+                <parameter>param</parameter>s are accessible inside
+                it.
+              </para>
+              <para>
+                The second kind of definition form is equivalent to
+                the following first-type form:
+                <literal>(define</literal>
+                <parameter>method-name</parameter>
+                <literal>(lambda
+                  (</literal><parameter>method-arg</parameter>
+                <literal>...) . </literal>
+                <parameter>body</parameter><literal>))</literal>.
+              </para>
+              <para>
+                If a method is invoked on a proxy for which no method
+                handler exists and error is returned to the caller.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-java-classes
+  &lt;java.util.comparator&gt;
+  &lt;java.util.arrays&gt;
+  &lt;java.lang.object&gt;)
+(define-java-proxy (comparator fn)
+  (&lt;java.util.comparator&gt;)
+  (define (.compare this obj1 obj2)
+    (let ([x (java-unwrap obj1)]
+          [y (java-unwrap obj2)])
+      (-&gt;jint (cond [(fn x y) -1]
+                    [(fn y x) +1]
+                    [else 0])))))
+(define-generic-java-method sort)
+(define-java-class &lt;java.lang.object&gt;)
+(define (list-sort fn l)
+  (let ([a (-&gt;jarray (map java-wrap l) &lt;java.lang.object&gt;)])
+    (sort (java-null &lt;java.util.arrays&gt;) a (comparator fn))
+    (map java-unwrap (-&gt;list a))))
+(list-sort &lt; '(3 4 2 1))  &arrow; '(1 2 3 4)
+(list-sort string&lt;? '("foo" "bar" "baz"))  &arrow; '("bar" "baz" "foo")
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+      </para>
+    </sect2>
+    <sect2 id="JavaConversions">
+      <title>Types and Conversions</title>
+      <indexterm><primary>&lt;jvoid&gt;</primary></indexterm>
+      <indexterm><primary>&lt;jboolean&gt;</primary></indexterm>
+      <indexterm><primary>&lt;jdouble&gt;</primary></indexterm>
+      <indexterm><primary>&lt;jfloat&gt;</primary></indexterm>
+      <indexterm><primary>&lt;jlong&gt;</primary></indexterm>
+      <indexterm><primary>&lt;jint&gt;</primary></indexterm>
+      <indexterm><primary>&lt;jshort&gt;</primary></indexterm>
+      <indexterm><primary>&lt;jbyte&gt;</primary></indexterm>
+      <indexterm><primary>&lt;jchar&gt;</primary></indexterm>
+      <para>
+        For convenience, all the primitive Java types,
+        i.e. <classname>void</classname>,
+        <classname>boolean</classname>, <classname>double</classname>,
+        <classname>float</classname>, <classname>long</classname>,
+        <classname>int</classname>, <classname>short</classname>,
+        <classname>byte</classname>, <classname>char</classname>, are
+        predefined and bound to <classname>&lt;jvoid&gt;</classname>,
+        <classname>&lt;jboolean&gt;</classname>,
+        <classname>&lt;jdouble&gt;</classname>,
+        <classname>&lt;jfloat&gt;</classname>,
+        <classname>&lt;jlong&gt;</classname>,
+        <classname>&lt;jint&gt;</classname>,
+        <classname>&lt;jshort&gt;</classname>,
+        <classname>&lt;jbyte&gt;</classname>,
+        <classname>&lt;jchar&gt;</classname>, respectively.
+      </para>
+      <para>
+        When calling Java methods, invoking Java constructors,
+        accessing or modifying Java fields, no automatic conversion is
+        performed between ordinary Scheme values and Java
+        values. Instead explicit conversion of arguments and results
+        is required. Automatic conversion is not performed for the
+        following reasons:
+        <itemizedlist spacing="compact">
+          <listitem>
+            <para>
+              For some Scheme types, such as numbers, the mapping to
+              Java types is one-to-many, e.g. a Scheme number could be
+              converted to a <classname>byte</classname>,
+              <classname>short</classname>,
+              <classname>int</classname>, etc. This causes ambiguities
+              when automatic conversion of parameters is attempted.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              Some Java types have several corresponding Scheme types,
+              e.g. a Java array could be represented as Scheme list or
+              vector - this causes ambiguities when automatic
+              conversion of results is attempted.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              Conversion carries an overhead that can be
+              significant. For instance, Java strings have to be
+              copied "by value" to Scheme strings since the former are
+              immutable and the latter aren't. In a chained-call
+              scenario, i.e. where the results of one method
+              invocation are passed as arguments to another, the
+              conversion is unnecessary and a wasted effort.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              Conversion breaks the object identity relationship. In a
+              chained-call scenario, the identities of the objects
+              passed to the second call are different from the ones
+              returned by the first. This causes problems if the
+              called Java code relies on the object identity being
+              preserved.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              Conversion conflicts with generic procedures. The method
+              selection mechanism employed by generic procedures
+              relies on objects having exactly one type. Automatic
+              conversion effectively gives objects more than one type
+              - their original type and the type of the objects they
+              can be converted to. While it would be technically
+              possible to devise a method selection algorithm that
+              accommodates this, the algorithm would impose a
+              substantial overhead on generic procedure invocation and
+              also make it significantly harder for users to predict
+              which method will be selected when invoking a generic
+              procedure with a particular set of arguments.
+            </para>
+          </listitem>
+        </itemizedlist>
+      </para>
+      <para>
+        Conversion functions are provided for converting instances of
+        primitive Java types to instances of standard Scheme types:
+        <blockquote>
+          <para>
+            <indexterm><primary>-&gt;boolean</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>&t;/&f;</type>
+              <methodname>-&gt;boolean</methodname>
+              <methodparam><parameter>jboolean</parameter></methodparam>
+            </methodsynopsis>
+          </para>
+          <para>
+            <indexterm><primary>-&gt;character</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>character</type>
+              <methodname>-&gt;character</methodname>
+              <methodparam><parameter>jchar</parameter></methodparam>
+            </methodsynopsis>
+          </para>
+          <para>
+            <indexterm><primary>-&gt;number</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>number</type>
+              <methodname>-&gt;number</methodname>
+              <methodparam><parameter>jbyte/jshort/jint/jlong/jfloat/jdouble</parameter></methodparam>
+            </methodsynopsis>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        Conversion functions also exists for the opposite direction,
+        i.e. converting instances of standard Scheme types to
+        instances of primitive Java types
+        <blockquote>
+          <para>
+            <indexterm><primary>-&gt;jboolean</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>jboolean</type>
+              <methodname>-&gt;jboolean</methodname>
+              <methodparam><parameter>boolean</parameter></methodparam>
+            </methodsynopsis>
+          </para>
+          <para>
+            <indexterm><primary>-&gt;jchar</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>jchar</type>
+              <methodname>-&gt;jchar</methodname>
+              <methodparam><parameter>character</parameter></methodparam>
+            </methodsynopsis>
+          </para>
+          <para>
+            <indexterm><primary>-&gt;jbyte</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>jbyte</type>
+              <methodname>-&gt;jbyte</methodname>
+              <methodparam><parameter>number</parameter></methodparam>
+            </methodsynopsis>
+          </para>
+          <para>
+            <indexterm><primary>-&gt;jshort</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>jshort</type>
+              <methodname>-&gt;jshort</methodname>
+              <methodparam><parameter>number</parameter></methodparam>
+            </methodsynopsis>
+          </para>
+          <para>
+            <indexterm><primary>-&gt;jint</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>jint</type>
+              <methodname>-&gt;jint</methodname>
+              <methodparam><parameter>number</parameter></methodparam>
+            </methodsynopsis>
+          </para>
+          <para>
+            <indexterm><primary>-&gt;jlong</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>jlong</type>
+              <methodname>-&gt;jlong</methodname>
+              <methodparam><parameter>number</parameter></methodparam>
+            </methodsynopsis>
+          </para>
+          <para>
+            <indexterm><primary>-&gt;jfloat</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>jfloat</type>
+              <methodname>-&gt;jfloat</methodname>
+              <methodparam><parameter>number</parameter></methodparam>
+            </methodsynopsis>
+          </para>
+          <para>
+            <indexterm><primary>-&gt;jdouble</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>jdouble</type>
+              <methodname>-&gt;jdouble</methodname>
+              <methodparam><parameter>number</parameter></methodparam>
+            </methodsynopsis>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        Finally, there are conversion functions for converting between
+        Java strings and Scheme strings and symbols:
+        <blockquote>
+          <para>
+            <indexterm><primary>-&gt;string</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>string</type>
+              <methodname>-&gt;string</methodname>
+              <methodparam><parameter>jstring</parameter></methodparam>
+            </methodsynopsis>
+          </para>
+          <para>
+            <indexterm><primary>-&gt;symbol</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>symbol</type>
+              <methodname>-&gt;symbol</methodname>
+              <methodparam><parameter>jstring</parameter></methodparam>
+            </methodsynopsis>
+          </para>
+          <para>
+            <indexterm><primary>-&gt;jstring</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>jstring</type>
+              <methodname>-&gt;jstring</methodname>
+              <methodparam><parameter>string/symbol</parameter></methodparam>
+            </methodsynopsis>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        Scheme values are not Java objects and hence cannot be passed
+        as arguments in Java method or constructor invocations or when
+        setting Java fields. However, all Scheme values are
+        <emphasis>internally</emphasis> represented by instances of
+        classes in the SISC runtime. S2J provides a mechanism to get
+        hold of this internal representation as an S2J Java
+        object. The converse operation is also supported - a Java
+        instance obtained via a Java method or constructor invocation
+        or field access in S2J can be turned into a Scheme value if it
+        is an instance of an appropriate &SISC; runtime class. These two
+        operations are called "wrapping" and "unwrapping" respectively
+        because conceptually the scheme object is wrapped to make it
+        appear like a Java object and the wrapper is removed in order
+        to recover the original Scheme object.
+        <blockquote>
+          <para>
+            <indexterm><primary>java-wrap</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>jobject</type>
+              <methodname>java-wrap</methodname>
+              <methodparam><parameter>value</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the Java object that represents the Scheme
+                <parameter>value</parameter> in &SISC;'s runtime.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>java-unwrap</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>value</type>
+              <methodname>java-unwrap</methodname>
+              <methodparam><parameter>jobject</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the Scheme value represented by the
+                <parameter>jobject</parameter>. If
+                <parameter>jobject</parameter> is not an object
+                representing a Scheme value in SISC's runtime and
+                error is thrown.
+              </para>
+            </blockquote>
+          </para>
+          <informalexample>
+            <programlisting>
+(define-java-class &lt;java.lang.object&gt;)
+(define a (java-array-new &lt;java.lang.object&gt; '#(1)))
+(java-array-set! a '#(0) (java-wrap 'foo))
+(java-unwrap (java-array-ref a '#(0))) &arrow; 'foo
+            </programlisting>
+          </informalexample>
+        </blockquote>
+        Wrapping and unwrapping allows Scheme values to be used in
+        generic (i.e. not type-specific) Java operations, such as
+        those of the Java collection API. It is also frequently used
+        in connection with proxies when Scheme objects are passed back
+        and forth through layers of Java to a Scheme-implemented proxy
+        that manipulates them. Finally, wrapping and unwrapping permit
+        &SISC; Scheme code to interface to the &SISC; runtime.
+      </para>
+    </sect2>
+    <sect2 id="JavaThreading">
+      <title>Multi-threading</title>
+      <para>
+        In Java each object is a potential thread synchronization
+        point. Therefore Scheme code needs to be able to synchronize
+        on Java objects in order for it to interoperate properly with
+        Java in a multi-threaded application. This is accomplished by
+        the following procedure:
+        <blockquote>
+          <para>
+            <indexterm><primary>java-synchronized</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>value</type>
+              <methodname>java-synchronized</methodname>
+              <methodparam><parameter>jobject</parameter></methodparam>
+              <methodparam><parameter>thunk</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Runs <parameter>thunk</parameter> in a block
+                synchronized on <parameter>jobject</parameter>,
+                returning the result returned by
+                <parameter>thunk</parameter>. This is the equivalent
+                to <literal>synchronized
+                  (</literal><parameter>jobject</parameter><literal>)
+                  { return
+                </literal><parameter>thunk</parameter><literal>();
+                  }</literal> in Java.
+              </para>
+              <para>
+                It is illegal for <parameter>thunk</parameter> to
+                invoke continuations that escape
+                <parameter>thunk</parameter>, or for code outside
+                <parameter>thunk</parameter> to invoke a continuation
+                captured inside <parameter>thunk</parameter>.
+              </para>
+            </blockquote>
+            <informalexample>
+              <programlisting>
+(define-java-class &lt;java.lang.object&gt;)
+(define mtx (java-new &lt;java.lang.object&gt;))
+(define v 0)
+(define (inc-v)
+  (java-synchronized mtx (lambda () (set! v (+ v 1)) v)))
+(define (dec-v)
+  (java-synchronized mtx (lambda () (set! v (- v 1)) v)))
+(import threading)
+(begin (parallel inc-v dec-v inc-v inc-v dec-v dec-v) v)  &arrow; 0
+              </programlisting>
+            </informalexample>
+          </para>
+        </blockquote>
+      </para>
+    </sect2>
+    <sect2 id="JavaExceptions">
+      <title>Exception Handling</title>
+      <para>
+        Java exceptions are propagated to scheme and can be caught
+        like any other exception, e.g. with
+        <function>with/fc</function> as defined in <xref
+        linkend="FailureContinuations"/>. The <literal>s2j</literal>
+        module exports augmented versions of the
+        <function>print-stack-trace</function> and
+        <function>print-exception</function> functions that handle
+        Java exceptions. For example
+        <programlisting>
+(define-generic-java-method char-at)
+(with/fc (lambda (m e) (print-exception (make-exception m e)))
+  (lambda () (char-at (-&gt;jstring "foo") (-&gt;jint 3))))
+        </programlisting>
+        will catch the
+        <classname>IndexOutOfBoundsException</classname>, print its
+        stack trace and return &f;.
+      </para>
+      <para>
+        In Scheme, Java exceptions can be thrown by raising an error
+        containing the Java exception as the message, e.g.
+        <programlisting>
+(define-java-class &lt;java.util.no-such-element-exception&gt;)
+(error (java-new &lt;java.util.no-such-element-exception&gt;))
+        </programlisting>
+        or
+        <programlisting>
+(throw (make-error (java-new &lt;java.util.no-such-element-exception&gt;)))
+        </programlisting>
+        If this occurs inside a proxy method (see <xref
+        linkend="JavaProxies"/>), the exception is propagated to the
+        invoking Java code.
+      </para>
+    </sect2>
+    <sect2 id="JavaPermissions">
+      <title>Access Permissions</title>
+      <para>
+        Invoking <function>[define-]java-class[es]</function>,
+        <function>java-new</function> or any of the procedures defined
+        with
+        <function>[define-]generic-java-{method,field-accessor,field-modifier}[s]</function>
+        causes S2J to perform reflection on the named Java class(es),
+        the class passed as the first argument, or the class
+        corresponding to the type first argument passed to the other
+        procedures, respectively. This process collects information
+        about all the constructors, methods and fields of the class
+        and its superclasses/interfaces.
+      </para>
+      <para>
+        The only class members processed during this automatic
+        reflection are public ones declared in public classes. This
+        almost exactly mimics the visibility rules in Java for code
+        residing in packages other than the one the member is residing
+        in. It is also in line with the default permissions granted to
+        the Java reflection API. There is one rare case where this
+        rule is more restrictive than Java's: public members of
+        package-protected classes are not visible even when accessed
+        via a public sub-class.
+      </para>
+      <para>
+        Depending on the security settings, the Java reflection API is
+        in fact capable of granting access to <emphasis>any</emphasis>
+        members of <emphasis>any</emphasis> class. However, using this
+        in the automatic reflection performed by S2J would constitute
+        a significant departure from normal Java behaviour and result
+        in unpredictable results to the user. For instance,
+        undocumented private methods would be invoked in preference to
+        documented public methods if the formers type signature
+        provided a better match.
+      </para>
+      <para>
+        Automatic reflection ignores security exceptions thrown by the
+        Java reflection API, i.e. the class in question will appear to
+        have no constructors, methods and fields. This is designed to
+        cope with situations where the default security settings have
+        been altered in a way that prevents access to members of some
+        (or even all) classes.
+      </para>
+      <para>
+        In some applications the reflection API permissions depend on
+        the context of the invocation. For instance, in applets it is
+        usually possible to access class member information as part of
+        the initialisation but not after that. Since
+        <function>[define-]java-class[es]</function> triggers
+        automatic reflection, it can be used to control when automatic
+        reflection for specific classes takes place.
+      </para>
+    </sect2>
+    <sect2 id="JavaUsage">
+      <title>Common Usage</title>
+      <para>
+        This section provides a summary of all the commonly used S2J
+        features, correlating them with the corresponding Java
+        code. It makes use of some functions from the
+        <literal>srfi-1</literal>, <literal>srfi-26</literal> and
+        <literal>misc</literal> modules
+      </para>
+      <programlisting>
+(require-library 'sisc/libs/srfi)
+(import* srfi-1 fold)
+(import* srfi-26 cut cute)
+(import* misc compose)
+      </programlisting>
+      <table frame="all">
+        <title>Common S2J Usage</title>
+        <tgroup cols="2" align="left">
+          <colspec colname='java'/>
+          <colspec colname='scheme'/>
+          <thead>
+            <row>
+              <entry align="center">Java</entry>
+              <entry align="center">Scheme</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry namest="java" nameend="scheme" align="center">
+                <emphasis>create bindings for classes, methods and
+                fields</emphasis>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <programlisting>
+n/a
+                </programlisting>
+              </entry>
+              <entry>
+                <programlisting>
+(define-java-classes &lt;foo.bar-baz&gt; &lt;foo.bar-boo&gt;)
+(define-generic-java-methods get-bar get-baz set-bar! set-baz!)
+(define-generic-java-field-accessors :bar :baz)
+(define-generic-java-field-modifiers :bar! :baz!)
+                </programlisting>
+              </entry>
+            </row>
+            <row>
+              <entry namest="java" nameend="scheme" align="center">
+                <emphasis>instantiate class</emphasis>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <programlisting>
+foo.BarBaz fooObj = new foo.BarBaz(a, b, c);
+                </programlisting>
+              </entry>
+              <entry>
+                <programlisting>
+(define foo-obj (java-new &lt;foo.bar-baz&gt; a b c))
+                </programlisting>
+              </entry>
+            </row>
+            <row>
+              <entry namest="java" nameend="scheme" align="center">
+                <emphasis>invoke method on instance</emphasis>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <programlisting>
+Object res = fooObj.barBaz(a, b, c)
+                </programlisting>
+              </entry>
+              <entry>
+                <programlisting>
+(define res (bar-baz foo-obj a b c))
+                </programlisting>
+              </entry>
+            </row>
+            <row>
+              <entry namest="java" nameend="scheme" align="center">
+                <emphasis>invoke method on class</emphasis>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <programlisting>
+Object res = foo.Bar.baz(a, b, c)
+                </programlisting>
+              </entry>
+              <entry>
+                <programlisting>
+(define res (baz (java-null &lt;foo.bar&gt;) a b c))
+                </programlisting>
+              </entry>
+            </row>
+            <row>
+              <entry namest="java" nameend="scheme" align="center">
+                <emphasis>access instance field</emphasis>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <programlisting>
+Object res = fooObj.bar;
+                </programlisting>
+              </entry>
+              <entry>
+                <programlisting>
+(define res (:bar foo-obj))
+                </programlisting>
+              </entry>
+            </row>
+            <row>
+              <entry namest="java" nameend="scheme" align="center">
+                <emphasis>access class field</emphasis>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <programlisting>
+Object res = foo.Bar.baz;
+                </programlisting>
+              </entry>
+              <entry>
+                <programlisting>
+(define res (:bar (java-null &lt;foo.bar&gt;)))
+                </programlisting>
+              </entry>
+            </row>
+            <row>
+              <entry namest="java" nameend="scheme" align="center">
+                <emphasis>modify instance field</emphasis>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <programlisting>
+fooObj.bar = val;
+                </programlisting>
+              </entry>
+              <entry>
+                <programlisting>
+(:bar! foo-obj val)
+                </programlisting>
+              </entry>
+            </row>
+            <row>
+              <entry namest="java" nameend="scheme" align="center">
+                <emphasis>modify class field</emphasis>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <programlisting>
+foo.Bar.baz = val;
+                </programlisting>
+              </entry>
+              <entry>
+                <programlisting>
+(:bar! (java-null &lt;foo.bar&gt;) val)
+                </programlisting>
+              </entry>
+            </row>
+            <row>
+              <entry namest="java" nameend="scheme" align="center">
+                <emphasis>chained field access</emphasis>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <programlisting>
+Object res = fooObj.bar.baz.boo
+                </programlisting>
+              </entry>
+              <entry>
+                <programlisting>
+(define res (fold (cut &lt;&gt; &lt;&gt;) foo-obj (list :bar :baz :boo)))
+                </programlisting>
+                or
+                <programlisting>
+(define res ((compose :boo :baz :bar) foo-obj))
+                </programlisting>
+                This works equally well for bean fields.
+              </entry>
+            </row>
+            <row>
+              <entry namest="java" nameend="scheme" align="center">
+                <emphasis>chained field modification</emphasis>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <programlisting>
+fooObj.bar.baz.boo = moo;
+                </programlisting>
+              </entry>
+              <entry>
+                <programlisting>
+(:boo! (fold (cut &lt;&gt; &lt;&gt;) foo-obj (list :bar :baz)) moo)
+                </programlisting>
+                or
+                <programlisting>
+(:boo! ((compose :baz :bar) foo-obj) moo)
+                </programlisting>
+                This works equally well for bean fields.
+              </entry>
+            </row>
+            <row>
+              <entry namest="java" nameend="scheme" align="center">
+                <emphasis>accessing several fields</emphasis>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <programlisting>
+a = fooObj.bar;
+b = fooObj.baz;
+c = fooObj.boo;
+                </programlisting>
+              </entry>
+              <entry>
+                <programlisting>
+(apply (lambda (a b c) ...)
+       (map (cute &lt;&gt; foo-obj) (list :bar :baz :boo)))
+                </programlisting>
+                This works equally well for bean fields.
+              </entry>
+            </row>
+            <row>
+              <entry namest="java" nameend="scheme" align="center">
+                <emphasis>modifying several fields</emphasis>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <programlisting>
+fooObj.bar = a;
+fooObj.baz = b;
+fooObj.boo = c;
+                </programlisting>
+              </entry>
+              <entry>
+                <programlisting>
+(for-each (cute &lt;&gt; foo-obj &lt;&gt;)
+          (list :bar! :baz! :boo!)
+          (list a b c))
+                </programlisting>
+                This works equally well for bean fields.
+              </entry>
+            </row>
+            <row>
+              <entry namest="java" nameend="scheme" align="center">
+                <emphasis>creating an array</emphasis>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <programlisting>
+int[][] ar = new int[2][2];
+                </programlisting>
+              </entry>
+              <entry>
+                <programlisting>
+(define ar (java-array-new &lt;jint&gt; '(2 2)))
+                </programlisting>
+                This works equally well for bean fields.
+              </entry>
+            </row>
+            <row>
+              <entry namest="java" nameend="scheme" align="center">
+                <emphasis>accessing an array element</emphasis>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <programlisting>
+int res = ar[1][1];
+                </programlisting>
+              </entry>
+              <entry>
+                <programlisting>
+(define res (java-array-ref ar '(1 1)))
+                </programlisting>
+              </entry>
+            </row>
+            <row>
+              <entry namest="java" nameend="scheme" align="center">
+                <emphasis>modifying an array element</emphasis>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <programlisting>
+ar[1][1] = val;
+                </programlisting>
+              </entry>
+              <entry>
+                <programlisting>
+(java-array-set! ar '(1 1) val)
+                </programlisting>
+              </entry>
+            </row>
+            <row>
+              <entry namest="java" nameend="scheme" align="center">
+                <emphasis>iterating over an array</emphasis>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <programlisting>
+for(int i=0; i&lt;ar.length; i++) ar[i].fooBar(a,b);
+                </programlisting>
+              </entry>
+              <entry>
+                <programlisting>
+(for-each (cute foo-bar &lt;&gt; a b) (-&gt;list ar))
+                </programlisting>
+              </entry>
+            </row>
+            <row>
+              <entry namest="java" nameend="scheme" align="center">
+                <emphasis>implementing interfaces</emphasis>
+              </entry>
+            </row>
+            <row>
+              <entry>
+                <programlisting>
+public class Foo implements Bar, Baz {
+  private int x;
+  private int y;
+  public Foo(int x, int y) {
+    this.x = x;
+    this.y = y;
+  }
+  public int barMethod(int z) {
+    return x+y+z;
+  }
+  public int bazMethod(int z) {
+    return x+y-z;
+  }
+}
+...
+Foo fooObj = new Foo(1, 2);
+                </programlisting>
+              </entry>
+              <entry>
+                <programlisting>
+(define-java-proxy (foo x y)
+  (&lt;bar&gt; &lt;baz&gt;)
+  (define (bar-method p z)
+    (-&gt;jint (+ x y (-&gt;number z))))
+  (define (baz-method p z)
+    (-&gt;jint (+ x y (- (-&gt;number z))))))
+...
+(define foo-obj (foo 1 2))
+                </programlisting>
+              </entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
+    </sect2>
+  </sect1>
+  <sect1 id="SchemeToJavaReflection">
+    <title>Java Reflection Interface</title>
+    <para>
+      &requires; 
+      <emphasis role="bold">
+        (import <emphasis>s2j</emphasis>)
+      </emphasis>
+    </para>
+    <para>
+      The S2J Reflection API lets Scheme code access all the core
+      functions of the Java reflection API. It underpins the High
+      Level S2J Interface (see <xref linkend="SchemeToJava"/>). Normal
+      interaction with Java from Scheme does not require knowledge of
+      this API, just like normal use of Java does not require
+      knowledge of the Java reflection API.
+    </para>
+    <sect2>
+      <title>Classes</title>
+      <para>
+        These functions access attributes and members of classes.
+      </para>
+      <blockquote>
+        <para>
+          <indexterm><primary>java-class-name</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>symbol</type>
+            <methodname>java-class-name</methodname>
+            <methodparam><parameter>jclass</parameter></methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns the name of <parameter>jclass</parameter>.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+          <indexterm><primary>java-class-flags</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>list of symbols</type>
+            <methodname>java-class-flags</methodname>
+            <methodparam><parameter>jclass</parameter></methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns the modifiers of <parameter>jclass</parameter>, for 
+              example <literal>public static final</literal>.            
+            </para>
+          </blockquote>
+        </para>
+        <para>
+          <indexterm><primary>java-class-declaring-class</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>jclass</type>
+            <methodname>java-class-declaring-class</methodname>
+            <methodparam><parameter>jclass</parameter></methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns the Java class in which <parameter>jclass</parameter>
+              was declared, or null if it was declared at the top level.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+          <indexterm><primary>java-class-declared-superclasses</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>list of jclass</type>
+            <methodname>java-class-declared-superclasses</methodname>
+            <methodparam><parameter>jclass</parameter></methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns the direct superclasses of <parameter>jclass</parameter>.
+            </para>
+            <para>
+              Normally this is the class' superclass followed by all
+              of its interfaces in the order they were specified in
+              the class declaration.  There are a number of exceptions
+              which ensure that the result is consistent with the
+              precedence order employed by Java for method lookup on
+              overloaded method.  Interfaces and classes that directly
+              inherit from <classname>java.lang.Object</classname> are
+              all given <classname>java.lang.Object</classname> as the
+              <emphasis>last</emphasis> element in their superclass
+              list.  For primitive and array types the direct
+              superclass or superclasses reflect the widening
+              conversions performed by Java.  For example,
+              <literal>&lt;jint&gt;</literal>'s superclass is
+              <literal>&lt;jlong&gt;</literal> and
+              <literal>&lt;java.util.array-list[][]&gt; </literal>'s
+              superclasses are:
+              <itemizedlist>
+                <listitem><para><literal>&lt;java.util.abstract-list[][]&gt;</literal></para></listitem>
+                <listitem><para><literal>&lt;java.util.list[][]&gt;</literal></para></listitem>
+                <listitem><para><literal>&lt;java.util.random-access[][]&gt;</literal></para></listitem>
+                <listitem><para><literal>&lt;java.lang.cloneable[][]&gt;</literal></para></listitem>
+                <listitem><para><literal>&lt;java.io.serializable[][]&gt;</literal></para></listitem>
+              </itemizedlist>
+              Note that this behavior is different from the corresponding method in the Java reflection 
+              API.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+          <indexterm><primary>java-class-declared-classes</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>list of jclasses/#f</type>
+            <methodname>java-class-declared-classes</methodname>
+            <methodparam><parameter>jclass</parameter></methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns all the classes declared by <parameter>jclass</parameter>,
+              or <literal>#f</literal> if access to this information is 
+              prohibited.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+          <indexterm><primary>java-class-declared-constructors</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>list of jconstructor/#f</type>
+            <methodname>java-class-declared-constructors</methodname>
+            <methodparam><parameter>jclass</parameter></methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns all the constructors declared by <parameter>jclass</parameter>,
+              or <literal>#f</literal> if access to this information is 
+              prohibited.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+          <indexterm><primary>java-class-declared-methods</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>list of jmethods/#f</type>
+            <methodname>java-class-declared-methods</methodname>
+            <methodparam><parameter>jclass</parameter></methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns all the methods declared by <parameter>jclass</parameter>,
+              or <literal>#f</literal> if access to this information is 
+              prohibited.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+          <indexterm><primary>java-class-declared-fields</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>list of jfields/#f</type>
+            <methodname>java-class-declared-fields</methodname>
+            <methodparam><parameter>jclass</parameter></methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns all the fields declared by <parameter>jclass</parameter>,
+              or <literal>#f</literal> if access to this information is 
+              prohibited.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+          <indexterm><primary>java-class-precedence-list</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>list of jclasses</type>
+            <methodname>java-class-precedence-list</methodname>
+            <methodparam><parameter>jclass</parameter></methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns the total order of <parameter>jclass</parameter> and
+              all direct and indirect superclasses, as determined by the
+              partial orders obtained from calling 
+              <function>java-class-declared-superclasses</function>.
+            </para>
+           <para>
+                 The class precedence list is important when comparing types 
+                 using the type system's <function>compare-types</function> procedure,
+                 which is used by the generic procedure method selection algorithm 
+                 (see <function>compare-methods</function> in <xref linkend="invokinggenerics"/>).  Since generic Java methods
+                 and field accessors/mutators are implemented in terms of generic 
+                 procedures they are all affected by the class precedence list.
+           </para>
+          </blockquote>
+        </para>      
+      </blockquote>
+    </sect2>
+    <sect2>
+      <title>Constructors</title>
+      <blockquote>
+        <para>
+         <indexterm><primary>java-constructor?</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>#t/#f</type>
+            <methodname>java-constructor?</methodname>
+            <methodparam><parameter>value</parameter></methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Determines whether <parameter>value</parameter> is a Java 
+              constructor.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+         <indexterm><primary>java-constructor-name</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>symbol</type>
+            <methodname>java-constructor-name</methodname>
+            <methodparam><parameter>jconstructor</parameter></methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns the name of <parameter>jconstructor</parameter>.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+         <indexterm><primary>java-constructor-flags</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>list of symbols</type>
+            <methodname>java-constructor-flags</methodname>
+            <methodparam><parameter>jconstructor</parameter></methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+               Returns the modifiers of <parameter>jconstructor
+               </parameter>, such as <literal>public static final</literal>.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+         <indexterm><primary>java-constructor-declaring-class</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>jclass</type>
+            <methodname>java-constructor-declaring-class</methodname>
+            <methodparam><parameter>jconstructor</parameter></methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns the Java class in which <parameter>jconstructor</parameter>
+              was declared.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+         <indexterm><primary>java-constructor-parameter-types</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>list of jclasses</type>
+            <methodname>java-constructor-parameter-types</methodname>
+            <methodparam><parameter>jconstructor</parameter></methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns the declared types of the parameters of <parameter>
+              jconstructor</parameter>.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+         <indexterm><primary>java-constructor-procedure</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>procedure</type>
+            <methodname>java-constructor-procedure</methodname>
+            <methodparam><parameter>jconstructor</parameter></methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns a procedure that when called invokes the constructor
+              with the passed arguments, returning the newly created
+              objected.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+         <indexterm><primary>java-constructor-method</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>method</type>
+            <methodname>java-constructor-method</methodname>
+            <methodparam><parameter>jconstructor</parameter></methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+               Returns a method suitable for adding to generic procedures
+              that, when called invokes the underlying Java constructor 
+              with the passed arguments.  The resulting newly created
+              object is returned.
+            </para>
+          </blockquote>
+        </para>
+      </blockquote>
+    </sect2>
+    <sect2>
+      <title>Methods</title>
+       <blockquote>
+        <para>
+         <indexterm><primary>java-method?</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>#t/#f</type>
+            <methodname>java-method?</methodname>
+            <methodparam><parameter>value</parameter></methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Determines whether <parameter>value</parameter> is a Java 
+              method.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+         <indexterm><primary>java-method-name</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>symbol</type>
+            <methodname>java-method-name</methodname>
+            <methodparam><parameter>jmethod</parameter></methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns the name of <parameter>jmethod</parameter>.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+         <indexterm><primary>java-method-flags</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>list of symbols</type>
+            <methodname>java-method-flags</methodname>
+            <methodparam><parameter>jmethod</parameter></methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns the modifiers of <parameter>jmethod</parameter>,
+              such as <literal>public static final</literal>.            
+            </para>
+          </blockquote>
+        </para>
+        <para>
+         <indexterm><primary>java-method-declaring-class</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>jclass</type>
+            <methodname>java-method-declaring-class</methodname>
+            <methodparam><parameter>jmethod</parameter></methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns the Java class in which <parameter>jmethod</parameter>
+              was declared.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+         <indexterm><primary>java-method-parameter-types</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>list of jclasses</type>
+            <methodname>java-method-parameter-types</methodname>
+            <methodparam><parameter>jmethod</parameter></methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns the declared types of the parameters of <parameter>
+              jmethod</parameter>.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+         <indexterm><primary>java-method-procedure</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>procedure</type>
+            <methodname>java-method-procedure</methodname>
+            <methodparam><parameter>jmethod</parameter></methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns a procedure that when called invokes the method
+              with the passed arguments, returning the newly created
+              objected.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+         <indexterm><primary>java-method-method</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>method</type>
+            <methodname>java-method-method</methodname>
+            <methodparam><parameter>jmethod</parameter></methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+               Returns a method suitable for adding to generic procedures
+              that, when called invokes the underlying Java method 
+              on the object passed as the first argument, and with the 
+              remaining arguments passed as parameters.  The result
+              of the method invocation is returned.  Static methods
+              can be invoked by passing a typed null object as the first
+              parameter to the generic procedure.
+            </para>
+          </blockquote>
+        </para>
+      </blockquote>      
+    </sect2>
+    <sect2>
+      <title>Fields</title>
+      <blockquote>
+        <para>
+         <indexterm><primary>java-field?</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>#t/#f</type>
+            <methodname>java-field?</methodname>
+            <methodparam><parameter>value</parameter></methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Determines whether <parameter>value</parameter> is a Java 
+              field.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+         <indexterm><primary>java-field-name</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>symbol</type>
+            <methodname>java-field-name</methodname>
+            <methodparam><parameter>jfield</parameter></methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns the name of <parameter>jfield</parameter>.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+         <indexterm><primary>java-field-flags</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>list of symbols</type>
+            <methodname>java-field-flags</methodname>
+            <methodparam><parameter>jfield</parameter></methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns the modifiers of <parameter>jfield</parameter>,
+              such as <literal>public static final</literal>.            
+            </para>
+          </blockquote>
+        </para>
+        <para>
+         <indexterm><primary>java-field-declaring-class</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>jclass</type>
+            <methodname>java-field-declaring-class</methodname>
+            <methodparam><parameter>jfield</parameter></methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns the Java class in which <parameter>jfield</parameter>
+              was declared.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+         <indexterm><primary>java-field-type</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>jclass</type>
+            <methodname>java-field-type</methodname>
+            <methodparam><parameter>jfield</parameter></methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns the declared type of <parameter>
+              jfield</parameter>.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+         <indexterm><primary>java-field-accessor-procedure</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>procedure</type>
+            <methodname>java-field-accessor-procedure</methodname>
+            <methodparam><parameter>jfield</parameter></methodparam>
+          </methodsynopsis>
+        </para>
+        <para>
+         <indexterm><primary>java-field-modifier-procedure</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>procedure</type>
+            <methodname>java-field-modifier-procedure</methodname>
+            <methodparam><parameter>jfield</parameter></methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+              Returns a procedure that when called returns or sets (respectively)
+              the value of the field on the object specified by the first parameter
+              to the invocation.  Static fields can be accessed/modified by
+              passing a null object.
+            </para>
+          </blockquote>
+        </para>
+        <para>
+         <indexterm><primary>java-field-accessor-method</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>method</type>
+            <methodname>java-field-accessor-method</methodname>
+            <methodparam><parameter>jfield</parameter></methodparam>
+          </methodsynopsis>
+        </para>
+        <para>
+         <indexterm><primary>java-field-modifier-method</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>method</type>
+            <methodname>java-field-modifier-method</methodname>
+            <methodparam><parameter>jfield</parameter></methodparam>
+          </methodsynopsis>          
+          <blockquote>
+            <para>
+               Returns a method suitable for adding to generic procedures that,
+               when called returns/sets the value of the field on the object
+               specified by the first argument to the generic procedure invocation.
+               Static fields can be accessed/modified by passing a typed null
+               object as the first parameter to the generic procedure.
+            </para>
+          </blockquote>
+        </para>
+      </blockquote> 
+    </sect2>
+    <sect2>
+      <title>Arrays</title>
+      <blockquote>
+        <para>
+         <indexterm><primary>java-array-class</primary></indexterm>
+          &procedure;
+          <methodsynopsis language="scheme">
+            <type>jclass</type>
+            <methodname>java-array-class</methodname>
+            <methodparam><parameter>jclass</parameter></methodparam>
+            <methodparam><parameter>dimensions</parameter></methodparam>
+          </methodsynopsis>
+          <blockquote>
+            <para>
+                  Returns a class representing the array type that has 
+                  <parameter>jclass</parameter> as the component type and
+                  <parameter>dimensions</parameter> as the number of dimensions.
+                  For example, the following expressions are equivalent:
+                  <programlisting>
+(java-array-class &lt;jint&gt; 2)
+(java-class '|int[][]|)
+              </programlisting>
+            </para>
+            <para>
+              The list of direct superclasses returned by <function>
+              java-class-declared-superclasses</function> for an array
+              class is consistent with the widening conversion performed
+              by Java, e.g. the direct superclasses of <literal>
+              java.util.ArrayList[][]</literal> are:
+              <itemizedlist>
+                <listitem><para><literal>java.util.AbstractList[][]</literal></para></listitem>
+                <listitem><para><literal>java.util.List[][]</literal></para></listitem>
+                <listitem><para><literal>java.util.RandomAccess[][]</literal></para></listitem>
+                <listitem><para><literal>java.lang.Cloneable[][]</literal></para></listitem>
+                <listitem><para><literal>java.io.Serializable[][]</literal></para></listitem>
+              </itemizedlist>
+              This is different from what the Java reflection APIs return.
+            </para>
+          </blockquote>
+        </para>
+      </blockquote>
+    </sect2>
+    <sect2>
+      <title>Proxies</title>
+      <para>
+        <blockquote>
+          <para>
+           <indexterm><primary>java-proxy-class</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>jclass</type>
+              <methodname>java-proxy-class</methodname>
+              <methodparam><parameter>jinterface</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Creates a Java class that implements the specified interfaces.
+                The class can be instantiated with an invocation handler, such
+                as the one returned by <function>java-proxy-dispatcher</function>
+                below, that delegates method invocation to Scheme code.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+           <indexterm><primary>java-proxy-dispatcher</primary></indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>invocation-handler</type>
+              <methodname>java-proxy-dispatcher</methodname>
+              <methodparam><parameter>alist</parameter></methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Creates an invocation handler suitable for use in the
+                instantiation of a proxy (see <function>java-proxy-class
+                </function> above).  The keys in <parameter>alist</parameter>
+                are Java method names and the values are Scheme procedures.
+              </para>
+              <para>
+                When a method is invoked on a proxy, the procedure matching
+                the method's name is invoked with the proxy object and the
+                parameters of the method invocation as arguments.  The result 
+                of the invocation is returned as the result of the method
+                call.  If <parameter>alist</parameter> does not contain
+                a binding for the method name, an error is signalled.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+    </sect2>
+  </sect1>
+</chapter>
+<!-- Keep this comment at the end of the file
+Local variables:
+sgml-parent-document:("sss.xml" "chapter")
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:2
+sgml-indent-data:t
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->

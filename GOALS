@@ -1,0 +1,47 @@
+The following lists the main goals pursued by the SISC project, in
+decreasing order of priority.
+
+1) Standards Compliance
+
+- full compliance with R5RS
+- comprehensive numeric tower
+- support for most of the optional elements of the standard
+- reporting of errors in all error situations defined by the standard
+
+2) Compact, Clean Code Base
+
+- elegant
+- doing the "right thing" philosophy 
+- easy to extend
+- easy to refactor
+
+3) Good Performance
+
+- be the fastest Java-based Scheme Interpreter
+- be one of the fastest Schemes when it comes to capturing and
+invoking continuations
+
+4) Small Footprint
+
+- small size of "executable" (jar + heap image)
+- small (for a Java-based program) memory footprint
+
+5) Comprehensive Set of Libraries
+
+- access to any Java library from Scheme
+- support for most SRFIs
+- integration with SLIB
+
+6) Suitability for "Real World" applications
+
+- comprehensive documentation
+- thread safety
+- embeddable into other Java applications
+- good error reporting / debugging capabilities
+- module system
+- object system
+
+
+The order of priority is not followed religiously. For instance, small
+sacrifices in code elegance and compactness in exchange for
+performance speed gains are acceptable.

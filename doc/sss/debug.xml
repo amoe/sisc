@@ -1,0 +1,610 @@
+<chapter id="Debugging">
+  <title>
+    Debugging Facilities
+  </title>
+  <para>
+    No Scheme system would be complete without facilities to assist
+    the programmer in debugging his or her code.  &SISC; provides aid
+    for passive debugging (requiring no action on the part of the
+    programmer) and active debugging (requiring code instrumentation to
+    facilitate debugging).  
+  </para>
+  <sect1 id="passive-debugging">
+    <title>
+      Passive Debugging
+    </title>
+    <para>
+      Passive debugging facilities are provided that collect
+      information on an error that occurred at runtime and was not
+      caught by the executing code.  The programmer can then inspect
+      the last error, obtain information about the call stack of
+      the error, or even attempt to restart the computation.
+    </para>
+    <blockquote>
+      <para>
+        <indexterm><primary>get-last-exception</primary>
+        </indexterm>
+        &procedure;
+        <methodsynopsis language="scheme">
+          <type>exception</type>
+          <methodname>get-last-exception</methodname>
+          <void/>
+        </methodsynopsis>
+        <blockquote>
+          <para>
+            Retrieves the last exception that occurred
+            in &SISC;.
+          </para>
+        </blockquote>
+      </para>
+    </blockquote>
+    <para>
+      One of the most common desires is to obtain a trace of the
+      call stack, to determine what sequence of calls resulted in the
+      error. &SISC; provides procedures for accessing the call stack of
+      <emphasis>any</emphasis> continuation.
+    </para>
+    <blockquote>
+      <para>      
+        &requires; 
+        <emphasis role="bold">
+          (import <emphasis>debugging</emphasis>)
+        </emphasis>
+      </para>
+      <para>
+        <indexterm><primary>stack-trace</primary>
+        </indexterm>
+        &procedure;
+        <methodsynopsis language="scheme">
+          <type>list</type>
+          <methodname>stack-trace</methodname>
+          <methodparam><parameter>continuation</parameter></methodparam>
+        </methodsynopsis>
+        <blockquote>
+          <para>
+            Returns the stack trace for
+            <parameter>continuation</parameter> in form of a
+            list. The format of the list is
+            <informaltable frame="none">
+              <tgroup cols="3">
+                <tbody>
+                  <row>
+                    <entry>stack-trace</entry>
+                    <entry>:=</entry>
+                    <entry><literal>(</literal>call-frame ...<literal>)</literal></entry>
+                  </row>
+                  <row>
+                    <entry>call-frame</entry>
+                    <entry>:=</entry>
+                    <entry>sisc-expr | <literal>(</literal>sisc-expr overflown <literal>.</literal> stack<literal>)</literal></entry>
+                  </row>
+                  <row>
+                    <entry>overflown</entry>
+                    <entry>:=</entry>
+                    <entry>&num;t | &num;f</entry>
+                  </row>
+                  <row>
+                    <entry>stack</entry>
+                    <entry>:=</entry>
+                    <entry><literal>(</literal>stack-entry ...<literal>)</literal></entry>
+                  </row>
+                  <row>
+                    <entry>stack-entry</entry>
+                    <entry>:=</entry>
+                    <entry>sisc-expr | <literal>(</literal>repetitions <literal>.</literal> stack<literal>)</literal></entry>
+                  </row>
+                  <row>
+                    <entry>repetitions</entry>
+                    <entry>:=</entry>
+                    <entry>integer</entry>
+                  </row>
+                </tbody>
+              </tgroup>
+            </informaltable>
+          </para>
+          <para>
+            Each element in the list represents one level in the
+            &SISC; interpreter's call stack, starting from the
+            top. The element contains the &SISC; virtual machine
+            expression that would be executed next in that frame, and,
+            if available, a compact representation of a virtual stack
+            created by collecting information on tail calls carried
+            out in that frame.
+          </para>
+          <para>
+            The virtual stack is bounded in size by the value of the
+            see <envar>maxStackTraceDepth</envar> configuration
+            parameter (see <xref linkend="config-parameters"/>). If
+            old information was dropped due to the bound being
+            exceeded then the <parameter>overflown</parameter> flag is
+            set.
+          </para>
+          <para>
+            Each entry in the virtual stack contains either the &SISC;
+            virtual machine expression that was executed, or a
+            sub-stack annotated with a repetition count, indicating
+            that the entries in that sub-stack were repeated several
+            times.
+          </para>
+          <para>
+            &SISC; expressions are annotated with source locations if
+            the <envar>emitAnnotations</envar> parameter is set to
+            <literal>true</literal>. Additional annotations are
+            produced when <envar>emitDebuggingSymbols</envar> is set
+            to <literal>true</literal>. See <xref
+            linkend="config-parameters"/>. The annotations can be
+            retrieved using the <function>annotation</function>
+            function with the keys <literal>source-file</literal>,
+            <literal>line-number</literal>,
+            <literal>column-number</literal>,
+            <literal>source-kind</literal>, and
+            <literal>proc-name</literal>.
+          </para>
+          <para>
+            Stack trace entries for expressions with a
+            <literal>source-kind</literal> mentioned on
+            <function>suppressed-stack-trace-source-kinds</function>
+            are suppressed.
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        <indexterm><primary>suppressed-stack-trace-source-kinds</primary>
+        </indexterm>
+        &procedure;
+        <methodsynopsis language="scheme">
+          <type>list</type>
+          <methodname>suppressed-stack-trace-source-kinds</methodname>
+          <methodparam choice="opt"><parameter>list</parameter></methodparam>
+        </methodsynopsis>
+        <blockquote>
+          <para>
+            Retrieves or sets the list of source kinds to suppress in
+            stack traces returned by
+            <function>stack-trace</function>. This is a dynamic
+            parameter.
+          </para>
+          <para>
+            The default value is <literal>(#f)</literal> which causes
+            all stack trace entries for expressions with no specified
+            source kind to be suppressed.
+          </para>
+          <para>
+            The annotation of expressions with source kinds and other
+            information is controlled by the
+            <function>source-annotations</function> parameter.
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        <indexterm><primary>source-annotations</primary>
+        </indexterm>
+        &procedure;
+        <methodsynopsis language="scheme">
+          <type>alist</type>
+          <methodname>source-annotations</methodname>
+          <methodparam choice="opt"><parameter>alist</parameter></methodparam>
+        </methodsynopsis>
+        <blockquote>
+          <para>
+            Retrieves or sets the association list of additional
+            annotations for expressions that are being read. This is a
+            dynamic parameter.
+          </para>
+          <para>
+            All system and core library code is loaded with this
+            parameter set to <literal>()</literal>, resulting in no
+            additional annotations being produced. However, on entry
+            to the REPL, the parameter is set to
+            <literal>((source-kind . user))</literal>. In combination
+            with the default settings for
+            <function>suppressed-stack-trace-source-kinds</function>
+            this results in system code being omitted from stack
+            traces.
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        <indexterm><primary>print-stack-trace</primary>
+        </indexterm>
+        &procedure;
+        <methodsynopsis language="scheme">
+          <void/>
+          <methodname>print-stack-trace</methodname>
+          <methodparam><parameter>continuation</parameter></methodparam>
+        </methodsynopsis>
+        <blockquote>
+          <para>
+            Displays the call stack of the
+            <parameter>continuation</parameter> in a human-readable
+            form.
+          </para>
+        </blockquote>
+      </para>
+    </blockquote>
+    <para>
+      The error message, location information and call stack
+      associated with an exception can be displayed in
+      human-readable form using the following procedure.
+    </para>
+    <blockquote>
+      <para>
+        <indexterm><primary>print-exception</primary>
+        </indexterm>
+        &procedure;
+        <methodsynopsis language="scheme">
+          <void/>
+          <methodname>print-exception</methodname>
+          <methodparam><parameter>exception</parameter>
+          </methodparam>
+          <methodparam choice="opt"><parameter>stack-trace?</parameter>
+          </methodparam>
+        </methodsynopsis>
+        <blockquote>
+          <para>
+            Displays the error message and location of
+            <parameter>exception</parameter>. A stack trace is
+            displayed if <parameter>stack-trace?</parameter> is absent
+            or set to &num;t. Furthermore the procedure calls itself
+            recursively in order to display similar information for
+            nested exceptions.
+          </para>
+        </blockquote>
+      </para>
+    </blockquote>
+    <para>
+      In order to obtain the source file location of a call, your
+      Scheme code must have been loaded while &SISC;'s reader had
+      <emphasis>annotations</emphasis> enabled.  Annotations are a
+      means of attaching metadata to compiled Scheme code.  To allow
+      the reader to attach annotations related to the source file
+      position of the code it reads, enable the emission of
+      annotations with the <envar>emitAnnotations</envar>
+      configuration parameter (see <xref
+        linkend="config-parameters"/>).
+    </para>
+    <para>
+      &SISC; can also produce more detailed stack traces if code was
+      generated with <emphasis>debugging symbols</emphasis>. These
+      are extra annotations generated by the compiler that track
+      function and variable names that would ordinarily be discarded.
+      By including these annotations, the stack trace can display the
+      name of more of the calls involved. To enable the generation of
+      debugging symbols, the <envar>emitDebuggingSymbols</envar>
+      configuration parameter must be set to <literal>true</literal>
+      (see <xref linkend="config-parameters"/>).
+    </para>
+    <para>
+      Finally, when debugging a program for a long period of time, it
+      may be desirable to have stack traces displayed whenever an
+      error occurs, rather than needing to invoke
+      <function>print-exception</function> or other functions each
+      time. For this, the <envar>stackTraceOnError</envar>
+      configuratin parameter must be set to <literal>true</literal>
+      (see <xref linkend="config-parameters"/>).
+    </para>
+  </sect1>
+  <sect1 id="ActiveDebugging">
+    <title>
+      Active Debugging
+    </title>
+    <para>
+      &requires; 
+      <emphasis role="bold">
+	(import <emphasis>debugging</emphasis>)
+      </emphasis>
+    </para>
+    <para>
+      &SISC; provides active debugging aids; procedures and syntax
+      that can be used in source code to assist in tracing the
+      activities of running Scheme code.
+    </para>
+    <sect2>
+      <title>
+        Runtime Tracing
+      </title>
+      <para>
+        When a function is traced, each call to the function will be
+        displayed to the console with the function's trace identifier
+        and the values of the operands the function is being applied to.
+        Each nested call is indented slightly, so as to illustrate the
+        depth of calls.  When the function application returns, the
+        value of the function-call is displayed at the same indentation
+        as the call itself.  Once indented to a certain depth, the same
+        indentation is kept for further nesting, but the depth of the
+        call is displayed as an integer preceding the call.
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>trace-lambda</primary>
+            </indexterm>
+            &syntax;
+            <methodsynopsis language="scheme">
+              <type>procedure</type>
+              <methodname>trace-lambda</methodname>
+              <methodparam>
+                <parameter>trace-name</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>formals</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>body</parameter>
+              </methodparam>	
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                When replaced with a trace-lambda, all calls to a lambda
+                defined procedure are traced on the console.
+                <parameter>trace-name</parameter> is an identifier which
+                will disambiguate the procedure in the trace. 
+                <parameter>formals</parameter> and
+                <parameter>body</parameter> have identical semantics to 
+                <function>lambda</function>.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>trace-let</primary>
+            </indexterm>
+            &syntax;
+            <methodsynopsis language="scheme">
+              <type>value</type>
+              <methodname>trace-let</methodname>
+              <methodparam>
+                <parameter>loop-identifier</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>formal-bindings</parameter>
+              </methodparam>
+              <methodparam>
+                <parameter>body</parameter>
+              </methodparam>	
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Replaces a named-let expression in a similar manner to
+                trace-lambda.  
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>trace</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>undefined</type>
+              <methodname>trace</methodname>
+              <methodparam choice="opt" rep="repeat">
+                <parameter>symbol</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Begins traces on the procedures named by the symbols
+                given.  The procedures must be defined in the top-level
+                environment.
+              </para>
+              <para>
+                If no procedures are given, a message is displayed
+                indicating the names of top-level procedures currently
+                being traced.
+              </para>
+              <para>
+                If a traced procedure is redefined, it will not retain
+                the instrumenting installed by
+                <function>trace</function>, until
+                <function>trace</function> or
+                <function>untrace</function> is called again (with any
+                arguments).  At that time, the traced procedures are
+                reinspected and instrumenting reinstalled on redefined
+                procedures.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>untrace</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>undefined</type>
+              <methodname>untrace</methodname>
+              <methodparam choice="opt" rep="repeat">
+                <parameter>symbol</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Stops tracing the top-level procedures named by the
+                symbols given.
+              </para>
+              <para>
+                If no procedures are given, a message is displayed
+                indicating the names of top-level procedures currently
+                being traced.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote>
+      </para>
+      <para>
+        <function>trace-lambda</function> and
+        <function>trace-let</function> are useful for debugging
+        anonymous lambdas and named-lets
+        respectively. <function>trace</function> and
+        <function>untrace</function> ar useful for tracing any top-level
+        bound procedure, including calls to builtin procedures and
+        stored continuations.
+      </para>
+      <note>
+        <para>
+          Tracing a function installs instrumentation code around
+          the procedure which does not preserve the continuation
+          of a call to that function.  Thus, tail calls made in 
+          a traced function are no longer tail calls.  This may
+          affect the memory usage characteristics of running code.
+        </para>
+      </note>
+    </sect2>
+    <sect2>
+      <title>
+        Breakpoints
+      </title>
+      <para>
+        A user may wish to halt execution of a running Scheme program
+        when a given procedure is called.  &SISC; provides means to
+        install breakpoints at top-level visible functions without
+        having to redefine the function. 
+      </para>
+      <para>
+        When a breakpoint is set using <function>set-breakpoint!</function>, 
+        and the function is called, execution will halt, returning to
+        the REPL and displaying an informational message indicating a
+        break, the procedure called, the arguments passed to the breakpointed
+        procedure, and, if possible, the location in a source file of
+        the call.  The user may then continue execution using the 
+        <function>continue</function> procedure.
+      </para>
+      <para>
+        <blockquote>
+          <para>
+            <indexterm><primary>set-breakpoint!</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>undefined</type>
+              <methodname>set-breakpoint!</methodname>
+              <methodparam>
+                <parameter>symbol</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Instruments the top-level procedure named by the given
+                symbol, such that when called, execution will halt and
+                return to the REPL and the name of the breakpointed
+                function and its arguments are displayed.
+              </para>
+            </blockquote>
+          </para>        
+          <para>
+            <indexterm><primary>clear-breakpoint!</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>undefined</type>
+              <methodname>clear-breakpoint!</methodname>
+              <methodparam>
+                <parameter>symbol</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Removes the instrumentation on the named top-level
+                procedure, if present.  Execution will continue normally
+                through occurances of the formally breakpointed
+                procedure.
+              </para>
+            </blockquote>
+          </para>        
+          <para>
+            <indexterm><primary>continue</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>does not return</type>
+              <methodname>continue</methodname>
+              <void/>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Continues execution from the most recent break.  It is
+                an error to call this procedure if a breakpoint has not 
+                been hit, or to call this procedure more than once for a 
+                given break.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>current-breakpoint-continuation</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>continuation</type>
+              <methodname>current-breakpoint-continuation</methodname>
+              <void/>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns the continuation of the most recent
+                breakpoint, or &num;f if execution is not currently
+                interrupted at a breakpoint.
+              </para>
+              <para>
+                The continuation is useful for obtaining stack traces,
+                e.g. with <literal>(print-stack-trace
+                  (current-breakpoint-continuation))</literal>.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>current-breakpoint-args</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>list</type>
+              <methodname>current-breakpoint-args</methodname>
+              <void/>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Returns a list containing the current breakpoint's
+                continuation procedure and arguments that will be used
+                when execution is resumed with
+                <methodname>continue</methodname>, or &num;f if
+                execution is not currently interrupted at a breakpoint.
+              </para>
+              <para>
+                This procedure is useful for performing deep
+                inspection of the breakpointed procedure and its
+                arguments. The returned values are also handy for
+                constructing modified breakpoint continuations with
+                <methodname>set-current-breakpoint-args!</methodname>.
+              </para>
+            </blockquote>
+          </para>
+          <para>
+            <indexterm><primary>set-current-breakpoint-args!</primary>
+            </indexterm>
+            &procedure;
+            <methodsynopsis language="scheme">
+              <type>&num;t/&num;f</type>
+              <methodname>set-current-breakpoint-args!</methodname>
+              <methodparam><parameter>procedure</parameter></methodparam>
+              <methodparam rep="repeat">
+                <parameter>value</parameter>
+              </methodparam>
+            </methodsynopsis>
+            <blockquote>
+              <para>
+                Sets the current breakpoint's continuation procedure
+                and arguments that will be used when execution is
+                resumed with <methodname>continue</methodname>.
+                If execution is not currently interrupted at a
+                breakpoint then invoking this procedure has no effect
+                and it returns &num;f. Otherwise it returns &num;t.
+              </para>
+            </blockquote>
+          </para>
+        </blockquote> 
+      </para>
+    </sect2>              
+  </sect1>
+</chapter>
+<!-- Keep this comment at the end of the file
+Local variables:
+sgml-parent-document:("sss.xml" "chapter")
+sgml-indent-data:t
+End:
+-->
