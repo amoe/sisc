@@ -1,8 +1,0 @@
-#!/bin/sh
-if [ -z "$SISC_HOME" ]
-then
-   SISC_HOME="/usr/share/sisc"
-fi
-
-EXTENSIONS=""
-java $JAVAOPT -classpath /usr/share/java/sisc-opt.jar:/usr/share/java/sisc.jar:/usr/share/java/sisc-lib.jar:$CLASSPATH -Dsisc.home=$SISC_HOME -Dsisc.heapfile=$SISC_HOME/sisc.shp sisc.REPL $EXTENSIONS "$@"
