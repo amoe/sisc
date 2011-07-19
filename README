@@ -25,6 +25,14 @@ libraries that may add new types, values, and functions to the
 language. These extensions can be packaged into scopable modules at
 the Scheme level as well.
 
+Building
+--------
+
+You need Apache Ant installed.  When you have it, simply run "ant".
+
+Tests will be built by default.  You will need to have JUnit installed in order
+to build the tests.  Drop the JUnit JAR file into the 'lib' subdirectory.
+
 Installation
 ------------
 

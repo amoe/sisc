@@ -125,7 +125,8 @@
            target="1.2"
     	  source="1.3"
            debug="${debugging}"
-           optimize="${optimization}">
+           optimize="${optimization}"
+           includeAntRuntime="false">
       <include name="${packagename}/**"/>
       <exclude name="${packagename}/dist/**"/>
       <exclude name="${packagename}/tests/**" unless="junit.present"/>
@@ -137,7 +138,8 @@
            debug="${debugging}"
            target="1.2"
     	  source="1.3"
-           optimize="${optimization}">
+           optimize="${optimization}"
+           includeAntRuntime="false">
       <include name="${packagename}/modules/io/IO.java"/>
       <include name="${packagename}/modules/io/StringIO.java"/>
       <include name="${packagename}/modules/Annotations.java"/>
