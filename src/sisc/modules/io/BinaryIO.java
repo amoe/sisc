@@ -1,7 +1,6 @@
 package sisc.modules.io;
 
 import sisc.interpreter.*;
-import sisc.io.AutoflushOutputStream;
 import sisc.nativefun.*;
 import sisc.data.*;
 
@@ -65,15 +64,10 @@ public class BinaryIO extends IndexedProcedure {
         return null;
     }
     
-    private static SchemeBinaryOutputPort openBinOutFile(Interpreter f,  URL url,
-                                                   boolean aflush) 
+    private static SchemeBinaryOutputPort openBinOutFile(Interpreter f,  URL url)
         throws ContinuationException {
         try {
             OutputStream out=new BufferedOutputStream(IO.getURLOutputStream(url));
-            if (aflush) {
-            	System.err.println(warn("autoflushdeprecated"));
-                out=new AutoflushOutputStream(out);
-            }
             return new SchemeBinaryOutputPort(out);
         } catch (IOException e) {
             IO.throwIOException(f, liMessage(IO.IOB, "erroropening",
@@ -135,7 +129,7 @@ public class BinaryIO extends IndexedProcedure {
             case OPENBINARYINPUTFILE:
                 return openBinInFile(f, url(f.vlr[0]));
             case OPENBINARYOUTPUTFILE:
-                return openBinOutFile(f, url(f.vlr[0]), false);
+                return openBinOutFile(f, url(f.vlr[0]));
             case BINARYINPUTPORTQ:
                 return truth(f.vlr[0] instanceof SchemeBinaryInputPort);
             case BINARYOUTPUTPORTQ:
@@ -174,7 +168,7 @@ public class BinaryIO extends IndexedProcedure {
                                                      f.vlr[0].synopsis()}));
                 }
             case OPENBINARYOUTPUTFILE:
-                return openBinOutFile(f, url(f.vlr[0]), truth(f.vlr[1]));
+                return openBinOutFile(f, url(f.vlr[0]));
             case OPENBUFFEREDBININPORT: 
             	return new SchemeBinaryInputPort(new BufferedInputStream(bininport(f.vlr[0]).getInputStream(),
             			num(f.vlr[1]).indexValue()));
