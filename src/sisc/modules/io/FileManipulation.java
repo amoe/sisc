@@ -68,8 +68,9 @@ public class FileManipulation extends Util {
                 return Quantity.valueOf(fileHandle(v1).lastModified());
             case GETPARENTURL:
                 try {
-                    return new SchemeString(fileHandle(v1)
-                                            .getParentFile().toURL().toString());
+                    return new SchemeString(
+                        fileHandle(v1).getParentFile().toURI().toURL().toString()
+                    );
                 } catch (MalformedURLException m) {
                     m.printStackTrace();
                 }
