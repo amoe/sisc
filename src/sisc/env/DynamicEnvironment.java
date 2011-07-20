@@ -94,7 +94,7 @@ public class DynamicEnvironment extends Util implements Cloneable {
         this.characterSet = Util.charsetFromString(ctx.getProperty("sisc.characterSet", defaultCharacterSet));
         try {
             this.in  = new SchemeCharacterInputPort(new SourceReader(new InputStreamReader(in, this.characterSet.getCharsetName()), liMessage(SISCB, "console")));
-            this.out = new SchemeCharacterOutputPort(new AutoflushWriter(new OutputStreamWriter(out, this.characterSet.getCharsetName())));
+            this.out = new SchemeCharacterOutputPort(new BufferedWriter(new OutputStreamWriter(out, this.characterSet.getCharsetName())));
         } catch (UnsupportedEncodingException use) {
             //Hack?
             throw new RuntimeException(use.getMessage());

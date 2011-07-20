@@ -59,7 +59,7 @@
 
 (define repl-prompt
   (make-config-parameter "replPrompt" (lambda (repl-depth)
-                                        (format "#;~a> "
+                                        (format "sisc#;~a> "
                                                 (if (zero? repl-depth)
                                                     "" repl-depth)))))
 (define stack-trace-on-error
@@ -113,7 +113,8 @@
             [repl-depth (- (length (_exit-handler)) 1)])
         (display (if (procedure? rp)
                      (rp repl-depth)
-                     rp)))
+                     rp))
+        (flush-output-port))
                 
       ;;read
       (let ([exp (read-code (current-input-port))])
