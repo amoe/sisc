@@ -14,11 +14,20 @@ import sisc.data.*;
 public class FileManipulation extends Util {
 
     public static final File fileHandle(Value o) {
-        URL u=url(o);
-        if (!"file".equals(u.getProtocol()))
-            Procedure.throwPrimException(liMessage(IO.IOB, "notafileurl"));
-        String path=URLDecoder.decode(u.getPath());
-        return new File(path);
+        String encoding = "UTF-8";    // always supported
+        
+        try {
+            URL u=url(o);
+            if (!"file".equals(u.getProtocol()))
+                Procedure.throwPrimException(liMessage(IO.IOB, "notafileurl"));
+            String path=URLDecoder.decode(u.getPath(), encoding);
+            return new File(path);
+        } catch (UnsupportedEncodingException use) {
+            Procedure.throwPrimException(
+                liMessage(IO.IOB, "unsupencoding", encoding)
+            );
+            return null;    // not reached
+        }
     }
 
     /**
