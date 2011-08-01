@@ -104,23 +104,17 @@ public class Networking extends IndexedProcedure {
             throws IOException, ContinuationException;
         abstract SchemeBinaryInputPort getBinaryInputPort(Interpreter r)
             throws IOException, ContinuationException;
-        abstract SchemeBinaryOutputPort getBinaryOutputPort(Interpreter r, 
-                                                      boolean autoflush)
+        abstract SchemeBinaryOutputPort getBinaryOutputPort(Interpreter r)
             throws IOException, ContinuationException;
  
-        SchemeCharacterOutputPort getCharacterOutputPort(Interpreter r, boolean autoflush)
+        SchemeCharacterOutputPort getCharacterOutputPort(Interpreter r)
             throws IOException, ContinuationException {
-            return getCharacterOutputPort(r, r.dynenv.characterSet, autoflush); 
+            return getCharacterOutputPort(r, r.dynenv.characterSet); 
         }
         
-        SchemeCharacterOutputPort getCharacterOutputPort(Interpreter r, Charset encoding)
-            throws IOException, ContinuationException {
-            return getCharacterOutputPort(r, encoding, false);
-        }
  
         abstract SchemeCharacterOutputPort getCharacterOutputPort(Interpreter r, 
-                                                Charset encoding, 
-                                                boolean autoflush)
+                                                                  Charset encoding)
             throws IOException, ContinuationException;
     }
     
@@ -176,19 +170,15 @@ public class Networking extends IndexedProcedure {
         }
          
         public SchemeCharacterOutputPort getCharacterOutputPort(Interpreter r,
-                                              Charset encoding,
-                                              boolean autoflush) 
+                                                                Charset encoding)
             throws IOException, ContinuationException {
             Writer out=new OutputStreamWriter(s.getOutputStream(), encoding.getCharsetName());
-            if (autoflush) out=new AutoflushWriter(out);
             return new SchemeCharacterOutputPort(out);
         }
                                
-        public SchemeBinaryOutputPort getBinaryOutputPort(Interpreter r,
-                                                    boolean autoflush) 
+        public SchemeBinaryOutputPort getBinaryOutputPort(Interpreter r)
             throws IOException, ContinuationException {
             OutputStream out=s.getOutputStream();
-            if (autoflush) out=new AutoflushOutputStream(out);
             return new SchemeBinaryOutputPort(out);
         }
     }
@@ -330,12 +320,11 @@ public class Networking extends IndexedProcedure {
                 new BufferedInputStream(new UDPInputStream(s, packet_size)));
         }
 
-        public SchemeBinaryOutputPort getBinaryOutputPort(Interpreter r, boolean autoflush)
+        public SchemeBinaryOutputPort getBinaryOutputPort(Interpreter r)
             throws IOException, ContinuationException {
             if ((mode & SEND) == 0)
                 error(r, liMessage(SNETB, "outputoninputudp"));
             OutputStream out=new UDPOutputStream(s, remoteHost, dport);
-            if (autoflush) out=new AutoflushOutputStream(out);
             return new SchemeBinaryOutputPort(out);
         }
         
@@ -348,13 +337,11 @@ public class Networking extends IndexedProcedure {
         }
 
         public SchemeCharacterOutputPort getCharacterOutputPort(Interpreter r, 
-                                              Charset encoding,
-                                              boolean autoflush)
+                                                                Charset encoding)
             throws IOException, ContinuationException {
             if ((mode & SEND) == 0)
                 error(r, liMessage(SNETB, "outputoninputudp"));
             Writer out=new OutputStreamWriter(new UDPOutputStream(s, remoteHost, dport), encoding.getCharsetName());
-            if (autoflush) out=new AutoflushWriter(out);
             return new SchemeCharacterOutputPort(out);
         }
     }
@@ -497,13 +484,13 @@ public class Networking extends IndexedProcedure {
                     return ss.getInputPort(f);
                 case OPEN_SOCKET_OUTPUT_PORT:
                     SchemeSocket ssock=sock(f.vlr[0]);
-                    return ssock.getCharacterOutputPort(f, false);
+                    return ssock.getCharacterOutputPort(f);
                   case OPEN_BINARY_SOCKET_INPUT_PORT:
                     ss=sock(f.vlr[0]);
                     return ss.getBinaryInputPort(f);
                 case OPEN_BINARY_SOCKET_OUTPUT_PORT:
                     ssock=sock(f.vlr[0]);
-                    return ssock.getBinaryOutputPort(f,false);                   
+                    return ssock.getBinaryOutputPort(f);                   
                 case CLOSE_SOCKET:
                     Closable c=(Closable)f.vlr[0];
                     c.close();
@@ -601,7 +588,7 @@ public class Networking extends IndexedProcedure {
                     }
                 case OPEN_BINARY_SOCKET_OUTPUT_PORT:
                     SchemeSocket ssock=sock(f.vlr[0]);
-                    return ssock.getBinaryOutputPort(f, truth(f.vlr[1]));
+                    return ssock.getBinaryOutputPort(f);
                 case OPEN_SOCKET_INPUT_PORT:
                     SchemeSocket ss=sock(f.vlr[0]);
                     return ss.getInputPort(f, Util.charsetFromString(string(f.vlr[1])));
@@ -610,7 +597,7 @@ public class Networking extends IndexedProcedure {
                     if (f.vlr[1] instanceof SchemeString)
                         return ssock.getCharacterOutputPort(f, Util.charsetFromString(string(f.vlr[1])));
                     else
-                       return ssock.getBinaryOutputPort(f, truth(f.vlr[1]));
+                       return ssock.getBinaryOutputPort(f);
                 case SET_MULTICAST_TTL:
                     SchemeMulticastUDPSocket ms=mcastsock(f.vlr[0]);
                     int ttl=num(f.vlr[1]).indexValue();
@@ -695,8 +682,7 @@ public class Networking extends IndexedProcedure {
                     SchemeSocket ssock=sock(f.vlr[0]);
                      return ssock.getCharacterOutputPort
                              (f,
-                              Util.charsetFromString(string(f.vlr[1])), 
-                              truth(f.vlr[2]));
+                              Util.charsetFromString(string(f.vlr[1])));
                 default:
                     throwArgSizeException();
                 }
