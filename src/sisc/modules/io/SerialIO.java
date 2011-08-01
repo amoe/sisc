@@ -63,12 +63,10 @@ public class SerialIO extends IndexedProcedure {
     }
 
     private static SchemeBinaryOutputPort openSerOutPort(Interpreter f, 
-                                                 SchemeBinaryOutputPort sop,
-                                                 boolean aflush) 
+                                                         SchemeBinaryOutputPort sop)
         throws ContinuationException {
         try {
             OutputStream out=sop.getOutputStream();
-            if (aflush) out=new AutoflushOutputStream(out);
             SerializerStream sp=new SerializerStream(f.getCtx(), out);
             sp.flush();
             return new SchemeBinaryOutputPort(sp);
@@ -126,8 +124,7 @@ public class SerialIO extends IndexedProcedure {
             case OPENSERIALINPUTFILE:
                 return openSerInPort(f, bininport(f.vlr[0]));
             case OPENSERIALOUTPUTFILE:
-                return openSerOutPort(f, binoutport(f.vlr[0]), 
-                                      false);
+                return openSerOutPort(f, binoutport(f.vlr[0]));
             case DESERIALIZE:
                 return readSer(f, sinport(f.vlr[0]));
             default:
@@ -136,8 +133,7 @@ public class SerialIO extends IndexedProcedure {
         case 2:
             switch (id) {
             case OPENSERIALOUTPUTFILE:
-                return openSerOutPort(f, binoutport(f.vlr[0]), 
-                                      truth(f.vlr[1]));
+                return openSerOutPort(f, binoutport(f.vlr[0]));
             case SERIALIZE:
                 return writeSer(f, soutport(f.vlr[1]), f.vlr[0]);
             default:
