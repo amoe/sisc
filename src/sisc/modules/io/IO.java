@@ -34,8 +34,6 @@ public class IO extends IndexedProcedure {
         LOADEXPANDED        = 24,
         MAKEPATH            = 15,
         NORMALIZEURL        = 16,
-        OPENAUTOFLUSHSTREAM = 35,
-        OPENAUTOFLUSHWRITER = 36,
         OPENBUFFEREDCHARINPORT = 32,
         OPENBUFFEREDCHAROUTPORT = 33,
         OPENCHARINPUTPORT   = 31,
@@ -79,8 +77,6 @@ public class IO extends IndexedProcedure {
             define("load"               , LOAD);
             define("load-expanded"               , LOADEXPANDED);
             define("normalize-url"      , NORMALIZEURL);
-            define("open-autoflush-binary-output-port", OPENAUTOFLUSHSTREAM);
-            define("open-autoflush-character-output-port", OPENAUTOFLUSHWRITER);
             define("open-buffered-character-input-port", OPENBUFFEREDCHARINPORT);
             define("open-buffered-character-output-port", OPENBUFFEREDCHAROUTPORT);
             define("open-character-input-port", OPENCHARINPUTPORT);
@@ -469,12 +465,6 @@ public class IO extends IndexedProcedure {
             case READCODE:
                 cinport=charinport(f.vlr[0]);
                 return readCode(f, cinport);
-            case OPENAUTOFLUSHSTREAM:
-                System.err.println(warn("autoflushdeprecated"));
-                return new SchemeBinaryOutputPort(new AutoflushOutputStream(binoutstream(f.vlr[0])));
-            case OPENAUTOFLUSHWRITER:
-                System.err.println(warn("autoflushdeprecated"));
-                return new SchemeCharacterOutputPort(new AutoflushWriter(charoutwriter(f.vlr[0])));
             case OPENCHARINPUTPORT:
             	return new SchemeCharacterInputPort(new PushbackReader(new BufferedReader(
             			f.dynenv.getCharacterSet().newInputStreamReader(bininstream(f.vlr[0])))));
