@@ -274,26 +274,37 @@ public class IO extends IndexedProcedure {
     }
 
     public static URL urlClean(URL u) {
-        if (u.getProtocol().equals("file") &&
-            (u.getRef()!=null || u.getQuery()!=null)) {
-            StringBuffer b=new StringBuffer(u.getProtocol());
-            b.append(':');
-            b.append(u.getPath());
-            if (u.getRef()!=null) {
-                b.append("%23");
-                b.append(URLEncoder.encode(u.getRef()));
-            }
-            if (u.getQuery()!=null) {
-                b.append("%3F");
-                b.append(URLEncoder.encode(u.getQuery()));
-            }
-            try {
-                u=new URL(b.toString());
-            } catch (Exception e2) {
-                e2.printStackTrace();
-            }
-        } 
-        return u;
+        String encoding = "UTF-8";
+
+        try {
+            if (u.getProtocol().equals("file") &&
+                (u.getRef()!=null || u.getQuery()!=null)) {
+                StringBuffer b=new StringBuffer(u.getProtocol());
+                b.append(':');
+                b.append(u.getPath());
+                if (u.getRef()!=null) {
+                    b.append("%23");
+                    b.append(URLEncoder.encode(u.getRef(), encoding));
+                }
+                if (u.getQuery()!=null) {
+                    b.append("%3F");
+                    b.append(URLEncoder.encode(u.getQuery(), encoding));
+                }
+                try {
+                    u=new URL(b.toString());
+                } catch (Exception e2) {
+                    e2.printStackTrace();
+                }
+            } 
+            return u;
+        } catch (UnsupportedEncodingException use) {
+            // We should probably use throwIOException, but we don't have
+            // an interpreter at this point.
+            Procedure.throwPrimException(
+                liMessage(IO.IOB, "unsupencoding", encoding)
+            );
+            return null;    // not reached
+        }
     }
 
     public static SchemeCharacterInputPort openCharInFile(Interpreter f,
