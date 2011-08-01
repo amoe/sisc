@@ -324,15 +324,10 @@ public class IO extends IndexedProcedure {
 
     public static SchemeCharacterOutputPort openCharOutFile(Interpreter f, 
                                                    URL url,
-                                                   Charset encoding,
-                                                   boolean aflush) 
+                                                            Charset encoding)
         throws ContinuationException {
         try {
             Writer w=new OutputStreamWriter(getURLOutputStream(url), encoding.getCharsetName());           
-            if (aflush) {
-            	System.err.println(warn("autoflushdeprecated"));
-            	w=new AutoflushWriter(w);
-            }
             return new SchemeCharacterOutputPort(w);
         } catch (IOException e) {
             e.printStackTrace();
@@ -494,7 +489,7 @@ public class IO extends IndexedProcedure {
                 return openCharInFile(f, url, f.dynenv.characterSet);
             case OPENOUTPUTFILE:
                 url = url(f.vlr[0]);
-                return openCharOutFile(f, url, f.dynenv.characterSet, false);
+                return openCharOutFile(f, url, f.dynenv.characterSet);
             case OPENBUFFEREDCHARINPORT: 
             	return new SchemeCharacterInputPort(new BufferedReader(charinreader(f.vlr[0])));
             case OPENBUFFEREDCHAROUTPORT: 
@@ -650,13 +645,9 @@ public class IO extends IndexedProcedure {
                                       Util.charsetFromString(string(f.vlr[1])));
             case OPENOUTPUTFILE:
                 url = url(f.vlr[0]);
-                boolean aflush=false;
                 Charset encoding=f.dynenv.characterSet;
-                if (f.vlr[1] instanceof SchemeString)
-                    encoding=Util.charsetFromString(string(f.vlr[1]));
-                else
-                    aflush=truth(f.vlr[1]);
-                return openCharOutFile(f, url, encoding, aflush);
+                encoding=Util.charsetFromString(string(f.vlr[1]));
+                return openCharOutFile(f, url, encoding);
             case OPENBUFFEREDCHARINPORT: 
             	return new SchemeCharacterInputPort(new BufferedReader(charinreader(f.vlr[0]),
             			num(f.vlr[1]).indexValue()));
@@ -694,8 +685,7 @@ public class IO extends IndexedProcedure {
             case OPENOUTPUTFILE:
                 URL url = url(f.vlr[0]);
                 return openCharOutFile(f, url,
-                                       Util.charsetFromString(string(f.vlr[1])),
-                                       truth(f.vlr[2]));
+                                       Util.charsetFromString(string(f.vlr[1])));
             default:
                 throwArgSizeException();
             }
