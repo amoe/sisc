@@ -127,6 +127,10 @@
            debug="${debugging}"
            optimize="${optimization}"
            includeAntRuntime="false">
+      <!-- Use the following to enable deprecation warnings: -->
+      <!--
+        <compilerarg value="-Xlint:deprecation"/> 
+      -->
       <include name="${packagename}/**"/>
       <exclude name="${packagename}/dist/**"/>
       <exclude name="${packagename}/tests/**" unless="junit.present"/>
@@ -404,7 +408,8 @@
     <javadoc packagenames="${packagename}.*"
              use="yes"
              sourcepath="${srcdir}"
-             destdir="${gendocdir}/javadoc">
+             destdir="${gendocdir}/javadoc"
+             classpathref="classpath">
       <excludepackage name="${packagename}/tests"/>
     </javadoc>
   </target>
