@@ -221,10 +221,9 @@ jar:http://foo.com/bar.jar!/bar/bar1.scm
         </para>
       </blockquote>
       <para>
-        With buffered output ports, individual writes may not actually 
-		reach the eventual output source, so the programmer must explicitly
-		flush the port when it the output data <emphasis>must</emphasis>
-		reach its destination.  
+        With buffered output ports, individual writes may not actually reach the
+        eventual output source, so the programmer must explicitly flush the port
+        when it the output data <emphasis>must</emphasis> reach its destination.
       </para>	        
       <blockquote>
         <para>
@@ -341,22 +340,16 @@ jar:http://foo.com/bar.jar!/bar/bar1.scm
                 <methodparam choice="opt">
                   <parameter>encoding</parameter>
                 </methodparam>
-                <methodparam choice="opt">
-                  <parameter>auto-flush</parameter>
-                </methodparam>
               </methodsynopsis>
               <blockquote>
                 <para>
                   Creates an output port to the specified
                   <parameter>url</parameter>.  If the optional
-                  <parameter>encoding</parameter> parameter, a string,
-                  is supplied output will be encoded in the specified
-                  encoding rather than the default.  If the optional
-                  <parameter>auto-flush</parameter> argument is provided
-                  and is non-false, the port will automatically flush
-                  after each write call.  If the specified file exists,
-                  it will be overwritten silently when the port is
-                  opened.
+                  <parameter>encoding</parameter> parameter, a string, is
+                  supplied output will be encoded in the specified encoding
+                  rather than the default.  If the specified file exists, it
+                  will be overwritten silently when the port is opened.
+
                 </para>
               </blockquote>
             </para>
@@ -397,9 +390,6 @@ jar:http://foo.com/bar.jar!/bar/bar1.scm
                 <methodparam choice="opt">
                   <parameter>character-set</parameter>
                 </methodparam>
-                <methodparam choice="opt">
-                  <parameter>auto-flush</parameter>
-                </methodparam>
               </methodsynopsis>
               <blockquote>
                 <para>
@@ -407,10 +397,7 @@ jar:http://foo.com/bar.jar!/bar/bar1.scm
                   provided binary output port.  One may specify the
                   desired character set as a string, otherwise the character
                   set is retrieved from the <literal>character-set</literal>
-                  dynamic parameter.  If the optional
-                  <parameter>auto-flush</parameter> argument is provided
-                  and is non-false, the port will automatically flush
-                  after each write call.
+                  dynamic parameter.
                 </para>
               </blockquote>
             </para>
@@ -991,9 +978,6 @@ jar:http://foo.com/bar.jar!/bar/bar1.scm
               <methodparam>
                 <parameter>url</parameter>
               </methodparam>
-              <methodparam choice="opt">
-                <parameter>auto-flush</parameter>
-              </methodparam>
             </methodsynopsis>
             <blockquote>
               <para>
@@ -1500,18 +1484,13 @@ jar:http://foo.com/bar.jar!/bar/bar1.scm
               <methodparam>
                 <parameter>joutput-stream</parameter>
               </methodparam>
-              <methodparam choice="opt">
-                <parameter>aflush?</parameter>
-              </methodparam>
             </methodsynopsis>
             <blockquote>
               <para>
                 Returns a binary input port associated to the
                 <classname>java.io.OutputStream</classname> object
                 passed as the <parameter>joutput-stream</parameter>
-                parameter. If the optional boolean
-                <parameter>aflush?</parameter> parameter is not
-                provided, the port will not autoflush by default.
+                parameter.
               </para>
             </blockquote>
           </para>
@@ -1544,18 +1523,13 @@ jar:http://foo.com/bar.jar!/bar/bar1.scm
               <methodparam>
                 <parameter>jwriter</parameter>
               </methodparam>
-              <methodparam choice="opt">
-                <parameter>aflush?</parameter>
-              </methodparam>
             </methodsynopsis>
             <blockquote>
               <para>
                 Returns a binary input port associated to the
                 <classname>java.io.Writer</classname> object passed as
                 the <parameter>joutput-stream</parameter>
-                parameter. If the optional boolean
-                <parameter>aflush?</parameter> parameter is not
-                provided, the port will not autoflush by default.
+                parameter.
               </para>
             </blockquote>
           </para>
@@ -1704,9 +1678,6 @@ jar:http://foo.com/bar.jar!/bar/bar1.scm
                 <methodname>open-serial-output-port</methodname>
                 <methodparam>
                   <parameter>binary-output-port</parameter>
-                </methodparam>
-                <methodparam choice="opt">
-                  <parameter>auto-flush</parameter>
                 </methodparam>
               </methodsynopsis>
               <blockquote>
@@ -2187,19 +2158,14 @@ jar:http://foo.com/bar.jar!/bar/bar1.scm
               <methodparam choice="opt">
                 <parameter>encoding</parameter>
               </methodparam>
-              <methodparam choice="opt">
-                <parameter>auto-flush</parameter>
-              </methodparam>
             </methodsynopsis>
             <blockquote>
               <para>
-                Opens a character output port to the socket.  If provided, the
-                boolean argument specifies whether the given port should be
-                set to auto-flush mode.  If unspecified, the port does
-                <emphasis>not</emphasis> auto-flush.
-                If the optional <parameter>encoding</parameter>
-                parameter is provided, the character port created will
-                use the specified encoding rather than the default.
+                Opens a character output port to the socket.  The port does
+                <emphasis>not</emphasis> auto-flush.  If the optional
+                <parameter>encoding</parameter> parameter is provided, the
+                character port created will use the specified encoding rather
+                than the default.
               </para>
             </blockquote>
           </para>
@@ -2228,15 +2194,10 @@ jar:http://foo.com/bar.jar!/bar/bar1.scm
               <methodname>open-binary-socket-output-port</methodname>
               <methodparam><parameter>socket</parameter>
               </methodparam>
-              <methodparam choice="opt">
-                <parameter>auto-flush</parameter>
-              </methodparam>
             </methodsynopsis>
             <blockquote>
               <para>
-                Opens a character output port to the socket.  If provided, the
-                boolean argument specifies whether the given port should be
-                set to auto-flush mode.  If unspecified, the port does
+                Opens a character output port to the socket.  The port does
                 <emphasis>not</emphasis> auto-flush.
               </para>
             </blockquote>
@@ -2269,19 +2230,16 @@ jar:http://foo.com/bar.jar!/bar/bar1.scm
     <sect2 id="TCP">
       <title>TCP</title>
       <para>
-        The most commonly used Internet protocol maps most favorably
-        to Scheme's input/output model.  Writing to an output port
-        retrieved from a TCP socket writes the data to that socket.
-        Reading from an input port reads from the connected socket.
-        One important note is that one can control the amount of data
-        that fills a TCP packet by using an output port that does
-        not auto-flush.  Data is written to the port until one
-        considers the packet complete, and then uses
-        <computeroutput>(flush-output-port port)</computeroutput> to
-        complete the packet.  Note also that this does not
-        <emphasis>guarantee</emphasis> that one gets the desired
-        packet size, but does allow one to construct reasonably
-        sized packets.
+        The most commonly used Internet protocol maps most favorably to Scheme's
+        input/output model.  Writing to an output port retrieved from a TCP
+        socket writes the data to that socket.  Reading from an input port reads
+        from the connected socket.  One important note is that one can control
+        the amount of data that fills a TCP packet by using a buffered output
+        port.  Data is written to the port until one considers the packet
+        complete, and then uses <computeroutput>(flush-output-port
+        port)</computeroutput> to complete the packet.  Note also that this does
+        not <emphasis>guarantee</emphasis> that one gets the desired packet
+        size, but does allow one to construct reasonably sized packets.
       </para>
       <para>
         TCP sockets are obtained one of two ways.  Either one
@@ -2801,16 +2759,13 @@ jar:http://foo.com/bar.jar!/bar/bar1.scm
         listen for another datagram.
       </para>
       <para>
-        UDP output ports should be treated with some care, however.
-        If a UDP output port was obtained in auto-flush mode, each
-        write operation to the output port will cause a new datagram
-        to be sent.  Control over the size of the datagram must be
-        maintained by using a port that does not auto-flush, writing
-        the desired data, and flushing once the amount of data that
-        the user wants to occupy a single UDP datagram is reached.
-        The behavior of constructing very large UDP packets is
-        undefined.  The packet may be silently dropped or (more
-        likely) fragmented at the IP layer.
+        UDP output ports should be treated with some care, however.  Control
+        over the size of the datagram must be maintained by using a buffered
+        port, writing the desired data, and flushing once the amount of data
+        that the user wants to occupy a single UDP datagram is reached.  The
+        behavior of constructing very large UDP packets is undefined.  The
+        packet may be silently dropped or (more likely) fragmented at the IP
+        layer.
       </para>
     </sect2>
     <sect2>
