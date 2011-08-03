@@ -33,6 +33,14 @@ You need Apache Ant installed.  When you have it, simply run "ant".
 Tests will be built by default.  You will need to have JUnit installed in order
 to build the tests.  Drop the JUnit JAR file into the 'lib' subdirectory.
 
+The Java FFI, s2j, needs the ASM bytecode manipulation library to build.  This
+should also be dropped in the 'lib' subdirectory.
+
+On Debian, you can install and symlink in the relevant jars like this:
+
+  sudo aptitude install junit libasm3-java
+  ln -st lib /usr/share/java/{junit,asm3}.jar
+
 Installation
 ------------
 
