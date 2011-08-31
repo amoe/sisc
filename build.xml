@@ -4,7 +4,6 @@
     <fileset dir="./lib">
       <include name="*.jar"/>
     </fileset>
-<!--    <pathelement path=".."/> -->
   </path>
 
   <target name="prepare">
