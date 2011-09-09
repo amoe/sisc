@@ -22,17 +22,21 @@ public class SchemeInputStream extends InputStream implements CustomPortProxy {
     }
 
     public int read() throws IOException {
-        return Util.num(IOUtils.bridge(read, getHost())).intValue();
+        return ((Quantity) IOUtils.bridge(read, getHost())).intValue();
     }
     
     public int read(byte[] b, int offset, int length) throws IOException {
-        return Util.num(IOUtils.bridge(readBlock, 
-                new Value[] {getHost(), new Buffer(b), Quantity.valueOf(offset), Quantity.valueOf(length)})) 
-                .intValue();        
+        Value[] args = new Value[] {
+            getHost(),
+            new Buffer(b),
+            Quantity.valueOf(offset),
+            Quantity.valueOf(length)
+        };
+        return ((Quantity) (IOUtils.bridge(readBlock, args))).intValue();
     }
     
     public int available() throws IOException {
-        return Util.num(IOUtils.bridge(available, getHost())).intValue();        
+        return ((Quantity) IOUtils.bridge(available, getHost())).intValue();
     }
 
     public void close() throws IOException {

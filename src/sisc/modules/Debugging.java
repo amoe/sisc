@@ -86,7 +86,7 @@ public class Debugging extends IndexedProcedure {
         case 1:
             switch(id) {
             case QTYPE:
-                return Quantity.valueOf(num(f.vlr[0]).type);
+                return Quantity.valueOf(((Quantity) f.vlr[0]).type);
             case FREEXPQ:
                 return truth(expr(f.vlr[0]) instanceof FreeReferenceExp);
             case FRESYM:

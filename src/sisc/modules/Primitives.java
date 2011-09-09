@@ -328,18 +328,18 @@ public abstract class Primitives extends Util {
             case IMMUTABLEVECTORQ:
                 return truth(v1 instanceof ImmutableVector);
             case ADD: 
-            case MUL: return num(v1);
-            case SUB: return num(v1).negate();
-            case DIV: return Quantity.ONE.div(num(v1));
-            case SIN: return num(v1).sin();
-            case COS: return num(v1).cos();
-            case TAN: return num(v1).tan();
-            case ASIN: return num(v1).asin();
-            case ACOS: return num(v1).acos();
-            case ATAN: return num(v1).atan();
-            case LOG: return num(v1).log();
-            case EXP: return num(v1).exp();
-            case SQRT: return num(v1).sqrt();
+            case MUL: return (Quantity) v1;
+            case SUB: return ((Quantity) v1).negate();
+            case DIV: return Quantity.ONE.div((Quantity) v1);
+            case SIN: return ((Quantity) v1).sin();
+            case COS: return ((Quantity) v1).cos();
+            case TAN: return ((Quantity) v1).tan();
+            case ASIN: return ((Quantity) v1).asin();
+            case ACOS: return ((Quantity) v1).acos();
+            case ATAN: return ((Quantity) v1).atan();
+            case LOG: return ((Quantity) v1).log();
+            case EXP: return ((Quantity) v1).exp();
+            case SQRT: return ((Quantity) v1).sqrt();
             case NUMBERQ: return truth(v1 instanceof Quantity);
             case VECTORQ: return truth(v1 instanceof SchemeVector);
             case SYMBOLQ: return truth(v1 instanceof Symbol);
@@ -369,13 +369,13 @@ public abstract class Primitives extends Util {
             case VECTOR2LIST:
                 Value[] vals=vec(v1).vals;
                 return valArrayToList(vals, 0, vals.length);
-            case EXACT2INEXACT: return num(v1).toInexact();
-            case INEXACT2EXACT: return num(v1).toExact();
-            case FLOOR: return num(v1).floor();
-            case CEILING: return num(v1).ceiling();
-            case ROUND: return num(v1).round();
-            case TRUNCATE: return num(v1).truncate();
-            case INTEGER2CHAR: return new SchemeCharacter((char)num(v1).
+            case EXACT2INEXACT: return ((Quantity) v1).toInexact();
+            case INEXACT2EXACT: return ((Quantity) v1).toExact();
+            case FLOOR: return ((Quantity) v1).floor();
+            case CEILING: return ((Quantity) v1).ceiling();
+            case ROUND: return ((Quantity) v1).round();
+            case TRUNCATE: return ((Quantity) v1).truncate();
+            case INTEGER2CHAR: return new SchemeCharacter((char)((Quantity) v1).
                                                           indexValue());
             case VECTORFINDLASTUNIQUE: return Quantity.valueOf(vec(v1).findEnd());
             case BOX: return new Box(v1);
@@ -394,15 +394,15 @@ public abstract class Primitives extends Util {
             case MAKENATIVEPARAM:
                 return new NativeParameter(string(v1));
             case MAKESTRING:
-                return new SchemeString(new char[num(v1).indexValue()]);
+                return new SchemeString(new char[((Quantity) v1).indexValue()]);
             case MAKEVECTOR:
-                return new SchemeVector(num(v1).indexValue());
+                return new SchemeVector(((Quantity) v1).indexValue());
             case MAKEIMMUTABLEVECTOR:
-                return new ImmutableVector(num(v1).indexValue(), false);
-            case NUMERATOR: return num(v1).numerator();
-            case DENOMINATOR: return num(v1).denominator();
-            case REALPART: return num(v1).realpart();
-            case IMAGPART: return num(v1).imagpart();
+                return new ImmutableVector(((Quantity) v1).indexValue(), false);
+            case NUMERATOR: return ((Quantity) v1).numerator();
+            case DENOMINATOR: return ((Quantity) v1).denominator();
+            case REALPART: return ((Quantity) v1).realpart();
+            case IMAGPART: return ((Quantity) v1).imagpart();
             case STRING2UNINTERNEDSYMBOL:
                 return Symbol.getUnique(string(v1));
             case MAKECHILDENVIRONMENT:
@@ -411,7 +411,7 @@ public abstract class Primitives extends Util {
                 sisc.compiler.Compiler.addSpecialForms(ae);
                 return ae;
             case NULLENVIRONMENT:
-                switch (num(v1).indexValue()) {
+                switch (((Quantity) v1).indexValue()) {
                 case 5:
                     ae = new MemorySymEnv();
                     sisc.compiler.Compiler.addSpecialForms(ae);
@@ -428,7 +428,7 @@ public abstract class Primitives extends Util {
                 return Quantity.valueOf(nlib(v1).getLibraryVersion());
             case SLEEP:
                 try {
-                    Thread.sleep(num(v1).longValue());
+                    Thread.sleep(((Quantity) v1).longValue());
                 } catch (InterruptedException ie) {}
                 return VOID;
             case STRINGAPPEND:
@@ -457,23 +457,23 @@ public abstract class Primitives extends Util {
                 return Quantity.valueOf(sisc.compiler.Compiler.getExpType(env(v1), v2));
             case CHAREQUAL:
                 return truth(character(v1) == character(v2));
-            case ADD: return num(v1).add(num(v2));
-            case MUL: return num(v1).mul(num(v2));
-            case SUB: return num(v1).sub(num(v2));
-            case DIV: return num(v1).div(num(v2));
-            case NEQ: return truth(num(v1).comp(num(v2),0));
+            case ADD: return ((Quantity) v1).add((Quantity) v2);
+            case MUL: return ((Quantity) v1).mul((Quantity) v2);
+            case SUB: return ((Quantity) v1).sub((Quantity) v2);
+            case DIV: return ((Quantity) v1).div((Quantity) v2);
+            case NEQ: return truth(((Quantity) v1).comp((Quantity) v2,0));
             case REMAINDER:
-                return num(v1).remainder(num(v2));
+                return ((Quantity) v1).remainder((Quantity) v2);
             case QUOTIENT:
-                return num(v1).quotient(num(v2));
+                return ((Quantity) v1).quotient((Quantity) v2);
             case LCM:
-                return num(v1).lcm(num(v2));
+                return ((Quantity) v1).lcm((Quantity) v2);
             case GCD:
-                return num(v1).gcd(num(v2));
+                return ((Quantity) v1).gcd((Quantity) v2);
             case ATAN:
-                return num(v1).atan(num(v2));
+                return ((Quantity) v1).atan((Quantity) v2);
             case STRINGREF:
-                int index=num(v2).indexValue();
+                int index=((Quantity) v2).indexValue();
                 try {
                     return new SchemeCharacter(str(v1).charAt(index));
                 } catch (ArrayIndexOutOfBoundsException e) {
@@ -483,22 +483,15 @@ public abstract class Primitives extends Util {
                                                      v1.synopsis()}));
                 }
             case VECTORREF:
-                index=num(v2).indexValue();
-                try {
-                    return vec(v1).vals[index];
-                } catch (ArrayIndexOutOfBoundsException e) {
-                    throwPrimException(liMessage(SISCB, "indexoob", 
-                                                 new Object[] {
-                                                     new Integer(index),
-                                                     v1.synopsis()}));
-                }
+                index=((Quantity) v2).indexValue();
+                return vec(v1).vals[index];
             case STRINGEQUAL:
                 return truth(str(v1).valueEqual(str(v2)));
             case MAKEVECTOR:
-                return new SchemeVector(num(v1).indexValue(),
+                return new SchemeVector(((Quantity) v1).indexValue(),
                                         v2);
             case MAKESTRING:
-                char newStr[]=new char[num(v1).indexValue()];
+                char newStr[]=new char[((Quantity) v1).indexValue()];
                 char fillchar=character(v2);
                 for (int i=0; i<newStr.length; i++) {
                     newStr[i]=fillchar;
@@ -512,21 +505,21 @@ public abstract class Primitives extends Util {
                 s2.appendTo(sbuf);
                 return new SchemeString(sbuf.toString());
             case MAKERECTANGULAR:
-                return Quantity.valueOf(num(v1),
-                                        num(v2));
-            case ASHL: return Quantity.valueOf(num(v1).integer()
-                                               .shiftLeft(num(v2)
+                return Quantity.valueOf((Quantity) v1,
+                                        (Quantity) v2);
+            case ASHL: return Quantity.valueOf(((Quantity) v1).integer()
+                                               .shiftLeft(((Quantity) v2)
                                                           .indexValue()));
-            case ASHR: return Quantity.valueOf(num(v1).integer()
-                                               .shiftRight(num(v2)
+            case ASHR: return Quantity.valueOf(((Quantity) v1).integer()
+                                               .shiftRight(((Quantity) v2)
                                                            .indexValue()));
             case MAKECONFIGPARAM:
                 return new ConfigParameter(string(v1), v2);
             case LIST: return list(v1, v2);
             case LT:
-                return truth(num(v1).comp(num(v2),-1));
+                return truth(((Quantity) v1).comp((Quantity) v2,-1));
             case GRT:
-                return truth(num(v1).comp(num(v2),1));
+                return truth(((Quantity) v1).comp((Quantity) v2,1));
             case INTERN:
                 InternedValue iv = InternedValue.intern(symbol(v1), v2);
                 if (iv == null) {
@@ -560,23 +553,23 @@ public abstract class Primitives extends Util {
                 return truth(str(v1).valueEqual(str(v2)) &&
                              str(v2).valueEqual(str(v3)));
             case LIST: return list(v1, v2, v3);
-            case ADD: return num(v1).add(num(v2)).add(num(v3));
-            case MUL: return num(v1).mul(num(v2)).mul(num(v3));
-            case SUB: return num(v1).sub(num(v2)).sub(num(v3));
+            case ADD: return ((Quantity) v1).add((Quantity) v2).add((Quantity) v3);
+            case MUL: return ((Quantity) v1).mul((Quantity) v2).mul((Quantity) v3);
+            case SUB: return ((Quantity) v1).sub((Quantity) v2).sub((Quantity) v3);
             case NEQ: 
-                Quantity q2=num(v2);
-                return truth(num(v1).comp(q2,0) &&
-                             q2.comp(num(v3),0));
+                Quantity q2=(Quantity) v2;
+                return truth(((Quantity) v1).comp(q2,0) &&
+                             q2.comp((Quantity) v3,0));
             case LT:
-                q2=num(v2);
-                return truth(num(v1).comp(q2,-1) &&
-                             q2.comp(num(v3),-1));
+                q2=(Quantity) v2;
+                return truth(((Quantity) v1).comp(q2,-1) &&
+                             q2.comp((Quantity) v3,-1));
             case GRT:
-                q2=num(v2);
-                return truth(num(v1).comp(q2,1) &&
-                             q2.comp(num(v3),1));
+                q2=(Quantity) v2;
+                return truth(((Quantity) v1).comp(q2,1) &&
+                             q2.comp((Quantity) v3,1));
             case DIV: 
-                return num(v1).div(num(v2).mul(num(v3)));
+                return ((Quantity) v1).div(((Quantity) v2).mul((Quantity) v3));
             case EQ: return truth(v1 == v2 && v2 == v3);
             case EQV: return truth(v1.eqv(v2));
             case EQUAL:
@@ -594,50 +587,50 @@ public abstract class Primitives extends Util {
             case LIST: return valArrayToList(v,0,vls);
             case ADD:
                 int x=vls-1;
-                quantity=num(v[x]);
+                quantity=(Quantity) v[x];
                 while (--x >= 0) 
-                    quantity=quantity.add(num(v[x]));
+                    quantity=quantity.add((Quantity) v[x]);
                 return quantity;
             case MUL:
                 x=vls-1;
-                quantity=num(v[x]);
+                quantity=(Quantity) v[x];
                 while (--x >= 0) 
-                    quantity=quantity.mul(num(v[x]));
+                    quantity=quantity.mul((Quantity) v[x]);
                 return quantity;
             case SUB: 
-                quantity=num(v[0]);
+                quantity=(Quantity) v[0];
                 for (int i=1; i<vls; i++) {
-                    quantity=quantity.sub(num(v[i]));
+                    quantity=quantity.sub((Quantity) v[i]);
                 }
                 return quantity;
             case NEQ:
-                quantity=num(v[0]);
+                quantity=(Quantity) v[0];
                 for (int i=vls-1; i>0; i--) {
-                    if (!quantity.comp(num(v[i]), 0)) return FALSE;
+                    if (!quantity.comp((Quantity) v[i], 0)) return FALSE;
                 }
                 return TRUE;
             case LT:
-                quantity=num(v[0]);
+                quantity=(Quantity) v[0];
                 for (int i=1; i<vls; i++) {
-                    Quantity q=num(v[i]);
+                    Quantity q=(Quantity) v[i];
                     if (!quantity.comp(q, -1)) return FALSE;
                     quantity=q;
                 }
                 return TRUE;
             case GRT:
-                quantity=num(v[0]);
+                quantity=(Quantity) v[0];
                 for (int i=1; i<vls; i++) {
-                    Quantity q=num(v[i]);
+                    Quantity q=(Quantity) v[i];
                     if (!quantity.comp(q, 1)) return FALSE;
                     quantity=q;
                 }
                 return TRUE;
             case DIV: 
                 x=vls-1;
-                quantity=num(v[x]);
+                quantity=(Quantity) v[x];
                 while (--x >= 1) 
-                    quantity=quantity.mul(num(v[x]));
-                return num(v[0]).div(quantity);
+                    quantity=quantity.mul((Quantity) v[x]);
+                return ((Quantity) v[0]).div(quantity);
             case STRINGAPPEND:
                 StringBuffer sbuf = new StringBuffer();
                 for (int i=0; i<vls; i++) {
@@ -725,7 +718,8 @@ public abstract class Primitives extends Util {
                 case COMPACTSTRINGREP:
                     SchemeString.compactRepresentation=truth(vlr[0]);
                     return VOID;
-                case NUMBER2STRING: return new SchemeString(num(vlr[0]).toString());
+                case NUMBER2STRING:
+                    return new SchemeString(((Quantity) vlr[0]).toString());
                 case GETENVIRONMENT:
                     try {
                         return r.getCtx().lookupContextEnv(symbol(vlr[0])).asValue();
@@ -801,7 +795,7 @@ public abstract class Primitives extends Util {
                     r.getCtx().toplevel_env=env(vlr[0]);
                     return last;
                 case REPORTENVIRONMENT:
-                    if (FIVE.equals(num(vlr[0])))
+                    if (FIVE.equals((Quantity) vlr[0]))
                         try {
                             return new MemorySymEnv(r.lookupContextEnv(Util.REPORT));
                         } catch (ArrayIndexOutOfBoundsException e) {
@@ -809,7 +803,7 @@ public abstract class Primitives extends Util {
                         }
                     else throwPrimException(liMessage(SISCB, "unsupportedstandardver"));
                 case NULLENVIRONMENT:
-                    switch (num(vlr[0]).indexValue()) {
+                    switch (((Quantity) vlr[0]).indexValue()) {
                     case 5:
                         MemorySymEnv ae = new MemorySymEnv();
                         sisc.compiler.Compiler.addSpecialForms(ae);
@@ -896,7 +890,7 @@ public abstract class Primitives extends Util {
                     return env(vlr[1]).getSidecarEnvironment(symbol(vlr[0])).asValue();
                 case STRING2NUMBER:
                     try {
-                        int radix=num(vlr[1]).indexValue();
+                        int radix=((Quantity) vlr[1]).indexValue();
                         if (r.dynenv.parser.lexer.strictR5RS &&
                             !(radix==10 || radix == 16 || radix == 2 ||
                               radix==8))
@@ -908,12 +902,12 @@ public abstract class Primitives extends Util {
                         return FALSE;
                     }
                 case NUMBER2STRING:
-                    int radix=num(vlr[1]).indexValue();
+                    int radix=((Quantity) vlr[1]).indexValue();
                     if (r.dynenv.parser.lexer.strictR5RS &&
                         !(radix==10 || radix == 16 || radix == 2 ||
                           radix==8))
                         throwPrimException(liMessage(SISCB, "invalidradix"));
-                    return new SchemeString(num(vlr[0]).toString(radix));
+                    return new SchemeString(((Quantity) vlr[0]).toString(radix));
                 case STRINGFILL:
                     SchemeString st=str(vlr[0]);
                     char c=character(vlr[1]);
@@ -929,7 +923,7 @@ public abstract class Primitives extends Util {
             case 3:
                 switch(id) {
                 case STRINGSET:
-                    int index=num(vlr[1]).indexValue();
+                    int index=((Quantity) vlr[1]).indexValue();
                     try {
                         str(vlr[0]).set(index, character(vlr[2]));
                     } catch (ArrayIndexOutOfBoundsException e) {
@@ -940,7 +934,7 @@ public abstract class Primitives extends Util {
                     }
                     return VOID;
                 case VECTORSET:
-                    index=num(vlr[1]).indexValue();
+                    index=((Quantity) vlr[1]).indexValue();
                     try {
                         vec(vlr[0]).set(index,vlr[2]);
                     } catch (ArrayIndexOutOfBoundsException e) {

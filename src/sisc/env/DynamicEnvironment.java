@@ -296,7 +296,7 @@ public class DynamicEnvironment extends Util implements Cloneable {
     }
 
     public void setSynopsisLength(Value v) {
-        synopsisLength = num(v).intValue();
+        synopsisLength = ((Quantity) v).intValue();
     }
 
     public Value getEmitAnnotations() {
@@ -324,7 +324,7 @@ public class DynamicEnvironment extends Util implements Cloneable {
     }
     
     public void setMaxStackTraceDepth(Value v) {
-    	maxStackTraceDepth = num(v).indexValue();
+    	maxStackTraceDepth = ((Quantity) v).indexValue();
     }
     
     public void setCustomPrinting(Value v) {

@@ -302,7 +302,7 @@ public class Reflection extends Util {
                               jclass(v1)).isAssignableFrom(c1Fixed));
             case JAVA_ARRAY_CLASS:
                 try {
-                    return makeJObj(makeArrayClass(jclass(v1), num(v2).indexValue()), Class.class);
+                    return makeJObj(makeArrayClass(jclass(v1), ((Quantity) v2).indexValue()), Class.class);
                 } catch (NullPointerException e) {
                     throw new RuntimeException(liMessage(S2JB, "arraytypenull"));
                 } catch (IllegalArgumentException e) {
@@ -322,7 +322,7 @@ public class Reflection extends Util {
                 }
                 int[] intDims = new int[dimensions.length];
                 for (int i=0; i< dimensions.length; i++) {
-                    intDims[i] = num(dimensions[i]).indexValue();
+                    intDims[i] = ((Quantity) dimensions[i]).indexValue();
                 }
                 Class componentType = jclass(v1);
                 try {
@@ -340,7 +340,7 @@ public class Reflection extends Util {
                 return Util.makeJObj(getField(jf, jobj(v2)), jf.getType());
             case JAVA_ARRAY_REF:
                 Object ar = jobj(v1);
-                return Util.makeJObj(getArray(ar, num(v2).indexValue()), ar.getClass().getComponentType());
+                return Util.makeJObj(getArray(ar, ((Quantity) v2).indexValue()), ar.getClass().getComponentType());
             default: throwArgSizeException();
             }
             return VOID;
@@ -364,7 +364,7 @@ public class Reflection extends Util {
                 setField(jfield(v1), jobj(v2), jobj(v3));
                 return VOID;
             case JAVA_ARRAY_SET:
-                setArray(jobj(v1), num(v2).indexValue(), jobj(v3));
+                setArray(jobj(v1), ((Quantity) v2).indexValue(), jobj(v3));
                 return VOID;
             default: throwArgSizeException();
             }

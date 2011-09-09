@@ -112,7 +112,7 @@ public class FileManipulation extends Util {
         public Value apply(Value v1, Value v2) throws ContinuationException {
             switch(id) {
             case SETLASTMODIFIED:
-                return truth(fileHandle(v1).setLastModified(num(v2).longValue()));
+                return truth(fileHandle(v1).setLastModified(((Quantity) v2).longValue()));
             case RENAME:
                 return truth(fileHandle(v1).renameTo(fileHandle(v2)));
             default:

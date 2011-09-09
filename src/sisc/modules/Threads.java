@@ -407,14 +407,14 @@ public class Threads extends Util {
                 mutex(v1).unlock(condvar(v2));
                 return TRUE;
             case MUTEXLOCK:
-                long timeout=num(v2).longValue();
+                long timeout=((Quantity) v2).longValue();
                 return mutex(v1).lock(timeout);
             case THREADJOIN:
                 SchemeThread c=sthread(v1);
 
                 if (c.state>=SchemeThread.RUNNING) {
                     try {
-                        c.thread.join(num(v2).indexValue());
+                        c.thread.join(((Quantity) v2).indexValue());
                     } catch (InterruptedException ie) {}
                     if (c.state==SchemeThread.RUNNING) 
                         return FALSE;
@@ -426,7 +426,7 @@ public class Threads extends Util {
                 sthread(v1).rv=v2;
                 return VOID;
             case SETTHREADPRIORITY:
-                sthread(v1).thread.setPriority(num(v2).indexValue());
+                sthread(v1).thread.setPriority(((Quantity) v2).indexValue());
                 return VOID;
             case SETTHREADDAEMON:
                 sthread(v1).thread.setDaemon(truth(v2));
@@ -444,7 +444,7 @@ public class Threads extends Util {
         public Value apply(Value v1, Value v2, Value v3) throws ContinuationException {
             switch(id) {
             case MUTEXUNLOCK:
-                return mutex(v1).unlock(condvar(v2), num(v3).longValue());
+                return mutex(v1).unlock(condvar(v2), ((Quantity) v3).longValue());
             default:
                 throwArgSizeException();                    
             }

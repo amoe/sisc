@@ -133,8 +133,8 @@ public class IO extends IndexedProcedure {
             return;
         throwNestedPrimException(liMessage(IOB, "evalat",
                                            string(pair(sourceFile).cdr()),
-                                           num(pair(sourceLine).cdr()).intValue(),
-                                           num(pair(sourceColumn).cdr()).intValue()),
+                                           ((Quantity) pair(sourceLine).cdr()).intValue(),
+                                           ((Quantity) pair(sourceColumn).cdr()).intValue()),
                                  se);
     }
 
@@ -540,7 +540,7 @@ public class IO extends IndexedProcedure {
                 return VOID;
             case WRITEBYTE:
                 try {
-                   binoutstream(f.dynenv.getCurrentOutPort()).write(num(f.vlr[0]).indexValue());
+                    binoutstream(f.dynenv.getCurrentOutPort()).write(((Quantity) f.vlr[0]).indexValue());
                 } catch (IOException e) {
                     throwIOException(f, liMessage(IOB, "errorwriting",
                                                   f.dynenv.out.toString(),
@@ -602,7 +602,7 @@ public class IO extends IndexedProcedure {
             case WRITEBYTE:
                 OutputStream bport=binoutstream(f.vlr[1]);
                 try {
-                    bport.write(num(f.vlr[0]).indexValue());
+                    bport.write(((Quantity) f.vlr[0]).indexValue());
                 } catch (IOException e) {
                     throwIOException(f, liMessage(IOB, "errorwriting",
                                                   bport.toString(),
@@ -640,10 +640,10 @@ public class IO extends IndexedProcedure {
                 return openCharOutFile(f, url, encoding);
             case OPENBUFFEREDCHARINPORT: 
             	return new SchemeCharacterInputPort(new BufferedReader(charinreader(f.vlr[0]),
-            			num(f.vlr[1]).indexValue()));
+            			((Quantity) f.vlr[1]).indexValue()));
             case OPENBUFFEREDCHAROUTPORT: 
             	return new SchemeCharacterOutputPort(new BufferedWriter(charoutwriter(f.vlr[0]),
-            			num(f.vlr[1]).indexValue()));
+            			((Quantity) f.vlr[1]).indexValue()));
             case NORMALIZEURL:
                 return new SchemeString(urlClean(url(f.vlr[0], 
                                                      f.vlr[1])).toString());
@@ -655,8 +655,8 @@ public class IO extends IndexedProcedure {
             case READSTRING:
                 try {
                 	int charsRead=str(f.vlr[0]).readFromReader(f.dynenv.getCurrentInReader(),
-                            num(f.vlr[1]).intValue(),
-                            num(f.vlr[2]).intValue());
+                            ((Quantity) f.vlr[1]).intValue(),
+                            ((Quantity) f.vlr[2]).intValue());
                     if (charsRead < 0) return EOF;
                     else return Quantity.valueOf(charsRead);
                 } catch (IOException e) {
@@ -666,8 +666,8 @@ public class IO extends IndexedProcedure {
             case WRITESTRING:
                 try {
                     str(f.vlr[0]).writeToWriter(f.dynenv.getCurrentOutWriter(),
-                                                num(f.vlr[1]).intValue(),
-                                                num(f.vlr[2]).intValue());
+                                                ((Quantity) f.vlr[1]).intValue(),
+                                                ((Quantity) f.vlr[2]).intValue());
                 } catch (IOException e) {
                     throwIOException(f, e.getMessage(), e);
                 }
@@ -684,8 +684,8 @@ public class IO extends IndexedProcedure {
             case READSTRING:
                 try {
                 	int charsRead=str(f.vlr[0]).readFromReader(charinreader(f.vlr[3]),
-                            num(f.vlr[1]).intValue(),
-                            num(f.vlr[2]).intValue());
+                            ((Quantity) f.vlr[1]).intValue(),
+                            ((Quantity) f.vlr[2]).intValue());
                 	if (charsRead<0) return EOF;
                 	else return Quantity.valueOf(charsRead);
                 } catch (IOException e) {
@@ -695,8 +695,8 @@ public class IO extends IndexedProcedure {
             case WRITESTRING:
                 try {
                     str(f.vlr[0]).writeToWriter(charoutwriter(f.vlr[3]),
-                                                num(f.vlr[1]).intValue(),
-                                                num(f.vlr[2]).intValue());
+                                                ((Quantity) f.vlr[1]).intValue(),
+                                                ((Quantity) f.vlr[2]).intValue());
                 } catch (IOException e) {
                     throwIOException(f, e.getMessage(), e);
                 }

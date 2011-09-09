@@ -51,9 +51,9 @@ public abstract class Primitives extends Util {
         public Value apply(Value v1, Value v2) throws ContinuationException {
             switch (id) {
             case RECORD_MAKE:
-                return new Record(v1, num(v2).indexValue());
+                return new Record(v1, ((Quantity) v2).indexValue());
             case RECORD_REF:
-                return record(v1).getSlot(num(v2).indexValue());
+                return record(v1).getSlot(((Quantity) v2).indexValue());
             default:
                 throwArgSizeException();
             }
@@ -87,9 +87,9 @@ public abstract class Primitives extends Util {
             switch (id) {
             case RECORD_SET:
                 try {
-                    record(v1).setSlot(num(v2).indexValue(), v3);
+                    record(v1).setSlot(((Quantity) v2).indexValue(), v3);
                 } catch (ArrayIndexOutOfBoundsException aib) {
-                    throwPrimException(liMessage(SRECORDB, "nosuchslot", num(v2).toString(), record(v1).synopsis()));
+                    throwPrimException(liMessage(SRECORDB, "nosuchslot", ((Quantity) v2).toString(), record(v1).synopsis()));
                 }
                 return VOID;
             default:

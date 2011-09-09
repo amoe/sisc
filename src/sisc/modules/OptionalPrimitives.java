@@ -46,7 +46,7 @@ public class OptionalPrimitives extends Util {
 
         public final Value apply(Value v1) throws ContinuationException {
             switch(id) {        
-            case MIN: case MAX: return num(v1);
+            case MIN: case MAX: return (Quantity) v1;
             case VECTOR: return new SchemeVector(new Value[] {v1});
             case VALUES: return v1;
             case APPEND: return v1;
@@ -86,15 +86,15 @@ public class OptionalPrimitives extends Util {
         public final Value apply(Value v1, Value v2) throws ContinuationException {
             switch(id) {
             case MAX:
-                Quantity q1=num(v1);
-                Quantity q2=num(v2);
+                Quantity q1 = (Quantity) v1;
+                Quantity q2 = (Quantity) v2;
                 Quantity rv=(q1.comp(q2,1) ? q1 : q2);
                 if (rv.is(Quantity.EXACT) && (q1.is(Quantity.INEXACT) || q2.is(Quantity.INEXACT)))
                     return rv.toInexact();
                 else return rv;
             case MIN: 
-                q1=num(v1);
-                q2=num(v2);
+                q1=(Quantity) v1;
+                q2=(Quantity) v2;
                 rv=(q1.comp(q2,-1) ? q1 : q2);
                 if (rv.is(Quantity.EXACT) && (q1.is(Quantity.INEXACT) || q2.is(Quantity.INEXACT)))
                     return rv.toInexact();
@@ -112,7 +112,7 @@ public class OptionalPrimitives extends Util {
             case APPEND: return apply(new Value[] {v1,v2});
             case LISTREF:
                 Pair p1=truePair(v1);
-                for (int l=num(v2).intValue(); l>0; l--) {
+                for (int l=((Quantity) v2).intValue(); l>0; l--) {
                     p1=truePair(p1.cdr());
                 }
                 return p1.car();
@@ -171,9 +171,9 @@ public class OptionalPrimitives extends Util {
         public final Value apply(Value v1, Value v2, Value v3) throws ContinuationException {
             switch(id) {
             case MAX: 
-                Quantity q1=num(v1);
-                Quantity q2=num(v2);
-                Quantity q3=num(v3);
+                Quantity q1=(Quantity) v1;
+                Quantity q2=(Quantity) v2;
+                Quantity q3=(Quantity) v3;
                 Quantity rv;
                 if (q1.comp(q2,1)) {
                     if (q1.comp(q3,1)) 
@@ -190,9 +190,9 @@ public class OptionalPrimitives extends Util {
                     return rv.toInexact();
                 else return rv;
             case MIN: 
-                q1=num(v1);
-                q2=num(v2);
-                q3=num(v3);
+                q1=(Quantity) v1;
+                q2=(Quantity) v2;
+                q3=(Quantity) v3;
                 if (q1.comp(q2,-1)) {
                     if (q1.comp(q3,-1)) 
                         rv=q1;
@@ -228,8 +228,8 @@ public class OptionalPrimitives extends Util {
             case APPEND: return apply(new Value[] {v1,v2,v3});
             case SUBSTRING:
                 SchemeString str=str(v1);
-                int lidx=num(v2).indexValue();
-                int uidx=num(v3).indexValue();
+                int lidx=((Quantity) v2).indexValue();
+                int uidx=((Quantity) v3).indexValue();
                 return str.substring(lidx, uidx);
             default:
                 throwArgSizeException();            
@@ -240,20 +240,20 @@ public class OptionalPrimitives extends Util {
         public final Value apply(Value[] vlr) throws ContinuationException {
             switch(id) {
             case MAX:
-                Quantity q1=num(vlr[0]);
+                Quantity q1=(Quantity) vlr[0];
                 boolean exact=q1.is(Quantity.EXACT);
                 for (int i=vlr.length-1; i>0; i--) {
-                    Quantity q2=num(vlr[i]);
+                    Quantity q2=(Quantity) vlr[i];
                     exact = exact && q2.is(Quantity.EXACT);
                     if (q1.comp(q2,-1))
                         q1=q2;
                 }
                 return (exact ? q1 : q1.toInexact());
             case MIN:
-                q1=num(vlr[0]);
+                q1=(Quantity) vlr[0];
                 exact=q1.is(Quantity.EXACT);
                 for (int i=vlr.length-1; i>0; i--) {
-                    Quantity q2=num(vlr[i]);
+                    Quantity q2=(Quantity) vlr[i];
                     exact = exact && q2.is(Quantity.EXACT);
                     if (q1.comp(q2,1))
                         q1=q2;

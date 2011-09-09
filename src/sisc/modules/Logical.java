@@ -34,12 +34,14 @@ public class Logical extends IndexedFixableProcedure {
     
     public Logical() {}
     
-    public Value apply(Value v1) throws ContinuationException {
+   public Value apply(Value v1) throws ContinuationException {
         switch(id) {
-        case LOGNOT: return num(v1).not();
-        case LOGCOUNT: return num(v1).bitCount();
-        case LOGAND: case LOGOR: case LOGXOR:
-            return num(v1);
+        case LOGNOT: return ((Quantity) v1).not();
+        case LOGCOUNT: return ((Quantity) v1).bitCount();
+        case LOGAND:
+        case LOGOR:
+        case LOGXOR:
+            return (Quantity) v1;
         default:
             throwArgSizeException();
         }
@@ -48,9 +50,12 @@ public class Logical extends IndexedFixableProcedure {
     
     public Value apply(Value v1, Value v2) throws ContinuationException {
         switch(id) {
-        case LOGAND: return num(v1).and(num(v2));
-        case LOGOR: return num(v1).or(num(v2));
-        case LOGXOR: return num(v1).xor(num(v2));
+        case LOGAND:
+            return ((Quantity) v1).and((Quantity) v2);
+        case LOGOR:
+            return ((Quantity) v1).or((Quantity) v2);
+        case LOGXOR:
+            return ((Quantity) v1).xor((Quantity) v2);
         default:
             throwArgSizeException();
         }
@@ -59,9 +64,12 @@ public class Logical extends IndexedFixableProcedure {
 
     public Value apply(Value v1, Value v2, Value v3) throws ContinuationException {
         switch(id) {
-        case LOGAND: return num(v1).and(num(v2)).and(num(v3));
-        case LOGOR: return num(v1).or(num(v2)).or(num(v3));
-        case LOGXOR: return num(v1).xor(num(v2)).xor(num(v3));
+        case LOGAND:
+            return ((Quantity) v1).and((Quantity) v2).and((Quantity) v3);
+        case LOGOR:
+            return ((Quantity) v1).or((Quantity) v2).or((Quantity) v3);
+        case LOGXOR:
+            return ((Quantity) v1).xor((Quantity) v2).xor((Quantity) v3);
         default:
             throwArgSizeException();
         }
@@ -70,19 +78,19 @@ public class Logical extends IndexedFixableProcedure {
 
 
     public Value apply(Value[] v) throws ContinuationException {
-        Quantity r=num(v[0]);
+        Quantity r = (Quantity) v[0];
         switch(id) {
         case LOGAND:
             for (int i=v.length-1; i>0; i--)
-                r=r.and(num(v[i]));
+                r=r.and((Quantity) v[i]);
             break;
         case LOGOR:
             for (int i=v.length-1; i>0; i--)
-                r=r.or(num(v[i]));
+                r=r.or((Quantity) v[i]);
             break;
         case LOGXOR:
             for (int i=v.length-1; i>0; i--)
-                r=r.xor(num(v[i]));
+                r=r.xor((Quantity) v[i]);
             break;
         }
         return r;

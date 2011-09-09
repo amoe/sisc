@@ -398,15 +398,6 @@ public abstract class Util implements Version {
         }
     }
 
-    public static final Quantity num(Value o) {
-        if (o instanceof Quantity) {
-            return (Quantity) o;
-        } else {
-            typeError("number", o);
-            return null;
-        }
-    }
-
     public static final Pair pair(Value o) {
         if (o instanceof Pair) {
             return (Pair) o;

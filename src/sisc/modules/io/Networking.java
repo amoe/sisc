@@ -504,21 +504,21 @@ public class Networking extends IndexedProcedure {
                     addr=InetAddress.getByName(str);
                     return new SchemeString(addr.getHostAddress());
                 case OPEN_TCP_LISTENER:
-                    int port=num(f.vlr[0]).indexValue();
+                    int port=((Quantity) f.vlr[0]).indexValue();
                     return new SchemeServerSocket(new ServerSocket(port));
                 case OPEN_SSL_LISTENER:
-                    port=num(f.vlr[0]).indexValue();
+                    port=((Quantity) f.vlr[0]).indexValue();
                     return new SchemeServerSocket(SSLServerSocketFactory.getDefault().createServerSocket(port));
                 case ACCEPT_TCP_SOCKET:
                     Socket sock=serversock(f.vlr[0]).s.accept();
                     return new SchemeTCPSocket(sock);
                 case OPEN_UDP_LISTEN_SOCKET:
-                    port=num(f.vlr[0]).indexValue();
+                    port=((Quantity) f.vlr[0]).indexValue();
                     SchemeUDPSocket s=new SchemeUDPSocket(new DatagramSocket(port));
                     s.setMode(LISTEN);
                     return s;
                 case OPEN_MULTICAST_SOCKET:
-                    port=num(f.vlr[0]).indexValue();
+                    port=((Quantity) f.vlr[0]).indexValue();
                     s=new SchemeMulticastUDPSocket(new MulticastSocket(port));
                     s.setMode(LISTEN);
                     return s;
@@ -546,42 +546,42 @@ public class Networking extends IndexedProcedure {
                 switch (id) {
                 case OPEN_TCP_SOCKET:
                     String host=string( f.vlr[0]);
-                    int port=num(f.vlr[1]).indexValue();
+                    int port=((Quantity) f.vlr[1]).indexValue();
                     return new SchemeTCPSocket(new Socket(host, port));
                 case OPEN_TCP_LISTENER:
-                    port=num(f.vlr[0]).indexValue();
+                    port=((Quantity) f.vlr[0]).indexValue();
                     String iaddr=string(f.vlr[1]);
                     return new SchemeServerSocket(new ServerSocket(port, 0, InetAddress.getByName(iaddr)));
                 case OPEN_UDP_SOCKET:
                     host=string(f.vlr[0]);
-                    port=num(f.vlr[1]).indexValue();
+                    port=((Quantity) f.vlr[1]).indexValue();
                     SchemeUDPSocket s=new SchemeUDPSocket(new DatagramSocket(), port, host);
                     s.setMode(SEND);
                     return s;
                 case OPEN_UDP_LISTEN_SOCKET:
-                    port=num(f.vlr[0]).indexValue();
-                    int ps=num(f.vlr[1]).indexValue();
+                    port=((Quantity) f.vlr[0]).indexValue();
+                    int ps=((Quantity) f.vlr[1]).indexValue();
                     s=new SchemeUDPSocket(new DatagramSocket(port), ps);
                     s.setMode(LISTEN);
                     return s;
                 case OPEN_MULTICAST_SOCKET:
                     if (f.vlr[0] instanceof SchemeString) {
                         host=string(f.vlr[0]);
-                        int dport=num(f.vlr[1]).indexValue();
+                        int dport=((Quantity) f.vlr[1]).indexValue();
                         s=new SchemeMulticastUDPSocket(new MulticastSocket(dport), dport, host);
                         s.setMode(SEND | LISTEN);
                         return s;
                     } else if (f.vlr[1] instanceof SchemeString) {
                         String iface=string(f.vlr[1]);
-                        port=num(f.vlr[0]).indexValue();
+                        port=((Quantity) f.vlr[0]).indexValue();
                         MulticastSocket ms=new MulticastSocket(port);
                         ms.setInterface(InetAddress.getByName(iface));
                         s=new SchemeMulticastUDPSocket(ms);
                         s.setMode(LISTEN);
                         return s;
                     } else {
-                        port=num(f.vlr[0]).indexValue();
-                        ps=num(f.vlr[1]).indexValue();
+                        port=((Quantity) f.vlr[0]).indexValue();
+                        ps=((Quantity) f.vlr[1]).indexValue();
                         s=new SchemeMulticastUDPSocket(new MulticastSocket(port), ps);
                         s.setMode(LISTEN);
                         return s;
@@ -600,7 +600,7 @@ public class Networking extends IndexedProcedure {
                        return ssock.getBinaryOutputPort(f);
                 case SET_MULTICAST_TTL:
                     SchemeMulticastUDPSocket ms=mcastsock(f.vlr[0]);
-                    int ttl=num(f.vlr[1]).indexValue();
+                    int ttl=((Quantity) f.vlr[1]).indexValue();
                     ms.setTTL(ttl);
                     return VOID;
                 case JOIN_MULTICAST_GROUP:
@@ -616,10 +616,10 @@ public class Networking extends IndexedProcedure {
                 case SET_SO_TIMEOUT:
                     if(f.vlr[0] instanceof SchemeSocket) {
                          SchemeTCPSocket tcps=(SchemeTCPSocket)sock(f.vlr[0]);
-                         tcps.setSoTimeout(num(f.vlr[1]).intValue());
+                         tcps.setSoTimeout(((Quantity) f.vlr[1]).intValue());
                     } else {
                         SchemeServerSocket servsock=serversock(f.vlr[0]);
-                        servsock.setSoTimeout(num(f.vlr[1]).intValue());
+                        servsock.setSoTimeout(((Quantity) f.vlr[1]).intValue());
                     }
                     return VOID;
                 case SET_ENABLED_CIPHER_SUITES:
@@ -663,18 +663,18 @@ public class Networking extends IndexedProcedure {
             case 3:
                 switch(id) {
                 case OPEN_UDP_LISTEN_SOCKET:
-                    int dport=num(f.vlr[0]).indexValue();
+                    int dport=((Quantity) f.vlr[0]).indexValue();
                     String host=string(f.vlr[0]);
-                    int ps=num(f.vlr[2]).indexValue();
+                    int ps=((Quantity) f.vlr[2]).indexValue();
                     DatagramSocket ds=new DatagramSocket(dport, InetAddress.getByName(host));
                     SchemeUDPSocket s=new SchemeUDPSocket(ds, ps);
                     s.setMode(SEND | LISTEN);
                     return s;
                 case OPEN_MULTICAST_SOCKET:
                     host=string(f.vlr[0]);
-                    dport=num(f.vlr[1]).indexValue();
+                    dport=((Quantity) f.vlr[1]).indexValue();
                     
-                    int dgramsize=num(f.vlr[2]).indexValue();
+                    int dgramsize=((Quantity) f.vlr[2]).indexValue();
                     s=new SchemeMulticastUDPSocket(new MulticastSocket(dport), host, dgramsize);
                     s.setMode(SEND | LISTEN);
                     return s; 
@@ -691,14 +691,14 @@ public class Networking extends IndexedProcedure {
                 case OPEN_SSL_SOCKET:
                     SchemeTCPSocket original=(SchemeTCPSocket)sock(f.vlr[0]);
                     String host=string(f.vlr[1]);
-                    int port=num(f.vlr[2]).indexValue();
+                    int port=((Quantity) f.vlr[2]).indexValue();
                     boolean autoClose=truth(f.vlr[3]);
                     return new SchemeTCPSocket(((SSLSocketFactory)SSLSocketFactory.getDefault()).createSocket(original.s, host, port, autoClose));
                 case OPEN_MULTICAST_SOCKET:
                     host=string(f.vlr[0]);
                     String iface=string(f.vlr[2]);
-                    int dport=num(f.vlr[1]).indexValue();
-                    int dgramsize=num(f.vlr[3]).indexValue();
+                    int dport=((Quantity) f.vlr[1]).indexValue();
+                    int dgramsize=((Quantity) f.vlr[3]).indexValue();
                     MulticastSocket ms=new MulticastSocket(dport);
                     ms.setInterface(InetAddress.getByName(iface));
                     SchemeUDPSocket s=new SchemeMulticastUDPSocket(ms, host, dgramsize);

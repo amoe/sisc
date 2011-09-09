@@ -72,7 +72,7 @@ public class BufferIO extends IndexedProcedure {
             case OPENINPUTBUFFER:
                 return new SchemeBinaryInputPort(new ByteArrayInputStream(BinaryIO.buffer(f.vlr[0]).buf));
             case OPENOUTPUTBUFFER:
-                return new SchemeBinaryOutputPort(new ByteArrayOutputStream(num(f.vlr[0]).indexValue()));
+                return new SchemeBinaryOutputPort(new ByteArrayOutputStream(((Quantity) f.vlr[0]).indexValue()));
             default:
                 throwArgSizeException();
             }
