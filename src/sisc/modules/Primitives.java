@@ -379,7 +379,7 @@ public abstract class Primitives extends Util {
                                                           indexValue());
             case VECTORFINDLASTUNIQUE: return Quantity.valueOf(((SchemeVector) v1).findEnd());
             case BOX: return new Box(v1);
-            case UNBOX: return box(v1).val;
+            case UNBOX: return ((Box) v1).val;
             case BOXQ: return truth(v1 instanceof Box);
             case LENGTH:
                 return Quantity.valueOf(length((Pair) v1));
@@ -865,7 +865,7 @@ public abstract class Primitives extends Util {
                     return VOID;
                 case SETBOX:
                     try {
-                        box(vlr[0]).set(vlr[1]);
+                        ((Box) vlr[0]).set(vlr[1]);
                     } catch (ImmutableException e) {
                         throwPrimException(liMessage(SISCB, "isimmutable", "box",
                                                      vlr[0].synopsis()));

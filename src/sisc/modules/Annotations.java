@@ -62,19 +62,19 @@ public abstract class Annotations  {
                 return akl;
             }
             case ANNOTATIONSTRIPPED:
-                return annotated(v1).stripped;
+                return ((AnnotatedExpr) v1).stripped;
             case ANNOTATIONQ:
                 return truth(v1 instanceof AnnotatedExpr);
             case ANNOTATIONSRC:
                 Value rv;
                 if (v1 instanceof AnnotatedExpr) 
-                    rv=annotated(v1).annotation;
+                    rv=((AnnotatedExpr) v1).annotation;
                 else 
                     rv=FALSE;
                 return rv;
             case ANNOTATIONEXPR:
                 if (v1 instanceof AnnotatedExpr) 
-                    return (Value)annotated(v1).expr;
+                    return (Value)((AnnotatedExpr) v1).expr;
                 else return v1;
             default:
                 throwArgSizeException();
@@ -121,7 +121,7 @@ public abstract class Annotations  {
         public Value apply(Value v1, Value v2) throws ContinuationException {
             switch (id) {
             case SETANNOTATIONSTRIPPED:
-                annotated(v1).stripped=v2;
+                ((AnnotatedExpr) v1).stripped=v2;
                 return VOID;
             default:
                 throwArgSizeException();

@@ -399,38 +399,11 @@ public abstract class Util implements Version {
         }
     }
 
-    public static final Box box(Value o) {
-        if (o instanceof Box) {
-            return (Box) o;
-        } else {
-            typeError("box", o);
-            return null;            
-        }
-    }
-
-    public static final CallFrame cont(Value o) {
-        if (o instanceof CallFrame) {
-            return (CallFrame) o;
-        } else {
-            typeError("continuation", o);
-            return null;
-        }
-    }
-
     public static final Expression expr(Value o) {
         if (o instanceof ExpressionValue) {
             return ((ExpressionValue)o).e;
         } else {
             typeError("expression", o);
-            return null;
-        }
-    }
-
-    public static final AnnotatedExpr annotated(Value o) {
-        if (o instanceof AnnotatedExpr) {
-            return (AnnotatedExpr) o;
-        } else {
-            typeError("annotatedexpression", o);
             return null;
         }
     }

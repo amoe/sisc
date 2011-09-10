@@ -61,7 +61,8 @@ public class Debugging extends IndexedProcedure {
     CallFrame getCont(Value v) {
         if (v instanceof ApplyParentFrame)
             return ((ApplyParentFrame)v).c;
-        else return cont(v);
+        else
+            return (CallFrame) v;
     }
     
     public Value doApply(Interpreter f) throws ContinuationException {
