@@ -89,17 +89,17 @@ public class Debugging extends IndexedProcedure {
             case QTYPE:
                 return Quantity.valueOf(((Quantity) f.vlr[0]).type);
             case FREEXPQ:
-                return truth(expr(f.vlr[0]) instanceof FreeReferenceExp);
+                return truth(ExpressionValue.toExpression(f.vlr[0]) instanceof FreeReferenceExp);
             case FRESYM:
-                return ((FreeReferenceExp)expr(f.vlr[0])).getSym();
+                return ((FreeReferenceExp)ExpressionValue.toExpression(f.vlr[0])).getSym();
             case FILLRIBQ:
                 return truth(f.vlr[0] instanceof ExpressionValue &&
-                             expr(f.vlr[0]) instanceof FillRibExp);
+                             ExpressionValue.toExpression(f.vlr[0]) instanceof FillRibExp);
             case FILLRIBEXP:
-                return new ExpressionValue(((FillRibExp)expr(f.vlr[0])).exp);
+                return new ExpressionValue(((FillRibExp)ExpressionValue.toExpression(f.vlr[0])).exp);
             case EXPRESSV:
                 if (f.vlr[0] instanceof ExpressionValue) {
-                    return expr(f.vlr[0]).express();
+                    return ExpressionValue.toExpression(f.vlr[0]).express();
                 } else {
                     return f.vlr[0].express();
                 }

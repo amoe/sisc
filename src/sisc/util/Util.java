@@ -390,24 +390,6 @@ public abstract class Util implements Version {
         return (Pair) o;
     }
 
-    public static final SymbolicEnvironment env(Value o) {
-        if (o instanceof SymbolicEnvironment) {
-            return (sisc.env.SymbolicEnvironment) o;
-        } else {
-            typeError("environment", o);
-            return null;
-        }
-    }
-
-    public static final Expression expr(Value o) {
-        if (o instanceof ExpressionValue) {
-            return ((ExpressionValue)o).e;
-        } else {
-            typeError("expression", o);
-            return null;
-        }
-    }
-
     public static URL makeURL(String url) {
         URL res = null;
         if (url == null) return res;
@@ -450,33 +432,6 @@ public abstract class Util implements Version {
             } catch (MalformedURLException ee) {
                 typeError("url", v);
             }
-            return null;
-        }
-    }
-
-    public static final NativeLibrary nlib(Value o) {
-        if (o instanceof NativeLibrary) {
-            return (NativeLibrary) o;
-        } else {
-            typeError("nativelibrary", o);
-            return null;
-        }        
-    }
-
-    public static final ImmutablePair immutablePair(Value o) {
-        if (o instanceof ImmutablePair) {
-            return (ImmutablePair) o;
-        } else {
-            typeError("immutable-pair", o);
-            return null;
-        }
-    }
-
-    public static final ImmutableVector immutableVector(Value o) {
-        if (o instanceof ImmutableVector) {
-            return (ImmutableVector) o;
-        } else {
-            typeError("immutable-vector", o);
             return null;
         }
     }

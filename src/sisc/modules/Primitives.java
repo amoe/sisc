@@ -406,7 +406,7 @@ public abstract class Primitives extends Util {
             case STRING2UNINTERNEDSYMBOL:
                 return Symbol.getUnique(SchemeString.asString(v1));
             case MAKECHILDENVIRONMENT:
-                SymbolicEnvironment env=env(v1);
+                SymbolicEnvironment env=(SymbolicEnvironment) v1;
                 MemorySymEnv ae = new MemorySymEnv(env);
                 sisc.compiler.Compiler.addSpecialForms(ae);
                 return ae;
@@ -423,9 +423,9 @@ public abstract class Primitives extends Util {
                     return VOID;
                 }
             case NLNAME:
-                return Symbol.get(nlib(v1).getLibraryName());
+                return Symbol.get(((NativeLibrary) v1).getLibraryName());
             case NLVERSION:
-                return Quantity.valueOf(nlib(v1).getLibraryVersion());
+                return Quantity.valueOf(((NativeLibrary) v1).getLibraryVersion());
             case SLEEP:
                 try {
                     Thread.sleep(((Quantity) v1).longValue());
@@ -454,7 +454,7 @@ public abstract class Primitives extends Util {
             case EQUAL:
                 return truth(v1.valueEqual(v2));
             case EXPTYPE:
-                return Quantity.valueOf(sisc.compiler.Compiler.getExpType(env(v1), v2));
+                return Quantity.valueOf(sisc.compiler.Compiler.getExpType((SymbolicEnvironment) v1, v2));
             case CHAREQUAL:
                 return truth(SchemeCharacter.charValue(v1) == SchemeCharacter.charValue(v2));
             case ADD: return ((Quantity) v1).add((Quantity) v2);
@@ -710,10 +710,10 @@ public abstract class Primitives extends Util {
                     }
                     return VOID;
                 case SEALIMMUTABLEPAIR:
-                    immutablePair(vlr[0]).makeImmutable();
+                    ((ImmutablePair) vlr[0]).makeImmutable();
                     return VOID;
                 case SEALIMMUTABLEVECTOR:
-                    immutableVector(vlr[0]).makeImmutable();
+                    ((ImmutableVector) vlr[0]).makeImmutable();
                     return VOID;
                 case COMPACTSTRINGREP:
                     SchemeString.compactRepresentation=truth(vlr[0]);
@@ -728,7 +728,7 @@ public abstract class Primitives extends Util {
                         return VOID;
                     }
                 case PARENTENVIRONMENT:
-                    SymbolicEnvironment env=env(vlr[0]);
+                    SymbolicEnvironment env=(SymbolicEnvironment) vlr[0];
                     SymbolicEnvironment parent=env.getParent();
                     if (parent == null) return FALSE;
                     else return parent.asValue();
@@ -788,11 +788,11 @@ public abstract class Primitives extends Util {
                         return FALSE;
                     }
                 case NLBINDINGNAMES:
-                    Value[] va=nlib(vlr[0]).getLibraryBindingNames(r);
+                    Value[] va=((NativeLibrary) vlr[0]).getLibraryBindingNames(r);
                     return valArrayToList(va,0,va.length);        
                 case INTERACTIONENVIRONMENT:
                     Value last = r.getCtx().toplevel_env.asValue();
-                    r.getCtx().toplevel_env=env(vlr[0]);
+                    r.getCtx().toplevel_env=(SymbolicEnvironment) vlr[0];
                     return last;
                 case REPORTENVIRONMENT:
                     if (FIVE.equals((Quantity) vlr[0]))
@@ -820,16 +820,16 @@ public abstract class Primitives extends Util {
             case 2:
                 switch (id) {
                 case NLBINDING:
-                    return nlib(vlr[0]).getBindingValue(r, (Symbol) vlr[1]);
+                    return ((NativeLibrary) vlr[0]).getBindingValue(r, (Symbol) vlr[1]);
                 case COMPILE:
                     return new Closure(false,
                                        (short)0, 
-                                       r.compile(vlr[0], env(vlr[1])),
+                                       r.compile(vlr[0], (SymbolicEnvironment) vlr[1]),
                                        ZV,
                                        new int[0]);
                 case WITHENVIRONMENT:
                     Procedure thunk=(Procedure) vlr[1];
-                    r.tpl=env(vlr[0]);
+                    r.tpl=(SymbolicEnvironment) vlr[0];
                     r.setupTailCall(WITHENV_APPEVAL, ZV);
                     return thunk;
                 case WITHFC:
@@ -847,7 +847,7 @@ public abstract class Primitives extends Util {
                 case GETPROP:
                     Value ret = null;
                     if (vlr[1] instanceof SymbolicEnvironment) {
-                        ret = env(vlr[1]).lookup((Symbol) vlr[0]);
+                        ret = ((SymbolicEnvironment) vlr[1]).lookup((Symbol) vlr[0]);
                     } else {
                         ret = r.tpl.getSidecarEnvironment(
                                  (Symbol) vlr[1]).lookup((Symbol) vlr[0]);
@@ -855,7 +855,7 @@ public abstract class Primitives extends Util {
                     return (ret == null) ? FALSE : ret;
                 case REMPROP:
                     if (vlr[1] instanceof SymbolicEnvironment) {
-                        env(vlr[1]).undefine((Symbol) vlr[0]);
+                        ((SymbolicEnvironment) vlr[1]).undefine((Symbol) vlr[0]);
                     } else {
                         r.tpl.getSidecarEnvironment((Symbol) vlr[1]).undefine((Symbol) vlr[0]); 
                     }
@@ -878,7 +878,7 @@ public abstract class Primitives extends Util {
                     truePair(vlr[0]).setCdr(vlr[1]);
                     return VOID;
                 case SETENVIRONMENT:
-                    r.getCtx().defineContextEnv((Symbol) vlr[0], env(vlr[1]));
+                    r.getCtx().defineContextEnv((Symbol) vlr[0], (SymbolicEnvironment) vlr[1]);
                     return VOID;
                 case SIGHOOK:
                     SignalHook.addHandler(SchemeString.asString(vlr[0]), (Procedure) vlr[1], r.dynenv);
@@ -887,7 +887,7 @@ public abstract class Primitives extends Util {
                     SignalHook.removeHandler(SchemeString.asString(vlr[0]), (Procedure) vlr[1], r.dynenv);
                     return VOID;                    
                 case GETSIDECAR:
-                    return env(vlr[1]).getSidecarEnvironment((Symbol) vlr[0]).asValue();
+                    return ((SymbolicEnvironment) vlr[1]).getSidecarEnvironment((Symbol) vlr[0]).asValue();
                 case STRING2NUMBER:
                     try {
                         int radix=((Quantity) vlr[1]).indexValue();
@@ -947,7 +947,7 @@ public abstract class Primitives extends Util {
                 case GETPROP:
                     Value ret = null;
                     if (vlr[1] instanceof SymbolicEnvironment) {
-                        ret = env(vlr[1]).lookup((Symbol) vlr[0]);
+                        ret = ((SymbolicEnvironment) vlr[1]).lookup((Symbol) vlr[0]);
                     } else {
                         ret = r.tpl.getSidecarEnvironment(
                               (Symbol) vlr[1]).lookup((Symbol) vlr[0]);
