@@ -66,7 +66,7 @@ public class StringIO extends IndexedFixableProcedure {
             return truth((v1 instanceof SchemeCharacterOutputPort) &&
                          (((SchemeCharacterOutputPort)v1).getWriter() instanceof StringWriter));
         case GETOUTPUTSTRING:
-            OutputPort port=outport(v1);
+            OutputPort port=(OutputPort) v1;
             if (!(port instanceof SchemeCharacterOutputPort) ||
                 !(((SchemeCharacterOutputPort)port).getWriter() 
                   instanceof StringWriter))

@@ -39,14 +39,14 @@ public class SerialIO extends IndexedProcedure {
     
     public static final SerialOutputStream soutport(Value o) {
         try {
-            return (SerialOutputStream)binoutport(o).getOutputStream();
+            return (SerialOutputStream)((SchemeBinaryOutputPort) o).getOutputStream();
         } catch (ClassCastException e) { typeError(BINARYB, "soutput-port", o); }
         return null;
     }
 
     public static final SerialInputStream sinport(Value o) {
         try {
-            return (SerialInputStream)bininport(o).getInputStream();
+            return (SerialInputStream)((SchemeBinaryInputPort) o).getInputStream();
         } catch (ClassCastException e) { typeError(BINARYB, "sinput-port", o); }
         return null;
     }
@@ -122,9 +122,9 @@ public class SerialIO extends IndexedProcedure {
                 return truth(f.vlr[0] instanceof SchemeBinaryInputPort &&
                         ((SchemeBinaryInputPort)f.vlr[0]).getInputStream() instanceof SerialInputStream);
             case OPENSERIALINPUTFILE:
-                return openSerInPort(f, bininport(f.vlr[0]));
+                return openSerInPort(f, (SchemeBinaryInputPort) f.vlr[0]);
             case OPENSERIALOUTPUTFILE:
-                return openSerOutPort(f, binoutport(f.vlr[0]));
+                return openSerOutPort(f, (SchemeBinaryOutputPort) f.vlr[0]);
             case DESERIALIZE:
                 return readSer(f, sinport(f.vlr[0]));
             default:
@@ -133,7 +133,7 @@ public class SerialIO extends IndexedProcedure {
         case 2:
             switch (id) {
             case OPENSERIALOUTPUTFILE:
-                return openSerOutPort(f, binoutport(f.vlr[0]));
+                return openSerOutPort(f, (SchemeBinaryOutputPort) f.vlr[0]);
             case SERIALIZE:
                 return writeSer(f, soutport(f.vlr[1]), f.vlr[0]);
             default:

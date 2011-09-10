@@ -131,7 +131,7 @@ public class DynamicEnvironment extends Util implements Cloneable {
     }
 
     public Reader getCurrentInReader() {
-        return charinreader(in);
+        return ((SchemeCharacterInputPort) in).getReader();
     }
     
     public Value getCurrentOutPort() {
@@ -139,7 +139,7 @@ public class DynamicEnvironment extends Util implements Cloneable {
     }
     
     public Writer getCurrentOutWriter() {
-        return charoutwriter(out);
+        return ((SchemeCharacterOutputPort) out).getWriter();
     }
 
     public Object clone() throws CloneNotSupportedException {

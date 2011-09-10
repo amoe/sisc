@@ -419,17 +419,17 @@ public class IO extends IndexedProcedure {
                 }
                 return VOID;
             case PEEKCHAR:
-            	return peekChar(f, charinport(f.dynenv.getCurrentInPort()));
+            	return peekChar(f, (SchemeCharacterInputPort) f.dynenv.getCurrentInPort());
             case PEEKBYTE:
-            	return peekByte(f, bininport(f.dynenv.getCurrentInPort()));
+            	return peekByte(f, (SchemeBinaryInputPort) f.dynenv.getCurrentInPort());
             case READ:
-                return read(f, charinport(f.dynenv.getCurrentInPort()));
+                return read(f, (SchemeCharacterInputPort) f.dynenv.getCurrentInPort());
             case READBYTE:
-                return readByte(f, bininport(f.dynenv.getCurrentInPort()));
+                return readByte(f, (SchemeBinaryInputPort) f.dynenv.getCurrentInPort());
             case READCHAR:
-                return readChar(f, charinport(f.dynenv.getCurrentInPort()));
+                return readChar(f, (SchemeCharacterInputPort) f.dynenv.getCurrentInPort());
             case READCODE:
-                return readCode(f, charinport(f.dynenv.getCurrentInPort()));
+                return readCode(f, (SchemeCharacterInputPort) f.dynenv.getCurrentInPort());
             default:
                 throwArgSizeException();
             }
@@ -439,38 +439,38 @@ public class IO extends IndexedProcedure {
             case INPORTQ: return truth(f.vlr[0] instanceof InputPort);
             case OUTPORTQ: return truth(f.vlr[0] instanceof OutputPort);
             case CHARREADY:
-                InputPort inport=charinport(f.vlr[0]);
+                InputPort inport=(SchemeCharacterInputPort) f.vlr[0];
                 try {
                     return truth(inport.ready());
                 } catch (IOException e) {
                     return FALSE;
                 }
             case DISPLAY:
-                return displayOrWrite(f, charoutport(f.dynenv.getCurrentOutPort()), f.vlr[0], true);
+                return displayOrWrite(f, (SchemeCharacterOutputPort) f.dynenv.getCurrentOutPort(), f.vlr[0], true);
             case WRITE:
-                return displayOrWrite(f, charoutport(f.dynenv.getCurrentOutPort()), f.vlr[0], false);
+                return displayOrWrite(f, (SchemeCharacterOutputPort) f.dynenv.getCurrentOutPort(), f.vlr[0], false);
             case PEEKBYTE:
-                return peekByte(f, bininport(f.vlr[0]));
+                return peekByte(f, (SchemeBinaryInputPort) f.vlr[0]);
             case PEEKCHAR:
-            	return peekChar(f, charinport(f.vlr[0]));
+            	return peekChar(f, (SchemeCharacterInputPort) f.vlr[0]);
             case READ:
-                SchemeCharacterInputPort cinport=charinport(f.vlr[0]);
+                SchemeCharacterInputPort cinport=(SchemeCharacterInputPort) f.vlr[0];
                 return read(f, cinport);
             case READBYTE:
-                SchemeBinaryInputPort binport=bininport(f.vlr[0]);
+                SchemeBinaryInputPort binport=(SchemeBinaryInputPort) f.vlr[0];
                 return readByte(f, binport);
             case READCHAR:
-                cinport=charinport(f.vlr[0]);
+                cinport=(SchemeCharacterInputPort) f.vlr[0];
                 return readChar(f, cinport);
             case READCODE:
-                cinport=charinport(f.vlr[0]);
+                cinport=(SchemeCharacterInputPort) f.vlr[0];
                 return readCode(f, cinport);
             case OPENCHARINPUTPORT:
             	return new SchemeCharacterInputPort(new PushbackReader(new BufferedReader(
-            			f.dynenv.getCharacterSet().newInputStreamReader(bininstream(f.vlr[0])))));
+            			f.dynenv.getCharacterSet().newInputStreamReader(((SchemeBinaryInputPort) f.vlr[0]).getInputStream()))));
             case OPENCHAROUTPUTPORT:
                 return new SchemeCharacterOutputPort(new BufferedWriter(
-                        f.dynenv.getCharacterSet().newOutputStreamWriter(binoutstream(f.vlr[0]))));
+                        f.dynenv.getCharacterSet().newOutputStreamWriter(((SchemeBinaryOutputPort) f.vlr[0]).getOutputStream())));
             case OPENSOURCEINPUTFILE:
                 URL url = url(f.vlr[0]);
                 return openCharInFile(f, url, f.dynenv.characterSet);
@@ -481,11 +481,11 @@ public class IO extends IndexedProcedure {
                 url = url(f.vlr[0]);
                 return openCharOutFile(f, url, f.dynenv.characterSet);
             case OPENBUFFEREDCHARINPORT: 
-            	return new SchemeCharacterInputPort(new BufferedReader(charinreader(f.vlr[0])));
+            	return new SchemeCharacterInputPort(new BufferedReader(((SchemeCharacterInputPort) f.vlr[0]).getReader()));
             case OPENBUFFEREDCHAROUTPORT: 
-            	return new SchemeCharacterOutputPort(new BufferedWriter(charoutwriter(f.vlr[0])));
+            	return new SchemeCharacterOutputPort(new BufferedWriter(((SchemeCharacterOutputPort) f.vlr[0]).getWriter()));
             case FLUSHOUTPUTPORT:
-                OutputPort op=outport(f.vlr[0]);
+                OutputPort op=(OutputPort) f.vlr[0];
                 try {
                     op.flush();
                 } catch (IOException e) {
@@ -494,7 +494,7 @@ public class IO extends IndexedProcedure {
                 }
                 return VOID;
             case CLOSEINPUTPORT:
-                InputPort inp=inport(f.vlr[0]);
+                InputPort inp=(InputPort) f.vlr[0];
                 try {
                     if (inp!=f.dynenv.in) inp.close();
                 } catch (IOException e) {
@@ -504,7 +504,7 @@ public class IO extends IndexedProcedure {
                 }
                 return VOID;
             case CLOSEOUTPUTPORT:
-                OutputPort outp=outport(f.vlr[0]);
+                OutputPort outp=(OutputPort) f.vlr[0];
                 try {
                     if (outp!=f.dynenv.out) outp.close();
                 } catch (IOException e) {
@@ -514,7 +514,7 @@ public class IO extends IndexedProcedure {
                 }
                 return VOID;
             case INPORTLOCATION:
-                Reader in = charinreader(f.vlr[0]);
+                Reader in = ((SchemeCharacterInputPort) f.vlr[0]).getReader();
                 if (in instanceof SourceReader) {
                     SourceReader sinp = (SourceReader)in;
                     return sourceAnnotations(sinp.sourceFile,
@@ -540,7 +540,7 @@ public class IO extends IndexedProcedure {
                 return VOID;
             case WRITEBYTE:
                 try {
-                    binoutstream(f.dynenv.getCurrentOutPort()).write(((Quantity) f.vlr[0]).indexValue());
+                    (((SchemeBinaryOutputPort) f.dynenv.getCurrentOutPort()).getOutputStream()).write(((Quantity) f.vlr[0]).indexValue());
                 } catch (IOException e) {
                     throwIOException(f, liMessage(IOB, "errorwriting",
                                                   f.dynenv.out.toString(),
@@ -590,7 +590,7 @@ public class IO extends IndexedProcedure {
         case 2:
             switch (id) {
             case WRITECHAR:
-                Writer port=charoutwriter(f.vlr[1]);
+                Writer port=((SchemeCharacterOutputPort) f.vlr[1]).getWriter();
                 try {
                     port.write(SchemeCharacter.charValue(f.vlr[0]));
                 } catch (IOException e) {
@@ -600,7 +600,7 @@ public class IO extends IndexedProcedure {
                 }
                 return VOID;
             case WRITEBYTE:
-                OutputStream bport=binoutstream(f.vlr[1]);
+                OutputStream bport=((SchemeBinaryOutputPort) f.vlr[1]).getOutputStream();
                 try {
                     bport.write(((Quantity) f.vlr[0]).indexValue());
                 } catch (IOException e) {
@@ -610,13 +610,13 @@ public class IO extends IndexedProcedure {
                 }
                 return VOID;
             case DISPLAY:
-                return displayOrWrite(f, charoutport(f.vlr[1]), f.vlr[0], true);
+                return displayOrWrite(f, (SchemeCharacterOutputPort) f.vlr[1], f.vlr[0], true);
             case WRITE:
-                return displayOrWrite(f, charoutport(f.vlr[1]), f.vlr[0], false);
+                return displayOrWrite(f, (SchemeCharacterOutputPort) f.vlr[1], f.vlr[0], false);
             case OPENCHARINPUTPORT:
                 try {
                     return new SchemeCharacterInputPort(new PushbackReader(new BufferedReader(
-                            Charset.forName(SchemeString.asString(f.vlr[1])).newInputStreamReader(bininstream(f.vlr[0])))));
+                            Charset.forName(SchemeString.asString(f.vlr[1])).newInputStreamReader(((SchemeBinaryInputPort) f.vlr[0]).getInputStream()))));
                 } catch (UnsupportedEncodingException use) {
                     throwIOException(f, liMessage(IOB, "unsupencoding", SchemeString.asString(f.vlr[1])), 
                             new IOException(use.getMessage())); 
@@ -624,7 +624,7 @@ public class IO extends IndexedProcedure {
             case OPENCHAROUTPUTPORT:
                 try {
                     return new SchemeCharacterOutputPort(new BufferedWriter(
-                            Charset.forName(SchemeString.asString(f.vlr[1])).newOutputStreamWriter(binoutstream(f.vlr[0]))));
+                            Charset.forName(SchemeString.asString(f.vlr[1])).newOutputStreamWriter(((SchemeBinaryOutputPort) f.vlr[0]).getOutputStream())));
                 } catch (UnsupportedEncodingException use) {
                     throwIOException(f, liMessage(IOB, "unsupencoding", SchemeString.asString(f.vlr[1])), 
                             new IOException(use.getMessage())); 
@@ -639,10 +639,10 @@ public class IO extends IndexedProcedure {
                 encoding=Util.charsetFromString(SchemeString.asString(f.vlr[1]));
                 return openCharOutFile(f, url, encoding);
             case OPENBUFFEREDCHARINPORT: 
-            	return new SchemeCharacterInputPort(new BufferedReader(charinreader(f.vlr[0]),
+            	return new SchemeCharacterInputPort(new BufferedReader(((SchemeCharacterInputPort) f.vlr[0]).getReader(),
             			((Quantity) f.vlr[1]).indexValue()));
             case OPENBUFFEREDCHAROUTPORT: 
-            	return new SchemeCharacterOutputPort(new BufferedWriter(charoutwriter(f.vlr[0]),
+            	return new SchemeCharacterOutputPort(new BufferedWriter(((SchemeCharacterOutputPort) f.vlr[0]).getWriter(),
             			((Quantity) f.vlr[1]).indexValue()));
             case NORMALIZEURL:
                 return new SchemeString(urlClean(url(f.vlr[0], 
@@ -683,7 +683,7 @@ public class IO extends IndexedProcedure {
             switch (id) {
             case READSTRING:
                 try {
-                    int charsRead=((SchemeString) f.vlr[0]).readFromReader(charinreader(f.vlr[3]),
+                    int charsRead=((SchemeString) f.vlr[0]).readFromReader(((SchemeCharacterInputPort) f.vlr[3]).getReader(),
                             ((Quantity) f.vlr[1]).intValue(),
                             ((Quantity) f.vlr[2]).intValue());
                 	if (charsRead<0) return EOF;
@@ -694,7 +694,7 @@ public class IO extends IndexedProcedure {
                 return VOID;
             case WRITESTRING:
                 try {
-                    ((SchemeString) f.vlr[0]).writeToWriter(charoutwriter(f.vlr[3]),
+                    ((SchemeString) f.vlr[0]).writeToWriter(((SchemeCharacterOutputPort) f.vlr[3]).getWriter(),
                                                 ((Quantity) f.vlr[1]).intValue(),
                                                 ((Quantity) f.vlr[2]).intValue());
                 } catch (IOException e) {
