@@ -6,13 +6,7 @@ import sisc.io.ValueWriter;
 import sisc.ser.Serializer;
 import sisc.ser.Deserializer;
 import sisc.util.ExpressionVisitor;
-import sisc.data.Box;
-import sisc.data.Expression;
-import sisc.data.NamedValue;
-import sisc.data.Pair;
-import sisc.data.Procedure;
-import sisc.data.Quantity;
-import sisc.data.Value;
+import sisc.data.*;
 import sisc.env.LexicalUtils;
 
 /**
@@ -61,7 +55,7 @@ public class SimpleClosure extends Procedure implements NamedValue {
     }
 
     public Value express() {
-        return list(sym("closure"),
+        return list(Symbol.get("closure"),
         			list(Quantity.valueOf(fcount)),
                     valArrayToVec(env),
                     body.express());

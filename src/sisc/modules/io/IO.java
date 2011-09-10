@@ -132,9 +132,9 @@ public class IO extends IndexedProcedure {
             sourceColumn == FALSE)
             return;
         throwNestedPrimException(liMessage(IOB, "evalat",
-                                           string(pair(sourceFile).cdr()),
-                                           ((Quantity) pair(sourceLine).cdr()).intValue(),
-                                           ((Quantity) pair(sourceColumn).cdr()).intValue()),
+                                           SchemeString.asString(((Pair) sourceFile).cdr()),
+                                           ((Quantity) ((Pair) sourceLine).cdr()).intValue(),
+                                           ((Quantity) ((Pair) sourceColumn).cdr()).intValue()),
                                  se);
     }
 
@@ -531,7 +531,7 @@ public class IO extends IndexedProcedure {
                 return VOID;
             case WRITECHAR:
                 try {
-                    f.dynenv.getCurrentOutWriter().write(character(f.vlr[0]));
+                    f.dynenv.getCurrentOutWriter().write(SchemeCharacter.charValue(f.vlr[0]));
                 } catch (IOException e) {
                     throwIOException(f, liMessage(IOB, "errorwriting",
                                                   f.dynenv.out.toString(),
@@ -555,14 +555,14 @@ public class IO extends IndexedProcedure {
                     return FALSE;
                 }
             case FINDRESOURCE:
-                url = Util.currentClassLoader().getResource(string(f.vlr[0]));
+                url = Util.currentClassLoader().getResource(SchemeString.asString(f.vlr[0]));
                 if (url == null) 
                     return FALSE;
                 else return new SchemeString(url.toString());
             case FINDRESOURCES:
                 java.util.Enumeration e;
                 try {
-                    e = Util.currentClassLoader().getResources(string(f.vlr[0]));
+                    e = Util.currentClassLoader().getResources(SchemeString.asString(f.vlr[0]));
                 } catch (IOException ex) {
                     return EMPTYLIST;
                 }
@@ -576,7 +576,7 @@ public class IO extends IndexedProcedure {
                 }
                 return pa;
             case ABSPATHQ:
-                String f1=string(f.vlr[0]);
+                String f1=SchemeString.asString(f.vlr[0]);
                 if (f1.startsWith("file:"))
                     f1=f1.substring(5);
                 File fn=new File(f1);
@@ -592,7 +592,7 @@ public class IO extends IndexedProcedure {
             case WRITECHAR:
                 Writer port=charoutwriter(f.vlr[1]);
                 try {
-                    port.write(character(f.vlr[0]));
+                    port.write(SchemeCharacter.charValue(f.vlr[0]));
                 } catch (IOException e) {
                     throwIOException(f, liMessage(IOB, "errorwriting",
                                                   port.toString(),
@@ -616,27 +616,27 @@ public class IO extends IndexedProcedure {
             case OPENCHARINPUTPORT:
                 try {
                     return new SchemeCharacterInputPort(new PushbackReader(new BufferedReader(
-                            Charset.forName(string(f.vlr[1])).newInputStreamReader(bininstream(f.vlr[0])))));
+                            Charset.forName(SchemeString.asString(f.vlr[1])).newInputStreamReader(bininstream(f.vlr[0])))));
                 } catch (UnsupportedEncodingException use) {
-                    throwIOException(f, liMessage(IOB, "unsupencoding", string(f.vlr[1])), 
+                    throwIOException(f, liMessage(IOB, "unsupencoding", SchemeString.asString(f.vlr[1])), 
                             new IOException(use.getMessage())); 
                 }
             case OPENCHAROUTPUTPORT:
                 try {
                     return new SchemeCharacterOutputPort(new BufferedWriter(
-                            Charset.forName(string(f.vlr[1])).newOutputStreamWriter(binoutstream(f.vlr[0]))));
+                            Charset.forName(SchemeString.asString(f.vlr[1])).newOutputStreamWriter(binoutstream(f.vlr[0]))));
                 } catch (UnsupportedEncodingException use) {
-                    throwIOException(f, liMessage(IOB, "unsupencoding", string(f.vlr[1])), 
+                    throwIOException(f, liMessage(IOB, "unsupencoding", SchemeString.asString(f.vlr[1])), 
                             new IOException(use.getMessage())); 
                 }
             case OPENINPUTFILE:
                 URL url = url(f.vlr[0]);
                 return openCharInFile(f, url,
-                                      Util.charsetFromString(string(f.vlr[1])));
+                                      Util.charsetFromString(SchemeString.asString(f.vlr[1])));
             case OPENOUTPUTFILE:
                 url = url(f.vlr[0]);
                 Charset encoding=f.dynenv.characterSet;
-                encoding=Util.charsetFromString(string(f.vlr[1]));
+                encoding=Util.charsetFromString(SchemeString.asString(f.vlr[1]));
                 return openCharOutFile(f, url, encoding);
             case OPENBUFFEREDCHARINPORT: 
             	return new SchemeCharacterInputPort(new BufferedReader(charinreader(f.vlr[0]),
@@ -654,7 +654,7 @@ public class IO extends IndexedProcedure {
             switch (id) {
             case READSTRING:
                 try {
-                	int charsRead=str(f.vlr[0]).readFromReader(f.dynenv.getCurrentInReader(),
+                    int charsRead=((SchemeString) f.vlr[0]).readFromReader(f.dynenv.getCurrentInReader(),
                             ((Quantity) f.vlr[1]).intValue(),
                             ((Quantity) f.vlr[2]).intValue());
                     if (charsRead < 0) return EOF;
@@ -665,9 +665,9 @@ public class IO extends IndexedProcedure {
                 return VOID;
             case WRITESTRING:
                 try {
-                    str(f.vlr[0]).writeToWriter(f.dynenv.getCurrentOutWriter(),
-                                                ((Quantity) f.vlr[1]).intValue(),
-                                                ((Quantity) f.vlr[2]).intValue());
+                    ((SchemeString) f.vlr[0]).writeToWriter(f.dynenv.getCurrentOutWriter(),
+                                                            ((Quantity) f.vlr[1]).intValue(),
+                                                            ((Quantity) f.vlr[2]).intValue());
                 } catch (IOException e) {
                     throwIOException(f, e.getMessage(), e);
                 }
@@ -675,7 +675,7 @@ public class IO extends IndexedProcedure {
             case OPENOUTPUTFILE:
                 URL url = url(f.vlr[0]);
                 return openCharOutFile(f, url,
-                                       Util.charsetFromString(string(f.vlr[1])));
+                                       Util.charsetFromString(SchemeString.asString(f.vlr[1])));
             default:
                 throwArgSizeException();
             }
@@ -683,7 +683,7 @@ public class IO extends IndexedProcedure {
             switch (id) {
             case READSTRING:
                 try {
-                	int charsRead=str(f.vlr[0]).readFromReader(charinreader(f.vlr[3]),
+                    int charsRead=((SchemeString) f.vlr[0]).readFromReader(charinreader(f.vlr[3]),
                             ((Quantity) f.vlr[1]).intValue(),
                             ((Quantity) f.vlr[2]).intValue());
                 	if (charsRead<0) return EOF;
@@ -694,7 +694,7 @@ public class IO extends IndexedProcedure {
                 return VOID;
             case WRITESTRING:
                 try {
-                    str(f.vlr[0]).writeToWriter(charoutwriter(f.vlr[3]),
+                    ((SchemeString) f.vlr[0]).writeToWriter(charoutwriter(f.vlr[3]),
                                                 ((Quantity) f.vlr[1]).intValue(),
                                                 ((Quantity) f.vlr[2]).intValue());
                 } catch (IOException e) {

@@ -58,7 +58,7 @@ public class FileManipulation extends Util {
                 String[] contents=fileHandle(v1).list();
                 if (contents == null)
                     throwPrimException(liMessage(IO.IOB, "nosuchdirectory",
-                                                 string(v1)));
+                                                 SchemeString.asString(v1)));
                 for (int i=contents.length-1; i>=0; i--) 
                     p=new Pair(new SchemeString(contents[i]), p);
                 return p;

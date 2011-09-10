@@ -12,6 +12,7 @@ import sisc.data.NamedValue;
 import sisc.data.Pair;
 import sisc.data.Procedure;
 import sisc.data.Quantity;
+import sisc.data.Symbol;
 import sisc.data.Value;
 import sisc.env.LexicalUtils;
 
@@ -123,7 +124,7 @@ public class Closure extends Procedure implements NamedValue {
 
     public Value express() {
         Pair boxs = LexicalUtils.intArrayToList(boxes);
-        return list(sym("closure"),
+        return list(Symbol.get("closure"),
                     new Pair(truth(arity),
                              new Pair(Quantity.valueOf(fcount),
                                       boxs)),

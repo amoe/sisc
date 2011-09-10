@@ -271,11 +271,11 @@ public class Reflection extends Util {
             case JAVA_NULL:
                 return makeJObj(null, jclass(v1));
             case JAVA_MANGLE_FIELD_NAME:
-                return Symbol.intern(mangleFieldName(symval(v1)));
+                return Symbol.intern(mangleFieldName(Symbol.toString(v1)));
             case JAVA_MANGLE_METHOD_NAME:
-                return Symbol.intern(mangleMethodName(symval(v1)));
+                return Symbol.intern(mangleMethodName(Symbol.toString(v1)));
             case JAVA_MANGLE_CLASS_NAME:
-                return Symbol.intern(mangleClassName(symval(v1)));
+                return Symbol.intern(mangleClassName(Symbol.toString(v1)));
             case JAVA_ARRAY_LENGTH:
                 Object ar = jobj(v1);
                 try {
@@ -314,9 +314,9 @@ public class Reflection extends Util {
                 Value dims = v2;
                 Value[] dimensions;
                 if (dims instanceof Pair) {
-                    dimensions = pairToValues(pair(dims));
+                    dimensions = pairToValues((Pair) dims);
                 } else if (dims instanceof SchemeVector) {
-                    dimensions = vec(dims).vals;
+                    dimensions = ((SchemeVector) dims).vals;
                 } else {
                     dimensions = new Value[]{dims};
                 }

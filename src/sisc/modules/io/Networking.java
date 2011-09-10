@@ -496,11 +496,11 @@ public class Networking extends IndexedProcedure {
                     c.close();
                     return VOID;
                 case GET_HOST_NAME_BY_IP:
-                    String str=string(f.vlr[0]);
+                    String str=SchemeString.asString(f.vlr[0]);
                     InetAddress addr=InetAddress.getByName(str);
                     return new SchemeString(addr.getHostName());
                 case GET_HOST_IP_BY_NAME:
-                    str=string(f.vlr[0]);
+                    str=SchemeString.asString(f.vlr[0]);
                     addr=InetAddress.getByName(str);
                     return new SchemeString(addr.getHostAddress());
                 case OPEN_TCP_LISTENER:
@@ -545,15 +545,15 @@ public class Networking extends IndexedProcedure {
             case 2:
                 switch (id) {
                 case OPEN_TCP_SOCKET:
-                    String host=string( f.vlr[0]);
+                    String host=SchemeString.asString( f.vlr[0]);
                     int port=((Quantity) f.vlr[1]).indexValue();
                     return new SchemeTCPSocket(new Socket(host, port));
                 case OPEN_TCP_LISTENER:
                     port=((Quantity) f.vlr[0]).indexValue();
-                    String iaddr=string(f.vlr[1]);
+                    String iaddr=SchemeString.asString(f.vlr[1]);
                     return new SchemeServerSocket(new ServerSocket(port, 0, InetAddress.getByName(iaddr)));
                 case OPEN_UDP_SOCKET:
-                    host=string(f.vlr[0]);
+                    host=SchemeString.asString(f.vlr[0]);
                     port=((Quantity) f.vlr[1]).indexValue();
                     SchemeUDPSocket s=new SchemeUDPSocket(new DatagramSocket(), port, host);
                     s.setMode(SEND);
@@ -566,13 +566,13 @@ public class Networking extends IndexedProcedure {
                     return s;
                 case OPEN_MULTICAST_SOCKET:
                     if (f.vlr[0] instanceof SchemeString) {
-                        host=string(f.vlr[0]);
+                        host=SchemeString.asString(f.vlr[0]);
                         int dport=((Quantity) f.vlr[1]).indexValue();
                         s=new SchemeMulticastUDPSocket(new MulticastSocket(dport), dport, host);
                         s.setMode(SEND | LISTEN);
                         return s;
                     } else if (f.vlr[1] instanceof SchemeString) {
-                        String iface=string(f.vlr[1]);
+                        String iface=SchemeString.asString(f.vlr[1]);
                         port=((Quantity) f.vlr[0]).indexValue();
                         MulticastSocket ms=new MulticastSocket(port);
                         ms.setInterface(InetAddress.getByName(iface));
@@ -591,11 +591,11 @@ public class Networking extends IndexedProcedure {
                     return ssock.getBinaryOutputPort(f);
                 case OPEN_SOCKET_INPUT_PORT:
                     SchemeSocket ss=sock(f.vlr[0]);
-                    return ss.getInputPort(f, Util.charsetFromString(string(f.vlr[1])));
+                    return ss.getInputPort(f, Util.charsetFromString(SchemeString.asString(f.vlr[1])));
                 case OPEN_SOCKET_OUTPUT_PORT:
                     ssock=sock(f.vlr[0]);
                     if (f.vlr[1] instanceof SchemeString)
-                        return ssock.getCharacterOutputPort(f, Util.charsetFromString(string(f.vlr[1])));
+                        return ssock.getCharacterOutputPort(f, Util.charsetFromString(SchemeString.asString(f.vlr[1])));
                     else
                        return ssock.getBinaryOutputPort(f);
                 case SET_MULTICAST_TTL:
@@ -605,12 +605,12 @@ public class Networking extends IndexedProcedure {
                     return VOID;
                 case JOIN_MULTICAST_GROUP:
                     ms=mcastsock(f.vlr[0]);
-                    host=string( f.vlr[1]);
+                    host=SchemeString.asString( f.vlr[1]);
                     ms.joinGroup(InetAddress.getByName(host));
                     return VOID;
                 case LEAVE_MULTICAST_GROUP:
                     ms=mcastsock(f.vlr[0]);
-                    host=string( f.vlr[1]);
+                    host=SchemeString.asString( f.vlr[1]);
                     ms.leaveGroup(InetAddress.getByName(host));
                     return VOID;
                 case SET_SO_TIMEOUT:
@@ -625,12 +625,12 @@ public class Networking extends IndexedProcedure {
                 case SET_ENABLED_CIPHER_SUITES:
                     SSLServerSocket sslssock=(SSLServerSocket)serversock(f.vlr[0]).s;
                     Value previous=stringArrayToList(sslssock.getEnabledCipherSuites());
-                    sslssock.setEnabledCipherSuites(listToStringArray(pair(f.vlr[1])));
+                    sslssock.setEnabledCipherSuites(listToStringArray((Pair) f.vlr[1]));
                     return previous;
                 case SET_ENABLED_PROTOCOLS:
                     sslssock=(SSLServerSocket)serversock(f.vlr[0]).s;
                     previous=stringArrayToList(sslssock.getEnabledProtocols());
-                    sslssock.setEnabledProtocols(listToStringArray(pair(f.vlr[1])));
+                    sslssock.setEnabledProtocols(listToStringArray((Pair) f.vlr[1]));
                     return previous;
                 case PERMIT_SESSION_CREATION:
                     sslssock=(SSLServerSocket)serversock(f.vlr[0]).s;
@@ -664,14 +664,14 @@ public class Networking extends IndexedProcedure {
                 switch(id) {
                 case OPEN_UDP_LISTEN_SOCKET:
                     int dport=((Quantity) f.vlr[0]).indexValue();
-                    String host=string(f.vlr[0]);
+                    String host=SchemeString.asString(f.vlr[0]);
                     int ps=((Quantity) f.vlr[2]).indexValue();
                     DatagramSocket ds=new DatagramSocket(dport, InetAddress.getByName(host));
                     SchemeUDPSocket s=new SchemeUDPSocket(ds, ps);
                     s.setMode(SEND | LISTEN);
                     return s;
                 case OPEN_MULTICAST_SOCKET:
-                    host=string(f.vlr[0]);
+                    host=SchemeString.asString(f.vlr[0]);
                     dport=((Quantity) f.vlr[1]).indexValue();
                     
                     int dgramsize=((Quantity) f.vlr[2]).indexValue();
@@ -682,7 +682,7 @@ public class Networking extends IndexedProcedure {
                     SchemeSocket ssock=sock(f.vlr[0]);
                      return ssock.getCharacterOutputPort
                              (f,
-                              Util.charsetFromString(string(f.vlr[1])));
+                              Util.charsetFromString(SchemeString.asString(f.vlr[1])));
                 default:
                     throwArgSizeException();
                 }
@@ -690,13 +690,13 @@ public class Networking extends IndexedProcedure {
                 switch(id) {
                 case OPEN_SSL_SOCKET:
                     SchemeTCPSocket original=(SchemeTCPSocket)sock(f.vlr[0]);
-                    String host=string(f.vlr[1]);
+                    String host=SchemeString.asString(f.vlr[1]);
                     int port=((Quantity) f.vlr[2]).indexValue();
                     boolean autoClose=truth(f.vlr[3]);
                     return new SchemeTCPSocket(((SSLSocketFactory)SSLSocketFactory.getDefault()).createSocket(original.s, host, port, autoClose));
                 case OPEN_MULTICAST_SOCKET:
-                    host=string(f.vlr[0]);
-                    String iface=string(f.vlr[2]);
+                    host=SchemeString.asString(f.vlr[0]);
+                    String iface=SchemeString.asString(f.vlr[2]);
                     int dport=((Quantity) f.vlr[1]).indexValue();
                     int dgramsize=((Quantity) f.vlr[3]).indexValue();
                     MulticastSocket ms=new MulticastSocket(dport);
@@ -718,7 +718,7 @@ public class Networking extends IndexedProcedure {
     private static String[] listToStringArray(Pair pair) {
         String[] rv=new String[length(pair)];
         for (int i=0; i<rv.length; i++) {
-            rv[i]=str(pair.car()).asString();
+            rv[i]=((SchemeString) pair.car()).asString();
             pair=(Pair)pair.cdr();
         }
         return rv;

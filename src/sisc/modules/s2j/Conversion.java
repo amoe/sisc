@@ -65,7 +65,7 @@ public class Conversion extends Util {
         case CONV_JBOOLEAN:
             return makeJObj((truth(v1) ? Boolean.TRUE : Boolean.FALSE), Boolean.TYPE);
         case CONV_JCHAR:
-            return makeJObj(new Character(character(v1)), Character.TYPE);
+            return makeJObj(new Character(SchemeCharacter.charValue(v1)), Character.TYPE);
         case CONV_JBYTE:
             return makeJObj(new Byte((byte)((Quantity) v1).intValue()), Byte.TYPE);
         case CONV_JSHORT:
@@ -81,9 +81,9 @@ public class Conversion extends Util {
         case CONV_JSTRING:
             Value v = v1;
             if (v instanceof Symbol)
-                return makeJObj(symval(v));
+                return makeJObj(((Symbol) v).toString());
             else if (v instanceof SchemeString)
-                return makeJObj(string(v));
+                return makeJObj(SchemeString.asString(v));
             else
                 typeError(S2JB, "stringorsymbol", v);
         case CONV_BOOLEAN:
@@ -152,9 +152,9 @@ public class Conversion extends Util {
             Value o = v1;
             Value[] vals = null;
             if (o instanceof Pair)
-                vals = pairToValues(pair(o));
+                vals = pairToValues((Pair) o);
             else if (o instanceof SchemeVector)
-                vals = vec(o).vals;
+                vals = ((SchemeVector) o).vals;
             else {
                 typeError(S2JB, "listorvector", o);
             }

@@ -60,23 +60,23 @@ public class OptionalPrimitives extends Util {
             case CDDR:
                 return truePair(truePair(v1).cdr()).cdr();
             case STRINGUPCASE:
-                SchemeString str=str(v1);
+                SchemeString str = (SchemeString) v1;
                 return new SchemeString(str.asString().toUpperCase());
             case STRINGDOWNCASE:
-                str=str(v1);
+                str=(SchemeString) v1;
                 return new SchemeString(str.asString().toLowerCase());
             case MAPCDR:
-                Pair lists=pair(v1);
+                Pair lists=(Pair) v1;
                 Pair c=EMPTYLIST;
                 while (lists != EMPTYLIST) {
                     c=new Pair(truePair(lists.car()).cdr(), c);
-                    lists=pair(lists.cdr());
+                    lists=(Pair) lists.cdr();
                 }
                 return reverseInPlace(c);
             case MAPCAR:
-                return mapcar(pair(v1));
+                return mapcar((Pair) v1);
             case REVERSE:
-                return reverse(pair(v1));
+                return reverse((Pair) v1);
             default:
                 throwArgSizeException();            
             }
@@ -99,14 +99,15 @@ public class OptionalPrimitives extends Util {
                 if (rv.is(Quantity.EXACT) && (q1.is(Quantity.INEXACT) || q2.is(Quantity.INEXACT)))
                     return rv.toInexact();
                 else return rv;
-            case CHARLESSTHAN: return truth(character(v1)<character(v2));
-            case CHARGRTRTHAN: return truth(character(v1)>character(v2));
-            case CHAREQUALCI: return truth(Character.toLowerCase(character(v1))==
-                                           Character.toLowerCase(character(v2)));
-            case CHARLESSTHANCI: return truth(Character.toLowerCase(character(v1))<
-                                              Character.toLowerCase(character(v2)));
-            case CHARGRTRTHANCI: return truth(Character.toLowerCase(character(v1))>
-                                              Character.toLowerCase(character(v2)));
+            case CHARLESSTHAN:
+                return truth(SchemeCharacter.charValue(v1) < SchemeCharacter.charValue(v2));
+            case CHARGRTRTHAN: return truth(SchemeCharacter.charValue(v1)>SchemeCharacter.charValue(v2));
+            case CHAREQUALCI: return truth(Character.toLowerCase(SchemeCharacter.charValue(v1))==
+                                           Character.toLowerCase(SchemeCharacter.charValue(v2)));
+            case CHARLESSTHANCI: return truth(Character.toLowerCase(SchemeCharacter.charValue(v1))<
+                                              Character.toLowerCase(SchemeCharacter.charValue(v2)));
+            case CHARGRTRTHANCI: return truth(Character.toLowerCase(SchemeCharacter.charValue(v1))>
+                                              Character.toLowerCase(SchemeCharacter.charValue(v2)));
             case VECTOR: return new SchemeVector(new Value[] {v1, v2});
             case VALUES: return new Values(new Value[] {v1, v2});
             case APPEND: return apply(new Value[] {v1,v2});
@@ -117,50 +118,50 @@ public class OptionalPrimitives extends Util {
                 }
                 return p1.car();
             case ASSV:
-                p1=pair(v2);
+                p1=(Pair) v2;
                 while (p1!=EMPTYLIST) {
-                    Pair assc=pair(p1.car());
+                    Pair assc=(Pair) p1.car();
                     if (assc.car().eqv(v1))
                         return assc;
-                    p1=pair(p1.cdr());
+                    p1=(Pair) p1.cdr();
                 }
                 return FALSE;
             case ASSQ:
-                return assq(v1, pair(v2));
+                return assq(v1, (Pair) v2);
             case MEMQ:
-                return memq(v1, pair(v2));
+                return memq(v1, (Pair) v2);
             case MEMV:
-                p1=pair(v2);
+                p1=(Pair) v2;
                 while (p1!=EMPTYLIST) {
                     if (p1.car().eqv(v1))
                         return p1;
-                    p1=pair(p1.cdr());
+                    p1=(Pair) p1.cdr();
                 }
                 return FALSE;
             case ASSOC:
-                p1=pair(v2);
+                p1=(Pair) v2;
                 while (p1!=EMPTYLIST) {
-                    Pair assc=pair(p1.car());
+                    Pair assc=(Pair) p1.car();
                     if (assc.car().valueEqual(v1))
                         return assc;
-                    p1=pair(p1.cdr());
+                    p1=(Pair) p1.cdr();
                 }
                 return FALSE;
             case MEMBER:
-                p1=pair(v2);
+                p1=(Pair) v2;
                 while (p1!=EMPTYLIST) {
                     if (p1.car().valueEqual(v1))
                         return p1;
-                    p1=pair(p1.cdr());
+                    p1=(Pair) p1.cdr();
                 }
                 return FALSE;
             case STRINGORDER:
-                SchemeString str=str(v1);
-                SchemeString str2=str(v2);
+                SchemeString str=(SchemeString) v1;
+                SchemeString str2=(SchemeString) v2;
                 return Quantity.valueOf(str.asString().compareTo(str2.asString()));
             case STRINGORDERCI:
-                str=str(v1);
-                str2=str(v2);
+                str=(SchemeString) v1;
+                str2=(SchemeString) v2;
                 return Quantity.valueOf(str.asString().compareToIgnoreCase(str2.asString()));
             default:
                 throwArgSizeException();            
@@ -207,27 +208,27 @@ public class OptionalPrimitives extends Util {
                         q3.is(Quantity.INEXACT)))
                     return rv.toInexact();
                 else return rv;
-            case CHARLESSTHAN: char c2=character(v2);
-                return truth(character(v1)<c2 && c2<character(v3));
-            case CHARGRTRTHAN: c2=character(v2);
-                return truth(character(v1)>c2 && c2>character(v3));
+            case CHARLESSTHAN: char c2=SchemeCharacter.charValue(v2);
+                return truth(SchemeCharacter.charValue(v1)<c2 && c2<SchemeCharacter.charValue(v3));
+            case CHARGRTRTHAN: c2=SchemeCharacter.charValue(v2);
+                return truth(SchemeCharacter.charValue(v1)>c2 && c2>SchemeCharacter.charValue(v3));
             case CHAREQUALCI: 
-                c2=Character.toLowerCase(character(v2));
-                return truth(Character.toLowerCase(character(v1))==c2 && c2==
-                             Character.toLowerCase(character(v3)));
+                c2=Character.toLowerCase(SchemeCharacter.charValue(v2));
+                return truth(Character.toLowerCase(SchemeCharacter.charValue(v1))==c2 && c2==
+                             Character.toLowerCase(SchemeCharacter.charValue(v3)));
             case CHARLESSTHANCI: 
-                c2=Character.toLowerCase(character(v2));
-                return truth(Character.toLowerCase(character(v1))<c2 && c2<
-                             Character.toLowerCase(character(v3)));
+                c2=Character.toLowerCase(SchemeCharacter.charValue(v2));
+                return truth(Character.toLowerCase(SchemeCharacter.charValue(v1))<c2 && c2<
+                             Character.toLowerCase(SchemeCharacter.charValue(v3)));
             case CHARGRTRTHANCI: 
-                c2=Character.toLowerCase(character(v2));
-                return truth(Character.toLowerCase(character(v1))>c2 && c2>
-                             Character.toLowerCase(character(v3)));
+                c2=Character.toLowerCase(SchemeCharacter.charValue(v2));
+                return truth(Character.toLowerCase(SchemeCharacter.charValue(v1))>c2 && c2>
+                             Character.toLowerCase(SchemeCharacter.charValue(v3)));
             case VECTOR: return new SchemeVector(new Value[] {v1, v2, v3});
             case VALUES: return new Values(new Value[] {v1, v2, v3});
             case APPEND: return apply(new Value[] {v1,v2,v3});
             case SUBSTRING:
-                SchemeString str=str(v1);
+                SchemeString str=(SchemeString) v1;
                 int lidx=((Quantity) v2).indexValue();
                 int uidx=((Quantity) v3).indexValue();
                 return str.substring(lidx, uidx);
@@ -260,43 +261,43 @@ public class OptionalPrimitives extends Util {
                 }
                 return (exact ? q1 : q1.toInexact());
             case CHARLESSTHAN:
-                char c1=character(vlr[0]);
+                char c1=SchemeCharacter.charValue(vlr[0]);
                 char c2;
                 for (int i=1; i<vlr.length; i++) {
-                    c2=character(vlr[i]);
+                    c2=SchemeCharacter.charValue(vlr[i]);
                     if (c1>=c2)
                         return FALSE;
                     c1=c2;
                 }
                 return TRUE;
             case CHARGRTRTHAN:
-                c1=character(vlr[0]);
+                c1=SchemeCharacter.charValue(vlr[0]);
                 for (int i=1; i<vlr.length; i++) {
-                    c2=character(vlr[i]);
+                    c2=SchemeCharacter.charValue(vlr[i]);
                     if (c1<=c2)
                         return FALSE;
                     c1=c2;
                 }
                 return TRUE;
             case CHAREQUALCI:
-                char c=Character.toLowerCase(character(vlr[0]));
+                char c=Character.toLowerCase(SchemeCharacter.charValue(vlr[0]));
                 for (int i=1; i<vlr.length; i++)
-                    if (Character.toLowerCase(character(vlr[i]))!=c)
+                    if (Character.toLowerCase(SchemeCharacter.charValue(vlr[i]))!=c)
                         return FALSE;
                 return TRUE;
             case CHARLESSTHANCI:
-                c1=Character.toLowerCase(character(vlr[0]));
+                c1=Character.toLowerCase(SchemeCharacter.charValue(vlr[0]));
                 for (int i=1; i<vlr.length; i++) {
-                    c2=Character.toLowerCase(character(vlr[i]));
+                    c2=Character.toLowerCase(SchemeCharacter.charValue(vlr[i]));
                     if (c2<=c1)
                         return FALSE;
                     c1=c2;
                 }
                 return TRUE;
             case CHARGRTRTHANCI:
-                c1=Character.toLowerCase(character(vlr[0]));
+                c1=Character.toLowerCase(SchemeCharacter.charValue(vlr[0]));
                 for (int i=1; i<vlr.length; i++) {
-                    c2=Character.toLowerCase(character(vlr[i]));
+                    c2=Character.toLowerCase(SchemeCharacter.charValue(vlr[i]));
                     if (c2>=c1)
                         return FALSE;
                     c1=c2;
@@ -328,7 +329,7 @@ public class OptionalPrimitives extends Util {
                 
                 int x=0;
                 do {
-                    Pair working_pair = pair(vlr[x]);
+                    Pair working_pair =(Pair) vlr[x];
                     while (working_pair != EMPTYLIST) {
                         if (current_pair == null) {
                             head_pair=current_pair=new Pair(working_pair.car(), 
@@ -367,7 +368,7 @@ public class OptionalPrimitives extends Util {
         public final Value apply(Value v1) throws ContinuationException {
             switch(id) {        
             case REVERSEB:
-                return reverseInPlace(pair(v1));
+                return reverseInPlace((Pair) v1);
             default:
                 throwArgSizeException();            
             }

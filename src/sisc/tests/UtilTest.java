@@ -234,50 +234,6 @@ public class UtilTest extends TestCase
     //TODO Implement typeError().
     }
 
-    public void testSym()
-    {
-    //TODO Implement sym().
-    }
-
-    public void testSymval()
-    {
-    //TODO Implement symval().
-    }
-
-    public void testNum()
-    {
-    //TODO Implement num().
-    }
-
-    public void testPair()
-    {
-        assertSame(Util.pair(l0), l0);
-        assertSame(Util.pair(l1), l1);
-        assertSame(Util.pair(l2), l2);
-        assertSame(Util.pair(l3), l3);
-        
-        try
-        {
-            Util.pair(va);
-            fail("expected a RuntimeException");
-        }
-        catch (RuntimeException e)
-        { }
-
-        try
-        {
-            Util.pair(vb);
-            fail("expected a RuntimeException");
-        }
-        catch (RuntimeException e)
-        { }
-    }
-
-    public void testProc()
-    {
-    //TODO Implement proc().
-    }
-
     public void testTruePair()
     {
         try
@@ -291,36 +247,6 @@ public class UtilTest extends TestCase
         assertSame(Util.truePair(l1), l1);
         assertSame(Util.truePair(l2), l2);
         assertSame(Util.truePair(l3), l3);
-    }
-
-    public void testCharacter()
-    {
-    //TODO Implement character().
-    }
-
-    public void testChr()
-    {
-    //TODO Implement chr().
-    }
-
-    public void testString()
-    {
-    //TODO Implement string().
-    }
-
-    public void testStr()
-    {
-    //TODO Implement str().
-    }
-
-    public void testSymbol()
-    {
-    //TODO Implement symbol().
-    }
-
-    public void testVec()
-    {
-    //TODO Implement vec().
     }
 
     public void testOutport()

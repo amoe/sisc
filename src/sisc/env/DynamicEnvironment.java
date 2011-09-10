@@ -224,7 +224,7 @@ public class DynamicEnvironment extends Util implements Cloneable {
     }
 
     public void setSourceAnnotations(Value v) {
-        sourceAnnotations = pair(v);
+        sourceAnnotations = (Pair) v;
     }
 
     public Charset getCharacterSet() {
@@ -232,7 +232,7 @@ public class DynamicEnvironment extends Util implements Cloneable {
     }
 
     public void setCharacterSet(Value v) {
-        characterSet=Util.charsetFromString(string(v));
+        characterSet=Util.charsetFromString(SchemeString.asString(v));
     }
     
     public Value getCaseSensitive() {
@@ -340,7 +340,7 @@ public class DynamicEnvironment extends Util implements Cloneable {
     }
     
     public void setCustomDisplayTypeMap(Value v) {
-    	customDisplayTypeMap=pair(v);    	
+    	customDisplayTypeMap = (Pair) v;    	
     }
 
     public Value getCustomWriteTypeMap() {
@@ -348,7 +348,7 @@ public class DynamicEnvironment extends Util implements Cloneable {
     }
     
     public void setCustomWriteTypeMap(Value v) {
-    	customWriteTypeMap=pair(v);    	
+    	customWriteTypeMap = (Pair) v;    	
     }
 }
 /*

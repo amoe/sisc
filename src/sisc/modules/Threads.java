@@ -353,7 +353,7 @@ public class Threads extends Util {
         public Value apply(Interpreter f, Value v1) throws ContinuationException {
             switch(id) {
             case THREADNEW:
-                return new SchemeThread(f.dynenv, proc(f.vlr[0]));
+                return new SchemeThread(f.dynenv, (Procedure) f.vlr[0]);
             case THREADRESULT:
                 return sthread(f.vlr[0]).getResult(f);
             case THREADINTERRUPT:
@@ -433,7 +433,7 @@ public class Threads extends Util {
                 return VOID;
             case SETTHREADNAME:
                 c=sthread(v1);
-                c.thread.setName(string(v2));
+                c.thread.setName(SchemeString.asString(v2));
                 return VOID;
             default:
                 throwArgSizeException();                    

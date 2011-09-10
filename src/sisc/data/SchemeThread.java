@@ -37,10 +37,10 @@ public class SchemeThread extends Value implements Runnable, NamedValue {
             return rv;
         } else {
             Values v=(Values)rv;
-            Procedure.throwNestedPrimException(new SchemeException(pair(v.values[0]), 
-                                                                   proc(v.values[1]),     
+            Procedure.throwNestedPrimException(new SchemeException((Pair) v.values[0], 
+                                                                   (Procedure) v.values[1],     
                                                                    v.values.length>2 ? 
-                                                                   proc(v.values[2]) :
+                                                                   ((Procedure) v.values[2]) :
                                                                    r.fk));
             return VOID;
         }

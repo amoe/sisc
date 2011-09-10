@@ -26,7 +26,7 @@ public class LocalReferenceExp extends Expression implements Immediate {
     }
 
     public Value express() {
-        return list(sym("lcl"), Quantity.valueOf(idx));
+        return list(Symbol.get("lcl"), Quantity.valueOf(idx));
     }
 
     public void serialize(Serializer s) throws IOException {

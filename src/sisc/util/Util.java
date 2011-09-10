@@ -384,86 +384,10 @@ public abstract class Util implements Version {
                                              o.synopsis()));
     }
 
-    // Synonym for Symbol.get(s) (i.e. a lowercased sym)
-    public static final Symbol sym(String s) {
-        return Symbol.get(s);
-    }
-
-    public static final String symval(Value o) {
-        if (o instanceof Symbol) {
-            return ((Symbol) o).symval;
-        } else {
-            typeError("symbol", o);
-            return null;
-        }
-    }
-
-    public static final Pair pair(Value o) {
-        if (o instanceof Pair) {
-            return (Pair) o;
-        } else {
-            typeError("pair", o);
-            return null;
-        }
-    }
-
-    public static final Procedure proc(Value o) {
-        if (o instanceof Procedure) {
-            return (Procedure) o;
-        } else {
-            typeError("procedure", o);
-            return null;
-        }
-    }
-
     public static final Pair truePair(Value o) {
         if (o == EMPTYLIST)
             typeError("pair", o);
-        return pair(o);
-    }
-
-    public static final char character(Value c) {
-        return chr(c).c;
-    }
-
-    public static final SchemeCharacter chr(Value o) {
-        if (o instanceof SchemeCharacter) {
-            return (SchemeCharacter) o;
-        } else {
-            typeError("character", o);
-            return null;            
-        }
-    }
-
-    public static final String string(Value o) {
-        return str(o).asString();
-    }
-
-    public static final SchemeString str(Value o) {
-        if (o instanceof SchemeString) {
-            return (SchemeString) o;
-        } else {
-            typeError("string", o);
-            return null;
-        }
-    }
-
-    public static final Symbol symbol(Value o) {
-        if (o instanceof Symbol) {
-            return (Symbol) o;
-        } else {
-            typeError("symbol", o);
-            return null;
-        }
-    }
-
-    public static final SchemeVector vec(Value o) {
-        if (o instanceof SchemeVector) {
-            return (SchemeVector) o;
-        } else {
-            typeError("vector", o);
-            return null;
-        }
+        return (Pair) o;
     }
 
     /* IO Type casts */
@@ -599,7 +523,7 @@ public abstract class Util implements Version {
 
     public static URL url(Value v) {
         try {
-            return url(string(v));
+            return url(SchemeString.asString(v));
         } catch (MalformedURLException e) {
             typeError("url", v);
         }
@@ -616,7 +540,7 @@ public abstract class Util implements Version {
 
     public static URL url(Value current, Value v) {
         URL c = url(current);
-        String s = string(v);
+        String s = SchemeString.asString(v);
         try {
             return new URL(c, s);
         } catch (MalformedURLException e) {
@@ -667,11 +591,11 @@ public abstract class Util implements Version {
     /* List functions */
     public static Value assq(Value v, Pair p) {
         while (p!=EMPTYLIST) {
-            Pair assc=pair(p.car());
+            Pair assc = (Pair) p.car();
             if (assc.car() == v) {
                 return assc;
             }
-            p=pair(p.cdr());
+            p = (Pair) p.cdr();
         }
         return FALSE;
     }
@@ -680,7 +604,7 @@ public abstract class Util implements Version {
         Pair c=EMPTYLIST;
         while (list != EMPTYLIST) {
             c=new Pair(truePair(list.car()).car(), c);
-            list=pair(list.cdr());
+            list=(Pair) list.cdr();
         }
         return reverseInPlace(c);
     }
@@ -764,7 +688,7 @@ public abstract class Util implements Version {
             if (p.car() == v) {
                 return p;
             }
-            p=pair(p.cdr());
+            p = (Pair) p.cdr();
         }
         return FALSE;
     }

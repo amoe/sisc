@@ -317,8 +317,8 @@ public abstract class Primitives extends Util {
             throws ContinuationException {      
             switch (id) {
             case NULLQ: return truth(v1==EMPTYLIST);
-            case CAR: return truePair( v1).car();
-            case CDR: return truePair( v1).cdr();
+            case CAR: return truePair(v1).car();
+            case CDR: return truePair(v1).cdr();
             case PAIRQ:
                 return truth(v1 instanceof Pair &&
                              v1!=EMPTYLIST);
@@ -357,17 +357,17 @@ public abstract class Primitives extends Util {
             case INEXACTQ: return numQuery(v1,Quantity.INEXACT);
             case PARAMETERQ: return truth(v1 instanceof Parameter);
             case GENSYMQ:
-                return truth(symbol(v1).symval.startsWith(GENSYM_MAGIC_PREFIX));
+                return truth(((Symbol) v1).symval.startsWith(GENSYM_MAGIC_PREFIX));
             case SYMBOL2STRING:
-                return new ImmutableString(symbol(v1).symval);
+                return new ImmutableString(((Symbol) v1).symval);
             case SYNTOKEN2STRING: 
                 return new ImmutableString(((sisc.compiler.Syntax)v1).toString());
 
-            case STRING2SYMBOL: return Symbol.intern(string(v1));
-            case CHAR2INTEGER: return Quantity.valueOf(character(v1));
-            case LIST2VECTOR: return new SchemeVector(Util.pairToValues(pair(v1)));
+            case STRING2SYMBOL: return Symbol.intern(SchemeString.asString(v1));
+            case CHAR2INTEGER: return Quantity.valueOf(SchemeCharacter.charValue(v1));
+            case LIST2VECTOR: return new SchemeVector(Util.pairToValues((Pair) v1));
             case VECTOR2LIST:
-                Value[] vals=vec(v1).vals;
+                Value[] vals=((SchemeVector) v1).vals;
                 return valArrayToList(vals, 0, vals.length);
             case EXACT2INEXACT: return ((Quantity) v1).toInexact();
             case INEXACT2EXACT: return ((Quantity) v1).toExact();
@@ -377,22 +377,22 @@ public abstract class Primitives extends Util {
             case TRUNCATE: return ((Quantity) v1).truncate();
             case INTEGER2CHAR: return new SchemeCharacter((char)((Quantity) v1).
                                                           indexValue());
-            case VECTORFINDLASTUNIQUE: return Quantity.valueOf(vec(v1).findEnd());
+            case VECTORFINDLASTUNIQUE: return Quantity.valueOf(((SchemeVector) v1).findEnd());
             case BOX: return new Box(v1);
             case UNBOX: return box(v1).val;
             case BOXQ: return truth(v1 instanceof Box);
             case LENGTH:
-                return Quantity.valueOf(length(pair(v1)));
+                return Quantity.valueOf(length((Pair) v1));
             case STRINGLENGTH:
-                return Quantity.valueOf(str(v1).length());
+                return Quantity.valueOf(((SchemeString) v1).length());
             case VECTORLENGTH:
-                return Quantity.valueOf(vec(v1).vals.length);
+                return Quantity.valueOf(((SchemeVector) v1).vals.length);
             case CIRCULARQ:
                 return truth(new CircularityDetector().isCircular(v1));
             case MAKEPARAM:
                 return new SchemeParameter(v1);
             case MAKENATIVEPARAM:
-                return new NativeParameter(string(v1));
+                return new NativeParameter(SchemeString.asString(v1));
             case MAKESTRING:
                 return new SchemeString(new char[((Quantity) v1).indexValue()]);
             case MAKEVECTOR:
@@ -404,7 +404,7 @@ public abstract class Primitives extends Util {
             case REALPART: return ((Quantity) v1).realpart();
             case IMAGPART: return ((Quantity) v1).imagpart();
             case STRING2UNINTERNEDSYMBOL:
-                return Symbol.getUnique(string(v1));
+                return Symbol.getUnique(SchemeString.asString(v1));
             case MAKECHILDENVIRONMENT:
                 SymbolicEnvironment env=env(v1);
                 MemorySymEnv ae = new MemorySymEnv(env);
@@ -432,7 +432,7 @@ public abstract class Primitives extends Util {
                 } catch (InterruptedException ie) {}
                 return VOID;
             case STRINGAPPEND:
-                return str(v1).copy();
+                return ((SchemeString) v1).copy();
             case LIST: return new Pair(v1, EMPTYLIST);
             case HASHCODE:
                 return Quantity.valueOf(v1.hashCode());
@@ -456,7 +456,7 @@ public abstract class Primitives extends Util {
             case EXPTYPE:
                 return Quantity.valueOf(sisc.compiler.Compiler.getExpType(env(v1), v2));
             case CHAREQUAL:
-                return truth(character(v1) == character(v2));
+                return truth(SchemeCharacter.charValue(v1) == SchemeCharacter.charValue(v2));
             case ADD: return ((Quantity) v1).add((Quantity) v2);
             case MUL: return ((Quantity) v1).mul((Quantity) v2);
             case SUB: return ((Quantity) v1).sub((Quantity) v2);
@@ -475,7 +475,7 @@ public abstract class Primitives extends Util {
             case STRINGREF:
                 int index=((Quantity) v2).indexValue();
                 try {
-                    return new SchemeCharacter(str(v1).charAt(index));
+                    return new SchemeCharacter(((SchemeString) v1).charAt(index));
                 } catch (ArrayIndexOutOfBoundsException e) {
                     throwPrimException(liMessage(SISCB, "indexoob", 
                                                  new Object[] {
@@ -484,22 +484,22 @@ public abstract class Primitives extends Util {
                 }
             case VECTORREF:
                 index=((Quantity) v2).indexValue();
-                return vec(v1).vals[index];
+                return ((SchemeVector) v1).vals[index];
             case STRINGEQUAL:
-                return truth(str(v1).valueEqual(str(v2)));
+                return truth(((SchemeString) v1).valueEqual((SchemeString) v2));
             case MAKEVECTOR:
                 return new SchemeVector(((Quantity) v1).indexValue(),
                                         v2);
             case MAKESTRING:
                 char newStr[]=new char[((Quantity) v1).indexValue()];
-                char fillchar=character(v2);
+                char fillchar=SchemeCharacter.charValue(v2);
                 for (int i=0; i<newStr.length; i++) {
                     newStr[i]=fillchar;
                 }
                 return new SchemeString(newStr);
             case STRINGAPPEND:
-                SchemeString s1 = str(v1);
-                SchemeString s2 = str(v2);
+                SchemeString s1 = (SchemeString) v1;
+                SchemeString s2 = (SchemeString) v2;
                 StringBuffer sbuf = new StringBuffer(s1.length() + s2.length());
                 s1.appendTo(sbuf);
                 s2.appendTo(sbuf);
@@ -514,17 +514,17 @@ public abstract class Primitives extends Util {
                                                .shiftRight(((Quantity) v2)
                                                            .indexValue()));
             case MAKECONFIGPARAM:
-                return new ConfigParameter(string(v1), v2);
+                return new ConfigParameter(SchemeString.asString(v1), v2);
             case LIST: return list(v1, v2);
             case LT:
                 return truth(((Quantity) v1).comp((Quantity) v2,-1));
             case GRT:
                 return truth(((Quantity) v1).comp((Quantity) v2,1));
             case INTERN:
-                InternedValue iv = InternedValue.intern(symbol(v1), v2);
+                InternedValue iv = InternedValue.intern((Symbol) v1, v2);
                 if (iv == null) {
                     throwPrimException(liMessage(SISCB, "internconflict",
-                                                 symval(v1),
+                                                 v1.toString(),
                                                  v2.synopsis()));
                 }
                 return new Values(new Value[] { iv.getName(), iv.getValue() });
@@ -538,20 +538,20 @@ public abstract class Primitives extends Util {
             throws ContinuationException {      
             switch(id) {
             case CHAREQUAL:
-                return truth(character(v1) == character(v2) &&
-                             character(v2) == character(v3));
+                return truth(SchemeCharacter.charValue(v1) == SchemeCharacter.charValue(v2) &&
+                             SchemeCharacter.charValue(v2) == SchemeCharacter.charValue(v3));
             case STRINGAPPEND:
-                SchemeString s1 = str(v1);
-                SchemeString s2 = str(v2);
-                SchemeString s3 = str(v3);
+                SchemeString s1 = (SchemeString) v1;
+                SchemeString s2 = (SchemeString) v2;
+                SchemeString s3 = (SchemeString) v3;
                 StringBuffer sbuf = new StringBuffer(s1.length() + s2.length() + s3.length());
                 s1.appendTo(sbuf);
                 s2.appendTo(sbuf);
                 s3.appendTo(sbuf);
                 return new SchemeString(sbuf.toString());
             case STRINGEQUAL:
-                return truth(str(v1).valueEqual(str(v2)) &&
-                             str(v2).valueEqual(str(v3)));
+                return truth(((SchemeString) v1).valueEqual((SchemeString) v2) &&
+                             ((SchemeString) v2).valueEqual((SchemeString) v3));
             case LIST: return list(v1, v2, v3);
             case ADD: return ((Quantity) v1).add((Quantity) v2).add((Quantity) v3);
             case MUL: return ((Quantity) v1).mul((Quantity) v2).mul((Quantity) v3);
@@ -634,20 +634,20 @@ public abstract class Primitives extends Util {
             case STRINGAPPEND:
                 StringBuffer sbuf = new StringBuffer();
                 for (int i=0; i<vls; i++) {
-                    str(v[i]).appendTo(sbuf);
+                    ((SchemeString) v[i]).appendTo(sbuf);
                 }
                 return new SchemeString(sbuf.toString());
             case STRINGEQUAL:
-                SchemeString str = str(v[0]);
+                SchemeString str = (SchemeString) v[0];
                 for (int i=1; i<vls; i++) {
-                    SchemeString s = str(v[i]);
+                    SchemeString s = (SchemeString) v[i];
                     if (!str.valueEqual(s)) return FALSE;
                 }
                 return TRUE;
             case CHAREQUAL:
-                char character = character(v[0]);
+                char character = SchemeCharacter.charValue(v[0]);
                 for (int i=1; i<vls; i++) {
-                    char c = character(v[i]);
+                    char c = SchemeCharacter.charValue(v[i]);
                     if (!(character == c)) return FALSE;
                 }
                 return TRUE;
@@ -705,7 +705,7 @@ public abstract class Primitives extends Util {
             case 1:
                 switch (id) {
                 case CLASSPATHEXTENSIONAPPEND:
-                    for (Pair p = pair(vlr[0]); p != EMPTYLIST; p = (Pair)p.cdr()) {
+                    for (Pair p = (Pair) vlr[0]; p != EMPTYLIST; p = (Pair) p.cdr()) {
                         r.dynenv.extendClassPath(url(p.car()));
                     }
                     return VOID;
@@ -722,7 +722,7 @@ public abstract class Primitives extends Util {
                     return new SchemeString(((Quantity) vlr[0]).toString());
                 case GETENVIRONMENT:
                     try {
-                        return r.getCtx().lookupContextEnv(symbol(vlr[0])).asValue();
+                        return r.getCtx().lookupContextEnv((Symbol) vlr[0]).asValue();
                     } catch (ArrayIndexOutOfBoundsException e) {
                         throwPrimException(liMessage(SISCB, "noenv", vlr[0].synopsis()));
                         return VOID;
@@ -733,9 +733,9 @@ public abstract class Primitives extends Util {
                     if (parent == null) return FALSE;
                     else return parent.asValue();
                 case GETSIDECAR:
-                    return r.tpl.getSidecarEnvironment(symbol(vlr[0])).asValue();
+                    return r.tpl.getSidecarEnvironment((Symbol) vlr[0]).asValue();
                 case GETENV:
-                    String str = r.getCtx().getProperty(string(vlr[0]));
+                    String str = r.getCtx().getProperty(SchemeString.asString(vlr[0]));
                     if (str == null) {
                         return FALSE;
                     } else {
@@ -767,17 +767,17 @@ public abstract class Primitives extends Util {
                     return VOID;
                 case LOADNL:
                     try {
-                        Class clazz=Class.forName(string(vlr[0]), true, Util.currentClassLoader());
+                        Class clazz=Class.forName(SchemeString.asString(vlr[0]), true, Util.currentClassLoader());
                         return (NativeLibrary)clazz.newInstance();
                     } catch (Exception e) {
                         throwPrimException(e.getMessage());
                     }
                 case GETPROP:
-                    int loc=r.tpl.getLoc(symbol(vlr[0]));
+                    int loc=r.tpl.getLoc((Symbol) vlr[0]);
                     if (loc==-1) return FALSE;
                     else return r.tpl.lookup(loc); 
                 case STRING2NUMBER:
-                    String st=string(vlr[0]);
+                    String st=SchemeString.asString(vlr[0]);
                     try {
                         return (Quantity)r.dynenv.parser.nextExpression(new PushbackReader(new StringReader(st)));
                     } catch (ClassCastException cce) {
@@ -820,7 +820,7 @@ public abstract class Primitives extends Util {
             case 2:
                 switch (id) {
                 case NLBINDING:
-                    return nlib(vlr[0]).getBindingValue(r, symbol(vlr[1]));
+                    return nlib(vlr[0]).getBindingValue(r, (Symbol) vlr[1]);
                 case COMPILE:
                     return new Closure(false,
                                        (short)0, 
@@ -828,40 +828,40 @@ public abstract class Primitives extends Util {
                                        ZV,
                                        new int[0]);
                 case WITHENVIRONMENT:
-                    Procedure thunk=proc(vlr[1]);
+                    Procedure thunk=(Procedure) vlr[1];
                     r.tpl=env(vlr[0]);
                     r.setupTailCall(WITHENV_APPEVAL, ZV);
                     return thunk;
                 case WITHFC:
-                    Procedure proc=proc(vlr[1]);
-                    Procedure ehandler=proc(vlr[0]);
+                    Procedure proc=(Procedure) vlr[1];
+                    Procedure ehandler=(Procedure) vlr[0];
                     r.setFailureContinuation(new ApplyValuesContEval(ehandler));
                     r.setupTailCall(WITHFC_APPEVAL, ZV);
                     return proc;
                 case CALLWITHVALUES:
-                    Procedure producer=proc(vlr[0]);
-                    Procedure consumer=proc(vlr[1]);
+                    Procedure producer=(Procedure) vlr[0];
+                    Procedure consumer=(Procedure) vlr[1];
                     r.pushExpr(new ApplyValuesContEval(consumer));
                     r.setupTailCall(CALLWITHVALUES_APPEVAL, ZV);
                     return producer;
                 case GETPROP:
                     Value ret = null;
                     if (vlr[1] instanceof SymbolicEnvironment) {
-                        ret = env(vlr[1]).lookup(symbol(vlr[0]));
+                        ret = env(vlr[1]).lookup((Symbol) vlr[0]);
                     } else {
                         ret = r.tpl.getSidecarEnvironment(
-                                 symbol(vlr[1])).lookup(symbol(vlr[0]));
+                                 (Symbol) vlr[1]).lookup((Symbol) vlr[0]);
                     }
                     return (ret == null) ? FALSE : ret;
                 case REMPROP:
                     if (vlr[1] instanceof SymbolicEnvironment) {
-                        env(vlr[1]).undefine(symbol(vlr[0]));
+                        env(vlr[1]).undefine((Symbol) vlr[0]);
                     } else {
-                        r.tpl.getSidecarEnvironment(symbol(vlr[1])).undefine(symbol(vlr[0])); 
+                        r.tpl.getSidecarEnvironment((Symbol) vlr[1]).undefine((Symbol) vlr[0]); 
                     }
                     return VOID;
                 case PUTPROP:
-                    r.tpl.define(symbol(vlr[0]), vlr[1]);
+                    r.tpl.define((Symbol) vlr[0], vlr[1]);
                     return VOID;
                 case SETBOX:
                     try {
@@ -876,18 +876,18 @@ public abstract class Primitives extends Util {
                     return VOID;
                 case SETCDR:
                     truePair(vlr[0]).setCdr(vlr[1]);
-                    return VOID;                    
+                    return VOID;
                 case SETENVIRONMENT:
-                    r.getCtx().defineContextEnv(symbol(vlr[0]), env(vlr[1]));
+                    r.getCtx().defineContextEnv((Symbol) vlr[0], env(vlr[1]));
                     return VOID;
                 case SIGHOOK:
-                    SignalHook.addHandler(string(vlr[0]), proc(vlr[1]), r.dynenv);
+                    SignalHook.addHandler(SchemeString.asString(vlr[0]), (Procedure) vlr[1], r.dynenv);
                     return VOID;
                 case SIGUNHOOK:
-                    SignalHook.removeHandler(string(vlr[0]), proc(vlr[1]), r.dynenv);
+                    SignalHook.removeHandler(SchemeString.asString(vlr[0]), (Procedure) vlr[1], r.dynenv);
                     return VOID;                    
                 case GETSIDECAR:
-                    return env(vlr[1]).getSidecarEnvironment(symbol(vlr[0])).asValue();
+                    return env(vlr[1]).getSidecarEnvironment((Symbol) vlr[0]).asValue();
                 case STRING2NUMBER:
                     try {
                         int radix=((Quantity) vlr[1]).indexValue();
@@ -895,7 +895,7 @@ public abstract class Primitives extends Util {
                             !(radix==10 || radix == 16 || radix == 2 ||
                               radix==8))
                             throwPrimException(liMessage(SISCB, "invalidradix"));
-                        return (Quantity)r.dynenv.parser.nextExpression(new PushbackReader(new StringReader(string(vlr[0]))), radix, 0);
+                        return (Quantity)r.dynenv.parser.nextExpression(new PushbackReader(new StringReader(SchemeString.asString(vlr[0]))), radix, 0);
                     } catch (NumberFormatException nf) {
                         return FALSE;
                     } catch (IOException e) {
@@ -909,13 +909,13 @@ public abstract class Primitives extends Util {
                         throwPrimException(liMessage(SISCB, "invalidradix"));
                     return new SchemeString(((Quantity) vlr[0]).toString(radix));
                 case STRINGFILL:
-                    SchemeString st=str(vlr[0]);
-                    char c=character(vlr[1]);
+                    SchemeString st=(SchemeString) vlr[0];
+                    char c=SchemeCharacter.charValue(vlr[1]);
                     for (int i=0; i<st.length(); i++)
                         st.set(i, c);
                     return VOID;
                 case VECTORFILL:
-                    vec(vlr[0]).fill(vlr[1]);
+                    ((SchemeVector) vlr[0]).fill(vlr[1]);
                     return VOID;
                 default:
                     break SIZESWITCH;
@@ -925,7 +925,7 @@ public abstract class Primitives extends Util {
                 case STRINGSET:
                     int index=((Quantity) vlr[1]).indexValue();
                     try {
-                        str(vlr[0]).set(index, character(vlr[2]));
+                        ((SchemeString) vlr[0]).set(index, SchemeCharacter.charValue(vlr[2]));
                     } catch (ArrayIndexOutOfBoundsException e) {
                         throwPrimException(liMessage(SISCB, "indexoob", 
                                                      new Object[] {
@@ -936,7 +936,7 @@ public abstract class Primitives extends Util {
                 case VECTORSET:
                     index=((Quantity) vlr[1]).indexValue();
                     try {
-                        vec(vlr[0]).set(index,vlr[2]);
+                        ((SchemeVector) vlr[0]).set(index,vlr[2]);
                     } catch (ArrayIndexOutOfBoundsException e) {
                         throwPrimException(liMessage(SISCB, "indexoob", 
                                                      new Object[] {
@@ -947,14 +947,14 @@ public abstract class Primitives extends Util {
                 case GETPROP:
                     Value ret = null;
                     if (vlr[1] instanceof SymbolicEnvironment) {
-                        ret = env(vlr[1]).lookup(symbol(vlr[0]));
+                        ret = env(vlr[1]).lookup((Symbol) vlr[0]);
                     } else {
                         ret = r.tpl.getSidecarEnvironment(
-                              symbol(vlr[1])).lookup(symbol(vlr[0]));
+                              (Symbol) vlr[1]).lookup((Symbol) vlr[0]);
                     }
                     return (ret == null) ? vlr[2] : ret;
                 case PUTPROP:
-                    Symbol lhs=symbol(vlr[0]);
+                    Symbol lhs=(Symbol) vlr[0];
                     Value rhs=vlr[2];
                     SymbolicEnvironment env;
                     if (vlr[1] instanceof SymbolicEnvironment) {
@@ -970,10 +970,10 @@ public abstract class Primitives extends Util {
             
             switch (id) {
             case APPLY:
-                Procedure proc=proc(vlr[0]);
+                Procedure proc=(Procedure) vlr[0];
                 int l = vls-2;
 
-                Pair args=pair(vlr[l+1]);
+                Pair args=(Pair) vlr[l+1];
                 Value newvlr[] = r.createValues(l+length(args));
                 
                 int j;

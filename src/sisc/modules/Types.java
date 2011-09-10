@@ -104,12 +104,12 @@ public class Types extends IndexedFixableProcedure {
             return truth(v1 instanceof SchemeType);
         case MAKETYPE:
             try {
-                Class cl = Class.forName(symval(v1), true, Util.currentClassLoader());
+                Class cl = Class.forName(Symbol.toString(v1), true, Util.currentClassLoader());
                 if (!Value.class.isAssignableFrom(cl))
-                    throw new RuntimeException(liMessage(TYPESDB, "notaschemetype", symval(v1)));
+                    throw new RuntimeException(liMessage(TYPESDB, "notaschemetype", Symbol.toString(v1)));
                 return new SchemeType(cl);
             } catch(ClassNotFoundException e) {
-                throw new RuntimeException(liMessage(TYPESDB, "classnotfound", symval(v1)));
+                throw new RuntimeException(liMessage(TYPESDB, "classnotfound", Symbol.toString(v1)));
             }
         case TYPEOF:
             return new SchemeType(v1.getClass());

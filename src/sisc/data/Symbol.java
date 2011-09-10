@@ -102,6 +102,21 @@ public class Symbol extends Value {
     public void deserialize(Deserializer s) throws IOException {
         symval = s.readUTF();
     }
+
+    /**
+     * Convenience method that casts v to a Symbol and
+     * calls toString() on it.
+     *
+     * @return The value returned by toString()
+     * @throws ClassCastException  If v is not a Symbol.
+     */
+    public static String toString(Value v) throws ClassCastException {
+        return ((Symbol) v).toString();
+    }
+
+    public String toString() {
+        return symval;
+    }
 }
 /*
  * The contents of this file are subject to the Mozilla Public

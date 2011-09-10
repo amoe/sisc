@@ -80,9 +80,9 @@ public class StringIO extends IndexedFixableProcedure {
             sw.getBuffer().setLength(0);
             return s;
         case OPENINPUTSTRING:
-            return new SchemeCharacterInputPort(new PushbackReader(new StringReader(string(v1))));
+            return new SchemeCharacterInputPort(new PushbackReader(new StringReader(SchemeString.asString(v1))));
         case OPENSOURCEINPUTSTRING:
-            return new SchemeCharacterInputPort(new SourceReader(new StringReader(string(v1)), "<string>"));
+            return new SchemeCharacterInputPort(new SourceReader(new StringReader(SchemeString.asString(v1)), "<string>"));
         default:
             throwArgSizeException();
         }
