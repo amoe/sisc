@@ -30,7 +30,7 @@ public class Primitives extends IndexedFixableProcedure {
         public Value apply(Value v1) throws ContinuationException {
             switch (id) {
               case HTQ:
-                  return truth(v1 instanceof HashtableBase);
+                  return SchemeBoolean.get(v1 instanceof HashtableBase);
               case HT_HASH_BY_EQ:
                   return Quantity.valueOf(System.identityHashCode(v1));
               case HT_HASH_BY_EQV:
@@ -51,9 +51,9 @@ public class Primitives extends IndexedFixableProcedure {
                     case HT_SIZE:
                         return Quantity.valueOf(h.size());
                     case HT_THREAD_SAFEQ:
-                        return truth(h instanceof SynchronizedHashtable);
+                        return SchemeBoolean.get(h instanceof SynchronizedHashtable);
                     case HT_WEAKQ:
-                        return truth((h instanceof WeakHashtable) ||
+                        return SchemeBoolean.get((h instanceof WeakHashtable) ||
                                      ((h instanceof SynchronizedHashtable) &&
                                       ((SynchronizedHashtable)h).getDelegate()
                                       instanceof WeakHashtable));
@@ -82,10 +82,10 @@ public class Primitives extends IndexedFixableProcedure {
                     Procedure equalsProc = (Procedure) v[0];
                     Procedure hashProc = (Procedure) v[1];
                     HashtableBase res =
-                        truth(v[3]) ?
+                        SchemeBoolean.toBoolean(v[3]) ?
                         new WeakHashtable(equalsProc, hashProc) :
                         new Hashtable(equalsProc, hashProc);
-                    if (truth(v[2])) {
+                    if (SchemeBoolean.toBoolean(v[2])) {
                         res = new SynchronizedHashtable(res);
                     }
                     return res;

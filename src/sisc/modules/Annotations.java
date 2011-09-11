@@ -64,7 +64,7 @@ public abstract class Annotations  {
             case ANNOTATIONSTRIPPED:
                 return ((AnnotatedExpr) v1).stripped;
             case ANNOTATIONQ:
-                return truth(v1 instanceof AnnotatedExpr);
+                return SchemeBoolean.get(v1 instanceof AnnotatedExpr);
             case ANNOTATIONSRC:
                 Value rv;
                 if (v1 instanceof AnnotatedExpr) 

@@ -125,15 +125,15 @@ public class BinaryIO extends IndexedProcedure {
             case BUFFERLENGTH:
                 return Quantity.valueOf(buffer(f.vlr[0]).buf.length);
             case BUFFERQ:
-                return truth(f.vlr[0] instanceof Buffer);
+                return SchemeBoolean.get(f.vlr[0] instanceof Buffer);
             case OPENBINARYINPUTFILE:
                 return openBinInFile(f, url(f.vlr[0]));
             case OPENBINARYOUTPUTFILE:
                 return openBinOutFile(f, url(f.vlr[0]));
             case BINARYINPUTPORTQ:
-                return truth(f.vlr[0] instanceof SchemeBinaryInputPort);
+                return SchemeBoolean.get(f.vlr[0] instanceof SchemeBinaryInputPort);
             case BINARYOUTPUTPORTQ:
-                return truth(f.vlr[0] instanceof SchemeBinaryOutputPort);
+                return SchemeBoolean.get(f.vlr[0] instanceof SchemeBinaryOutputPort);
             case OPENBUFFEREDBININPORT: 
             	return new SchemeBinaryInputPort(new PushbackInputStream(new BufferedInputStream(((SchemeBinaryInputPort) f.vlr[0]).getInputStream())));
             case OPENBUFFEREDBINOUTPORT: 

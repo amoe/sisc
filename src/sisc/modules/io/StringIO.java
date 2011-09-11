@@ -59,12 +59,12 @@ public class StringIO extends IndexedFixableProcedure {
         switch (id) {
         case STRINGINPORTQ:
             //FIXME: This doesn't really do it
-            return truth((v1 instanceof SchemeCharacterInputPort) &&
-                         (((SchemeCharacterInputPort)v1).getReader() instanceof StringReader));
+            return SchemeBoolean.get((v1 instanceof SchemeCharacterInputPort) &&
+                                     (((SchemeCharacterInputPort)v1).getReader() instanceof StringReader));
 
         case STRINGOUTPORTQ:
-            return truth((v1 instanceof SchemeCharacterOutputPort) &&
-                         (((SchemeCharacterOutputPort)v1).getWriter() instanceof StringWriter));
+            return SchemeBoolean.get((v1 instanceof SchemeCharacterOutputPort) &&
+                                     (((SchemeCharacterOutputPort)v1).getWriter() instanceof StringWriter));
         case GETOUTPUTSTRING:
             OutputPort port=(OutputPort) v1;
             if (!(port instanceof SchemeCharacterOutputPort) ||

@@ -308,31 +308,6 @@ public class UtilTest extends TestCase
     //TODO Implement nlib().
     }
 
-    /*
-     * Class to test for SchemeBoolean truth(boolean)
-     */
-    public void testTruthboolean()
-    {
-        assertSame(Util.truth(true), Util.TRUE);
-        assertSame(Util.truth(false), Util.FALSE);
-    }
-
-    /*
-     * Class to test for boolean truth(Value)
-     */
-    public void testTruthValue()
-    {
-        assertFalse(Util.truth(Util.FALSE));
-        assertTrue(Util.truth(Util.TRUE));
-        assertTrue(Util.truth(l0));
-        assertTrue(Util.truth(l1));
-        assertTrue(Util.truth(l2));
-        assertTrue(Util.truth(l3));
-        assertTrue(Util.truth(va));
-        assertTrue(Util.truth(vb));
-        assertTrue(Util.truth(vc));
-    }
-
     public void testAssq()
     {
     //TODO Implement assq().

@@ -63,7 +63,7 @@ public class Conversion extends Util {
     public Value apply(Value v1) throws ContinuationException {
         switch(id) {
         case CONV_JBOOLEAN:
-            return makeJObj((truth(v1) ? Boolean.TRUE : Boolean.FALSE), Boolean.TYPE);
+            return makeJObj((SchemeBoolean.toBoolean(v1) ? Boolean.TRUE : Boolean.FALSE), Boolean.TYPE);
         case CONV_JCHAR:
             return makeJObj(new Character(SchemeCharacter.charValue(v1)), Character.TYPE);
         case CONV_JBYTE:
@@ -87,7 +87,7 @@ public class Conversion extends Util {
             else
                 typeError(S2JB, "stringorsymbol", v);
         case CONV_BOOLEAN:
-            return truth(((Boolean)jobj(v1)).booleanValue());
+            return SchemeBoolean.get(((Boolean)jobj(v1)).booleanValue());
         case CONV_CHARACTER:
             return new SchemeCharacter(((Character)jobj(v1)).charValue());
         case CONV_NUMBER:

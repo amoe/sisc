@@ -116,10 +116,10 @@ public class SerialIO extends IndexedProcedure {
         case 1:
             switch (id) {
             case SERIALOUTPORTQ: 
-                return truth(f.vlr[0] instanceof SchemeBinaryOutputPort &&
+                return SchemeBoolean.get(f.vlr[0] instanceof SchemeBinaryOutputPort &&
                         ((SchemeBinaryOutputPort)f.vlr[0]).getOutputStream() instanceof SerialOutputStream);
             case SERIALINPORTQ: 
-                return truth(f.vlr[0] instanceof SchemeBinaryInputPort &&
+                return SchemeBoolean.get(f.vlr[0] instanceof SchemeBinaryInputPort &&
                         ((SchemeBinaryInputPort)f.vlr[0]).getInputStream() instanceof SerialInputStream);
             case OPENSERIALINPUTFILE:
                 return openSerInPort(f, (SchemeBinaryInputPort) f.vlr[0]);

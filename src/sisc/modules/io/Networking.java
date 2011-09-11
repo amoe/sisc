@@ -476,9 +476,9 @@ public class Networking extends IndexedProcedure {
             case 1:
                 switch (id) {
                 case SOCKETQ:
-                    return truth(f.vlr[0] instanceof SchemeSocket);
+                    return SchemeBoolean.get(f.vlr[0] instanceof SchemeSocket);
                 case SERVERSOCKETQ:
-                    return truth(f.vlr[0] instanceof SchemeServerSocket);
+                    return SchemeBoolean.get(f.vlr[0] instanceof SchemeServerSocket);
                 case OPEN_SOCKET_INPUT_PORT:
                     SchemeSocket ss=sock(f.vlr[0]);
                     return ss.getInputPort(f);
@@ -530,10 +530,10 @@ public class Networking extends IndexedProcedure {
                     return stringArrayToList(sslssock.getEnabledProtocols());
                 case SESSION_CREATION_PERMITTEDQ:
                     sslssock=(SSLServerSocket)serversock(f.vlr[0]).s;
-                    return truth(sslssock.getEnableSessionCreation());
+                    return SchemeBoolean.get(sslssock.getEnableSessionCreation());
                 case GET_CLIENT_MODE:
                     sslssock=(SSLServerSocket)serversock(f.vlr[0]).s;
-                    return truth(sslssock.getUseClientMode());
+                    return SchemeBoolean.get(sslssock.getUseClientMode());
                 case GET_CLIENT_AUTH:
                     sslssock=(SSLServerSocket)serversock(f.vlr[0]).s;
                     if (sslssock.getNeedClientAuth()) return NEEDED;
@@ -634,13 +634,13 @@ public class Networking extends IndexedProcedure {
                     return previous;
                 case PERMIT_SESSION_CREATION:
                     sslssock=(SSLServerSocket)serversock(f.vlr[0]).s;
-                    previous=truth(sslssock.getEnableSessionCreation());
-                    sslssock.setEnableSessionCreation(truth(f.vlr[1]));
+                    previous=SchemeBoolean.get(sslssock.getEnableSessionCreation());
+                    sslssock.setEnableSessionCreation(SchemeBoolean.toBoolean(f.vlr[1]));
                     return previous;
                 case SET_CLIENT_MODE:
                     sslssock=(SSLServerSocket)serversock(f.vlr[0]).s;
-                    previous=truth(sslssock.getUseClientMode());
-                    sslssock.setUseClientMode(truth(f.vlr[1]));
+                    previous=SchemeBoolean.get(sslssock.getUseClientMode());
+                    sslssock.setUseClientMode(SchemeBoolean.toBoolean(f.vlr[1]));
                     return previous;
                 case SET_CLIENT_AUTH:
                     sslssock=(SSLServerSocket)serversock(f.vlr[0]).s;
@@ -692,7 +692,7 @@ public class Networking extends IndexedProcedure {
                     SchemeTCPSocket original=(SchemeTCPSocket)sock(f.vlr[0]);
                     String host=SchemeString.asString(f.vlr[1]);
                     int port=((Quantity) f.vlr[2]).indexValue();
-                    boolean autoClose=truth(f.vlr[3]);
+                    boolean autoClose=SchemeBoolean.toBoolean(f.vlr[3]);
                     return new SchemeTCPSocket(((SSLSocketFactory)SSLSocketFactory.getDefault()).createSocket(original.s, host, port, autoClose));
                 case OPEN_MULTICAST_SOCKET:
                     host=SchemeString.asString(f.vlr[0]);

@@ -30,7 +30,7 @@ public class IfEval extends Expression implements OptimisticHost {
         boolean retry;
         do {
             try {
-                r.next(truth(r.acc) ? conseq : altern);
+                r.next(SchemeBoolean.toBoolean(r.acc) ? conseq : altern);
                 retry = false;
             } catch (OptimismUnwarrantedException uwe) {
                 retry = true;

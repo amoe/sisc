@@ -51,10 +51,10 @@ public class BufferIO extends IndexedProcedure {
         case 1:
             switch (id) {
             case BUFFEROUTPORTQ: 
-                return truth(f.vlr[0] instanceof SchemeBinaryOutputPort &&
+                return SchemeBoolean.get(f.vlr[0] instanceof SchemeBinaryOutputPort &&
                         ((SchemeBinaryOutputPort)f.vlr[0]).getOutputStream() instanceof ByteArrayOutputStream);
             case BUFFERINPORTQ: 
-                return truth(f.vlr[0] instanceof SchemeBinaryInputPort &&
+                return SchemeBoolean.get(f.vlr[0] instanceof SchemeBinaryInputPort &&
                         ((SchemeBinaryInputPort)f.vlr[0]).getInputStream() instanceof ByteArrayInputStream);
             case GETOUTPUTBUFFER:
                 SchemeBinaryOutputPort sop=(SchemeBinaryOutputPort)f.vlr[0];

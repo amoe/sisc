@@ -39,7 +39,7 @@ public abstract class Primitives extends Util {
         public Value apply(Value v1) throws ContinuationException {
             switch (id) {
             case RECORDQ:
-                return truth(v1 instanceof Record);
+                return SchemeBoolean.get(v1 instanceof Record);
             case RECORD_TYPE:
                 return record(v1).getType();
             default:

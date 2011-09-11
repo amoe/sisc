@@ -436,14 +436,6 @@ public abstract class Util implements Version {
         }
     }
 
-    public static final SchemeBoolean truth(boolean b) {
-        return b ? TRUE : FALSE;
-    }
-
-    public static final boolean truth(Value v) {
-        return v != FALSE;
-    }
-
     /* List functions */
     public static Value assq(Value v, Pair p) {
         while (p!=EMPTYLIST) {

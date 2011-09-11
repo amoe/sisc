@@ -101,7 +101,7 @@ public class Types extends IndexedFixableProcedure {
     public Value apply(Value v1) throws ContinuationException {
         switch(id) {
         case TYPEQ:
-            return truth(v1 instanceof SchemeType);
+            return SchemeBoolean.get(v1 instanceof SchemeType);
         case MAKETYPE:
             try {
                 Class cl = Class.forName(Symbol.toString(v1), true, Util.currentClassLoader());
@@ -122,7 +122,7 @@ public class Types extends IndexedFixableProcedure {
     public Value apply(Value v1, Value v2) throws ContinuationException {
         switch(id) {
         case TYPECOMP:
-            return truth(stype(v2).getClassObject().isAssignableFrom(stype(v1).getClassObject()));
+            return SchemeBoolean.get(stype(v2).getClassObject().isAssignableFrom(stype(v1).getClassObject()));
         default:
             throwArgSizeException();
         }

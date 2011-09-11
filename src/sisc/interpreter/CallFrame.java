@@ -100,7 +100,7 @@ public class CallFrame extends Procedure {
 
     public Value express() {
         return list(Symbol.get("frame"),
-                    list(truth(vlk),
+                    list(SchemeBoolean.get(vlk),
                          valArrayToVec(vlr),
                          valArrayToVec(lcl),
                          valArrayToVec(env)),

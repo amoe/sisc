@@ -89,12 +89,12 @@ public class Debugging extends IndexedProcedure {
             case QTYPE:
                 return Quantity.valueOf(((Quantity) f.vlr[0]).type);
             case FREEXPQ:
-                return truth(ExpressionValue.toExpression(f.vlr[0]) instanceof FreeReferenceExp);
+                return SchemeBoolean.get(ExpressionValue.toExpression(f.vlr[0]) instanceof FreeReferenceExp);
             case FRESYM:
                 return ((FreeReferenceExp)ExpressionValue.toExpression(f.vlr[0])).getSym();
             case FILLRIBQ:
-                return truth(f.vlr[0] instanceof ExpressionValue &&
-                             ExpressionValue.toExpression(f.vlr[0]) instanceof FillRibExp);
+                return SchemeBoolean.get(f.vlr[0] instanceof ExpressionValue &&
+                                         ExpressionValue.toExpression(f.vlr[0]) instanceof FillRibExp);
             case FILLRIBEXP:
                 return new ExpressionValue(((FillRibExp)ExpressionValue.toExpression(f.vlr[0])).exp);
             case EXPRESSV:
@@ -106,7 +106,7 @@ public class Debugging extends IndexedProcedure {
             case ERROR_CONT_K:
                 return getCont(f.vlr[0]);
             case CONT_VLK:
-                return truth(getCont(f.vlr[0]).vlk);
+                return SchemeBoolean.get(getCont(f.vlr[0]).vlk);
             case CONT_NXP:
                 CallFrame cn=getCont(f.vlr[0]);
                 if (cn.nxp==null) return FALSE;

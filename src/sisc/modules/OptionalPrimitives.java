@@ -50,7 +50,7 @@ public class OptionalPrimitives extends Util {
             case VECTOR: return new SchemeVector(new Value[] {v1});
             case VALUES: return v1;
             case APPEND: return v1;
-            case NOT: return truth(v1) ? FALSE : TRUE;
+            case NOT: return SchemeBoolean.toBoolean(v1) ? FALSE : TRUE;
             case CADR:
                 return truePair(truePair(v1).cdr()).car();
             case CDAR:
@@ -100,13 +100,13 @@ public class OptionalPrimitives extends Util {
                     return rv.toInexact();
                 else return rv;
             case CHARLESSTHAN:
-                return truth(SchemeCharacter.charValue(v1) < SchemeCharacter.charValue(v2));
-            case CHARGRTRTHAN: return truth(SchemeCharacter.charValue(v1)>SchemeCharacter.charValue(v2));
-            case CHAREQUALCI: return truth(Character.toLowerCase(SchemeCharacter.charValue(v1))==
+                return SchemeBoolean.get(SchemeCharacter.charValue(v1) < SchemeCharacter.charValue(v2));
+            case CHARGRTRTHAN: return SchemeBoolean.get(SchemeCharacter.charValue(v1)>SchemeCharacter.charValue(v2));
+            case CHAREQUALCI: return SchemeBoolean.get(Character.toLowerCase(SchemeCharacter.charValue(v1))==
                                            Character.toLowerCase(SchemeCharacter.charValue(v2)));
-            case CHARLESSTHANCI: return truth(Character.toLowerCase(SchemeCharacter.charValue(v1))<
+            case CHARLESSTHANCI: return SchemeBoolean.get(Character.toLowerCase(SchemeCharacter.charValue(v1))<
                                               Character.toLowerCase(SchemeCharacter.charValue(v2)));
-            case CHARGRTRTHANCI: return truth(Character.toLowerCase(SchemeCharacter.charValue(v1))>
+            case CHARGRTRTHANCI: return SchemeBoolean.get(Character.toLowerCase(SchemeCharacter.charValue(v1))>
                                               Character.toLowerCase(SchemeCharacter.charValue(v2)));
             case VECTOR: return new SchemeVector(new Value[] {v1, v2});
             case VALUES: return new Values(new Value[] {v1, v2});
@@ -209,20 +209,20 @@ public class OptionalPrimitives extends Util {
                     return rv.toInexact();
                 else return rv;
             case CHARLESSTHAN: char c2=SchemeCharacter.charValue(v2);
-                return truth(SchemeCharacter.charValue(v1)<c2 && c2<SchemeCharacter.charValue(v3));
+                return SchemeBoolean.get(SchemeCharacter.charValue(v1)<c2 && c2<SchemeCharacter.charValue(v3));
             case CHARGRTRTHAN: c2=SchemeCharacter.charValue(v2);
-                return truth(SchemeCharacter.charValue(v1)>c2 && c2>SchemeCharacter.charValue(v3));
+                return SchemeBoolean.get(SchemeCharacter.charValue(v1)>c2 && c2>SchemeCharacter.charValue(v3));
             case CHAREQUALCI: 
                 c2=Character.toLowerCase(SchemeCharacter.charValue(v2));
-                return truth(Character.toLowerCase(SchemeCharacter.charValue(v1))==c2 && c2==
+                return SchemeBoolean.get(Character.toLowerCase(SchemeCharacter.charValue(v1))==c2 && c2==
                              Character.toLowerCase(SchemeCharacter.charValue(v3)));
             case CHARLESSTHANCI: 
                 c2=Character.toLowerCase(SchemeCharacter.charValue(v2));
-                return truth(Character.toLowerCase(SchemeCharacter.charValue(v1))<c2 && c2<
+                return SchemeBoolean.get(Character.toLowerCase(SchemeCharacter.charValue(v1))<c2 && c2<
                              Character.toLowerCase(SchemeCharacter.charValue(v3)));
             case CHARGRTRTHANCI: 
                 c2=Character.toLowerCase(SchemeCharacter.charValue(v2));
-                return truth(Character.toLowerCase(SchemeCharacter.charValue(v1))>c2 && c2>
+                return SchemeBoolean.get(Character.toLowerCase(SchemeCharacter.charValue(v1))>c2 && c2>
                              Character.toLowerCase(SchemeCharacter.charValue(v3)));
             case VECTOR: return new SchemeVector(new Value[] {v1, v2, v3});
             case VALUES: return new Values(new Value[] {v1, v2, v3});

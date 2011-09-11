@@ -406,7 +406,7 @@ public class IO extends IndexedProcedure {
             switch (id) {
             case CHARREADY:
                 try {
-                    return truth(f.dynenv.getCurrentInReader().ready());
+                    return SchemeBoolean.get(f.dynenv.getCurrentInReader().ready());
                 } catch (IOException e) {
                     return FALSE;
                 }
@@ -435,13 +435,13 @@ public class IO extends IndexedProcedure {
             }
         case 1:
             switch (id) {
-            case PORTQ: return truth(f.vlr[0] instanceof Port);
-            case INPORTQ: return truth(f.vlr[0] instanceof InputPort);
-            case OUTPORTQ: return truth(f.vlr[0] instanceof OutputPort);
+            case PORTQ: return SchemeBoolean.get(f.vlr[0] instanceof Port);
+            case INPORTQ: return SchemeBoolean.get(f.vlr[0] instanceof InputPort);
+            case OUTPORTQ: return SchemeBoolean.get(f.vlr[0] instanceof OutputPort);
             case CHARREADY:
                 InputPort inport=(SchemeCharacterInputPort) f.vlr[0];
                 try {
-                    return truth(inport.ready());
+                    return SchemeBoolean.get(inport.ready());
                 } catch (IOException e) {
                     return FALSE;
                 }
@@ -580,7 +580,7 @@ public class IO extends IndexedProcedure {
                 if (f1.startsWith("file:"))
                     f1=f1.substring(5);
                 File fn=new File(f1);
-                return truth(fn.isAbsolute());
+                return SchemeBoolean.get(fn.isAbsolute());
             case NORMALIZEURL:
                 URL u=urlClean(url(f.vlr[0]));
                 return new SchemeString(u.toString());

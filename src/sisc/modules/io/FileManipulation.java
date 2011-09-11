@@ -44,15 +44,15 @@ public class FileManipulation extends Util {
         public Value apply(Value v1) throws ContinuationException {
             switch(id) {
             case DIRECTORYQ:
-                return truth(fileHandle(v1).isDirectory());
+                return SchemeBoolean.get(fileHandle(v1).isDirectory());
             case FILEQ:
-                return truth(fileHandle(v1).isFile());
+                return SchemeBoolean.get(fileHandle(v1).isFile());
             case HIDDENQ:
-                return truth(fileHandle(v1).isHidden());
+                return SchemeBoolean.get(fileHandle(v1).isHidden());
             case READABLE:
-                return truth(fileHandle(v1).canRead());
+                return SchemeBoolean.get(fileHandle(v1).canRead());
             case WRITEABLE:
-                return truth(fileHandle(v1).canWrite());
+                return SchemeBoolean.get(fileHandle(v1).canWrite());
             case DIRLIST:
                 Pair p=EMPTYLIST;
                 String[] contents=fileHandle(v1).list();
@@ -96,13 +96,13 @@ public class FileManipulation extends Util {
         public Value apply(Value v1) throws ContinuationException {
             switch(id) {
             case SETREADONLY:
-                return truth(fileHandle(v1).setReadOnly());
+                return SchemeBoolean.get(fileHandle(v1).setReadOnly());
             case DELETE:
-                return truth(fileHandle(v1).delete());
+                return SchemeBoolean.get(fileHandle(v1).delete());
             case MAKEDIRECTORY:
-                return truth(fileHandle(v1).mkdir());
+                return SchemeBoolean.get(fileHandle(v1).mkdir());
             case MAKEDIRECTORIES:
-                return truth(fileHandle(v1).mkdirs());
+                return SchemeBoolean.get(fileHandle(v1).mkdirs());
             default:
                 throwArgSizeException();
             }
@@ -112,9 +112,9 @@ public class FileManipulation extends Util {
         public Value apply(Value v1, Value v2) throws ContinuationException {
             switch(id) {
             case SETLASTMODIFIED:
-                return truth(fileHandle(v1).setLastModified(((Quantity) v2).longValue()));
+                return SchemeBoolean.get(fileHandle(v1).setLastModified(((Quantity) v2).longValue()));
             case RENAME:
-                return truth(fileHandle(v1).renameTo(fileHandle(v2)));
+                return SchemeBoolean.get(fileHandle(v1).renameTo(fileHandle(v2)));
             default:
                 throwArgSizeException();
             }

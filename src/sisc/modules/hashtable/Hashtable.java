@@ -69,7 +69,7 @@ public class Hashtable extends HashtableBase {
         }
 
         if (rv instanceof SchemeBoolean) {
-            return Util.truth((SchemeBoolean)rv);
+            return SchemeBoolean.toBoolean(rv);
         } else {
             Procedure.throwPrimException
                 (Util.liMessage(Primitives.SHASHB, "equalsreturn",

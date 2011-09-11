@@ -61,7 +61,7 @@ public abstract class Primitives extends Util {
    
     public static SchemeBoolean numQuery(Value v, int mask)
         throws ContinuationException {
-        return truth(v instanceof Quantity &&
+        return SchemeBoolean.get(v instanceof Quantity &&
                      (((Quantity)v).is(mask)));
     }
 
@@ -298,7 +298,7 @@ public abstract class Primitives extends Util {
             case MAXFLOATPRECISION: return Quantity.valueOf(maxFloatPrecision);
             case MINFLOATPRECISION: return Quantity.valueOf(minFloatPrecision);
             case MUL: return Quantity.ONE;
-            case PERMITINTERRUPTS: return truth(permitInterrupts);
+            case PERMITINTERRUPTS: return SchemeBoolean.get(permitInterrupts);
             case SYSTIME: return Quantity.valueOf(System.currentTimeMillis());
             case TIMEZONEOFFSET:
                 Calendar cal = Calendar.getInstance();
@@ -316,17 +316,17 @@ public abstract class Primitives extends Util {
         public final Value apply(Value v1) 
             throws ContinuationException {      
             switch (id) {
-            case NULLQ: return truth(v1==EMPTYLIST);
+            case NULLQ: return SchemeBoolean.get(v1==EMPTYLIST);
             case CAR: return truePair(v1).car();
             case CDR: return truePair(v1).cdr();
             case PAIRQ:
-                return truth(v1 instanceof Pair &&
+                return SchemeBoolean.get(v1 instanceof Pair &&
                              v1!=EMPTYLIST);
             case IMMUTABLEPAIRQ:
-                return truth((v1 instanceof ImmutablePair) &&
+                return SchemeBoolean.get((v1 instanceof ImmutablePair) &&
                              ((ImmutablePair)v1).isImmutable());
             case IMMUTABLEVECTORQ:
-                return truth(v1 instanceof ImmutableVector);
+                return SchemeBoolean.get(v1 instanceof ImmutableVector);
             case ADD: 
             case MUL: return (Quantity) v1;
             case SUB: return ((Quantity) v1).negate();
@@ -340,24 +340,24 @@ public abstract class Primitives extends Util {
             case LOG: return ((Quantity) v1).log();
             case EXP: return ((Quantity) v1).exp();
             case SQRT: return ((Quantity) v1).sqrt();
-            case NUMBERQ: return truth(v1 instanceof Quantity);
-            case VECTORQ: return truth(v1 instanceof SchemeVector);
-            case SYMBOLQ: return truth(v1 instanceof Symbol);
-            case SYNTOKENQ: return truth(v1 instanceof sisc.compiler.Syntax);
-            case CHARACTERQ: return truth(v1 instanceof SchemeCharacter);
-            case STRINGQ: return truth(v1 instanceof SchemeString);
-            case BOOLEANQ: return truth(v1 instanceof SchemeBoolean);
-            case VOIDQ: return truth(v1==VOID);
-            case ENVIRONMENTQ: return truth(v1 instanceof SymbolicEnvironment);
-            case PROCEDUREQ: return truth(v1 instanceof Procedure);
+            case NUMBERQ: return SchemeBoolean.get(v1 instanceof Quantity);
+            case VECTORQ: return SchemeBoolean.get(v1 instanceof SchemeVector);
+            case SYMBOLQ: return SchemeBoolean.get(v1 instanceof Symbol);
+            case SYNTOKENQ: return SchemeBoolean.get(v1 instanceof sisc.compiler.Syntax);
+            case CHARACTERQ: return SchemeBoolean.get(v1 instanceof SchemeCharacter);
+            case STRINGQ: return SchemeBoolean.get(v1 instanceof SchemeString);
+            case BOOLEANQ: return SchemeBoolean.get(v1 instanceof SchemeBoolean);
+            case VOIDQ: return SchemeBoolean.get(v1==VOID);
+            case ENVIRONMENTQ: return SchemeBoolean.get(v1 instanceof SymbolicEnvironment);
+            case PROCEDUREQ: return SchemeBoolean.get(v1 instanceof Procedure);
             case INTEGERQ: return numQuery(v1,Quantity.INTEGER);
                 
             case COMPLEXQ: return numQuery(v1,Quantity.IMAGINARY);
             case EXACTQ: return numQuery(v1,Quantity.EXACT);
             case INEXACTQ: return numQuery(v1,Quantity.INEXACT);
-            case PARAMETERQ: return truth(v1 instanceof Parameter);
+            case PARAMETERQ: return SchemeBoolean.get(v1 instanceof Parameter);
             case GENSYMQ:
-                return truth(((Symbol) v1).symval.startsWith(GENSYM_MAGIC_PREFIX));
+                return SchemeBoolean.get(((Symbol) v1).symval.startsWith(GENSYM_MAGIC_PREFIX));
             case SYMBOL2STRING:
                 return new ImmutableString(((Symbol) v1).symval);
             case SYNTOKEN2STRING: 
@@ -380,7 +380,7 @@ public abstract class Primitives extends Util {
             case VECTORFINDLASTUNIQUE: return Quantity.valueOf(((SchemeVector) v1).findEnd());
             case BOX: return new Box(v1);
             case UNBOX: return ((Box) v1).val;
-            case BOXQ: return truth(v1 instanceof Box);
+            case BOXQ: return SchemeBoolean.get(v1 instanceof Box);
             case LENGTH:
                 return Quantity.valueOf(length((Pair) v1));
             case STRINGLENGTH:
@@ -388,7 +388,7 @@ public abstract class Primitives extends Util {
             case VECTORLENGTH:
                 return Quantity.valueOf(((SchemeVector) v1).vals.length);
             case CIRCULARQ:
-                return truth(new CircularityDetector().isCircular(v1));
+                return SchemeBoolean.get(new CircularityDetector().isCircular(v1));
             case MAKEPARAM:
                 return new SchemeParameter(v1);
             case MAKENATIVEPARAM:
@@ -445,23 +445,23 @@ public abstract class Primitives extends Util {
         public final Value apply(Value v1, Value v2) 
             throws ContinuationException {      
             switch (id) {
-            case EQ: return truth(v1 == v2);
-            case EQV: return truth(v1.eqv(v2));
+            case EQ: return SchemeBoolean.get(v1 == v2);
+            case EQV: return SchemeBoolean.get(v1.eqv(v2));
             case CONS:
                 return new Pair(v1, v2);
             case CONSIMMUTABLE:
                 return new ImmutablePair(v1, v2, false);
             case EQUAL:
-                return truth(v1.valueEqual(v2));
+                return SchemeBoolean.get(v1.valueEqual(v2));
             case EXPTYPE:
                 return Quantity.valueOf(sisc.compiler.Compiler.getExpType((SymbolicEnvironment) v1, v2));
             case CHAREQUAL:
-                return truth(SchemeCharacter.charValue(v1) == SchemeCharacter.charValue(v2));
+                return SchemeBoolean.get(SchemeCharacter.charValue(v1) == SchemeCharacter.charValue(v2));
             case ADD: return ((Quantity) v1).add((Quantity) v2);
             case MUL: return ((Quantity) v1).mul((Quantity) v2);
             case SUB: return ((Quantity) v1).sub((Quantity) v2);
             case DIV: return ((Quantity) v1).div((Quantity) v2);
-            case NEQ: return truth(((Quantity) v1).comp((Quantity) v2,0));
+            case NEQ: return SchemeBoolean.get(((Quantity) v1).comp((Quantity) v2,0));
             case REMAINDER:
                 return ((Quantity) v1).remainder((Quantity) v2);
             case QUOTIENT:
@@ -486,7 +486,7 @@ public abstract class Primitives extends Util {
                 index=((Quantity) v2).indexValue();
                 return ((SchemeVector) v1).vals[index];
             case STRINGEQUAL:
-                return truth(((SchemeString) v1).valueEqual((SchemeString) v2));
+                return SchemeBoolean.get(((SchemeString) v1).valueEqual((SchemeString) v2));
             case MAKEVECTOR:
                 return new SchemeVector(((Quantity) v1).indexValue(),
                                         v2);
@@ -517,9 +517,9 @@ public abstract class Primitives extends Util {
                 return new ConfigParameter(SchemeString.asString(v1), v2);
             case LIST: return list(v1, v2);
             case LT:
-                return truth(((Quantity) v1).comp((Quantity) v2,-1));
+                return SchemeBoolean.get(((Quantity) v1).comp((Quantity) v2,-1));
             case GRT:
-                return truth(((Quantity) v1).comp((Quantity) v2,1));
+                return SchemeBoolean.get(((Quantity) v1).comp((Quantity) v2,1));
             case INTERN:
                 InternedValue iv = InternedValue.intern((Symbol) v1, v2);
                 if (iv == null) {
@@ -538,7 +538,7 @@ public abstract class Primitives extends Util {
             throws ContinuationException {      
             switch(id) {
             case CHAREQUAL:
-                return truth(SchemeCharacter.charValue(v1) == SchemeCharacter.charValue(v2) &&
+                return SchemeBoolean.get(SchemeCharacter.charValue(v1) == SchemeCharacter.charValue(v2) &&
                              SchemeCharacter.charValue(v2) == SchemeCharacter.charValue(v3));
             case STRINGAPPEND:
                 SchemeString s1 = (SchemeString) v1;
@@ -550,7 +550,7 @@ public abstract class Primitives extends Util {
                 s3.appendTo(sbuf);
                 return new SchemeString(sbuf.toString());
             case STRINGEQUAL:
-                return truth(((SchemeString) v1).valueEqual((SchemeString) v2) &&
+                return SchemeBoolean.get(((SchemeString) v1).valueEqual((SchemeString) v2) &&
                              ((SchemeString) v2).valueEqual((SchemeString) v3));
             case LIST: return list(v1, v2, v3);
             case ADD: return ((Quantity) v1).add((Quantity) v2).add((Quantity) v3);
@@ -558,22 +558,22 @@ public abstract class Primitives extends Util {
             case SUB: return ((Quantity) v1).sub((Quantity) v2).sub((Quantity) v3);
             case NEQ: 
                 Quantity q2=(Quantity) v2;
-                return truth(((Quantity) v1).comp(q2,0) &&
+                return SchemeBoolean.get(((Quantity) v1).comp(q2,0) &&
                              q2.comp((Quantity) v3,0));
             case LT:
                 q2=(Quantity) v2;
-                return truth(((Quantity) v1).comp(q2,-1) &&
+                return SchemeBoolean.get(((Quantity) v1).comp(q2,-1) &&
                              q2.comp((Quantity) v3,-1));
             case GRT:
                 q2=(Quantity) v2;
-                return truth(((Quantity) v1).comp(q2,1) &&
+                return SchemeBoolean.get(((Quantity) v1).comp(q2,1) &&
                              q2.comp((Quantity) v3,1));
             case DIV: 
                 return ((Quantity) v1).div(((Quantity) v2).mul((Quantity) v3));
-            case EQ: return truth(v1 == v2 && v2 == v3);
-            case EQV: return truth(v1.eqv(v2));
+            case EQ: return SchemeBoolean.get(v1 == v2 && v2 == v3);
+            case EQV: return SchemeBoolean.get(v1.eqv(v2));
             case EQUAL:
-                return truth(v1.valueEqual(v2) && v2.valueEqual(v3));
+                return SchemeBoolean.get(v1.valueEqual(v2) && v2.valueEqual(v3));
             default:
                 throwArgSizeException();
                 return VOID;
@@ -686,7 +686,7 @@ public abstract class Primitives extends Util {
                         p = new Pair(new SchemeString(urls[i].toString()), p);
                     }
                     return p;
-                case COMPACTSTRINGREP: return truth(SchemeString.compactRepresentation);
+                case COMPACTSTRINGREP: return SchemeBoolean.get(SchemeString.compactRepresentation);
                 case CURRENTWIND: return r.dynenv.wind;
                 case GENSYM: 
                     long unv=r.tctx.nextUnique();
@@ -716,7 +716,7 @@ public abstract class Primitives extends Util {
                     ((ImmutableVector) vlr[0]).makeImmutable();
                     return VOID;
                 case COMPACTSTRINGREP:
-                    SchemeString.compactRepresentation=truth(vlr[0]);
+                    SchemeString.compactRepresentation=SchemeBoolean.toBoolean(vlr[0]);
                     return VOID;
                 case NUMBER2STRING:
                     return new SchemeString(((Quantity) vlr[0]).toString());

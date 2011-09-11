@@ -236,59 +236,59 @@ public class DynamicEnvironment extends Util implements Cloneable {
     }
     
     public Value getCaseSensitive() {
-        return truth(caseSensitive);
+        return SchemeBoolean.get(caseSensitive);
     }
 
     public void setCaseSensitive(Value v) {
-        caseSensitive = truth(v);
+        caseSensitive = SchemeBoolean.toBoolean(v);
     }
 
     public Value getPrintShared() {
-        return truth(printShared);
+        return SchemeBoolean.get(printShared);
     }
 
     public void setPrintShared(Value v) {
-        printShared = truth(v);
+        printShared = SchemeBoolean.toBoolean(v);
     }
 
     public Value getVectorLengthPrefixing() {
-        return truth(vectorLengthPrefixing);
+        return SchemeBoolean.get(vectorLengthPrefixing);
     }
 
     public void setVectorLengthPrefixing(Value v) {
-        vectorLengthPrefixing = truth(v);
+        vectorLengthPrefixing = SchemeBoolean.toBoolean(v);
     }
 
     public Value getEmitDebuggingSymbols() {
-        return truth(emitDebuggingSymbols);
+        return SchemeBoolean.get(emitDebuggingSymbols);
     }
 
     public void setEmitDebuggingSymbols(Value v) {
-        emitDebuggingSymbols = truth(v);
+        emitDebuggingSymbols = SchemeBoolean.toBoolean(v);
     }
 
     public Value getPermissiveParsing() {
-        return truth(permissiveParsing);
+        return SchemeBoolean.get(permissiveParsing);
     }
 
     public void setPermissiveParsing(Value v) {
-        permissiveParsing=truth(v);
+        permissiveParsing=SchemeBoolean.toBoolean(v);
     }
 
     public Value getHedgedInlining() {
-        return truth(hedgedInlining);
+        return SchemeBoolean.get(hedgedInlining);
     }
     
     public void setHedgedInlining(Value v) {
-        hedgedInlining=truth(v);
+        hedgedInlining=SchemeBoolean.toBoolean(v);
     }
 
     public Value getInternalDebugging() {
-        return truth(internalDebugging);
+        return SchemeBoolean.get(internalDebugging);
     }
 
     public void setInternalDebugging(Value v) {
-        internalDebugging=truth(v);
+        internalDebugging=SchemeBoolean.toBoolean(v);
     }
 
     public Value getSynopsisLength() {
@@ -300,19 +300,19 @@ public class DynamicEnvironment extends Util implements Cloneable {
     }
 
     public Value getEmitAnnotations() {
-        return truth(parser.annotate);
+        return SchemeBoolean.get(parser.annotate);
     }
 
     public void setEmitAnnotations(Value v) {
-        parser.annotate = truth(v);
+        parser.annotate = SchemeBoolean.toBoolean(v);
     }
 
     public Value getStrictR5RSCompliance() {
-        return truth(parser.lexer.strictR5RS);
+        return SchemeBoolean.get(parser.lexer.strictR5RS);
     }
 
     public void setStrictR5RSCompliance(Value v) {
-        parser.lexer.strictR5RS = truth(v);
+        parser.lexer.strictR5RS = SchemeBoolean.toBoolean(v);
     }
 
     public int getMaxStackTraceDepthAsInt() {
@@ -328,11 +328,11 @@ public class DynamicEnvironment extends Util implements Cloneable {
     }
     
     public void setCustomPrinting(Value v) {
-    	customPrinting=truth(v);
+    	customPrinting=SchemeBoolean.toBoolean(v);
     }
     
     public Value getCustomPrinting() {
-    	return truth(customPrinting);
+    	return SchemeBoolean.get(customPrinting);
     }
     
     public Value getCustomDisplayTypeMap() {
