@@ -609,7 +609,7 @@
         <pathelement location="${classdir}" />
         <pathelement path="${java.class.path}" />
       </classpath>
-      <formatter type="brief"/>
+      <formatter type="brief" usefile="false"/>
       <test name="sisc.tests.AllTests"/>
     </junit>
   </target>
