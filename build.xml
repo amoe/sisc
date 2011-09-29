@@ -121,8 +121,8 @@
     <javac srcdir="${srcdir}"
            destdir="${classdir}"
            classpathref="classpath"
-           target="1.2"
-    	  source="1.3"
+           target="1.7"
+           source="1.7"
            debug="${debugging}"
            optimize="${optimization}"
            includeAntRuntime="false">
@@ -139,8 +139,8 @@
            destdir="${classdir}"
            classpathref="classpath"
            debug="${debugging}"
-           target="1.2"
-    	  source="1.3"
+           target="1.7"
+    	  source="1.7"
            optimize="${optimization}"
            includeAntRuntime="false">
       <include name="${packagename}/modules/io/IO.java"/>
