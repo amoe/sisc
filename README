@@ -39,7 +39,7 @@ should also be dropped in the 'lib' subdirectory.
 On Debian, you can install and symlink in the relevant jars like this:
 
   sudo aptitude install junit libasm3-java
-  ln -st lib /usr/share/java/{junit,asm3}.jar
+  ln -st lib /usr/share/java/{junit,asm3,asm3-commons}.jar
 
 Installation
 ------------
