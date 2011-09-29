@@ -6,13 +6,7 @@ import sisc.io.ValueWriter;
 import sisc.ser.Serializer;
 import sisc.ser.Deserializer;
 import sisc.util.ExpressionVisitor;
-import sisc.data.Box;
-import sisc.data.Expression;
-import sisc.data.NamedValue;
-import sisc.data.Pair;
-import sisc.data.Procedure;
-import sisc.data.Quantity;
-import sisc.data.Value;
+import sisc.data.*;
 import sisc.env.LexicalUtils;
 
 public class Closure extends Procedure implements NamedValue {
@@ -123,8 +117,8 @@ public class Closure extends Procedure implements NamedValue {
 
     public Value express() {
         Pair boxs = LexicalUtils.intArrayToList(boxes);
-        return list(sym("closure"),
-                    new Pair(truth(arity),
+        return list(Symbol.get("closure"),
+                    new Pair(SchemeBoolean.get(arity),
                              new Pair(Quantity.valueOf(fcount),
                                       boxs)),
                     valArrayToVec(env),

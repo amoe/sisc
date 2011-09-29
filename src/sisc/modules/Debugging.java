@@ -61,7 +61,8 @@ public class Debugging extends IndexedProcedure {
     CallFrame getCont(Value v) {
         if (v instanceof ApplyParentFrame)
             return ((ApplyParentFrame)v).c;
-        else return cont(v);
+        else
+            return (CallFrame) v;
     }
     
     public Value doApply(Interpreter f) throws ContinuationException {
@@ -86,26 +87,26 @@ public class Debugging extends IndexedProcedure {
         case 1:
             switch(id) {
             case QTYPE:
-                return Quantity.valueOf(num(f.vlr[0]).type);
+                return Quantity.valueOf(((Quantity) f.vlr[0]).type);
             case FREEXPQ:
-                return truth(expr(f.vlr[0]) instanceof FreeReferenceExp);
+                return SchemeBoolean.get(ExpressionValue.toExpression(f.vlr[0]) instanceof FreeReferenceExp);
             case FRESYM:
-                return ((FreeReferenceExp)expr(f.vlr[0])).getSym();
+                return ((FreeReferenceExp)ExpressionValue.toExpression(f.vlr[0])).getSym();
             case FILLRIBQ:
-                return truth(f.vlr[0] instanceof ExpressionValue &&
-                             expr(f.vlr[0]) instanceof FillRibExp);
+                return SchemeBoolean.get(f.vlr[0] instanceof ExpressionValue &&
+                                         ExpressionValue.toExpression(f.vlr[0]) instanceof FillRibExp);
             case FILLRIBEXP:
-                return new ExpressionValue(((FillRibExp)expr(f.vlr[0])).exp);
+                return new ExpressionValue(((FillRibExp)ExpressionValue.toExpression(f.vlr[0])).exp);
             case EXPRESSV:
                 if (f.vlr[0] instanceof ExpressionValue) {
-                    return expr(f.vlr[0]).express();
+                    return ExpressionValue.toExpression(f.vlr[0]).express();
                 } else {
                     return f.vlr[0].express();
                 }
             case ERROR_CONT_K:
                 return getCont(f.vlr[0]);
             case CONT_VLK:
-                return truth(getCont(f.vlr[0]).vlk);
+                return SchemeBoolean.get(getCont(f.vlr[0]).vlk);
             case CONT_NXP:
                 CallFrame cn=getCont(f.vlr[0]);
                 if (cn.nxp==null) return FALSE;

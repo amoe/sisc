@@ -47,7 +47,7 @@ public class ApplyValuesContEval extends Expression {
     }
 
     public Value express() {
-        return list(sym("values"), consumer.express());
+        return list(Symbol.get("values"), consumer.express());
     }
 
     public void serialize(Serializer s) throws IOException {

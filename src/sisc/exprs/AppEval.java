@@ -36,7 +36,7 @@ public class AppEval extends Expression {
     }
 
     public Value express() {
-        return list(sym("appl"));
+        return list(Symbol.get("appl"));
     }
 
     public boolean equals(Object o) {

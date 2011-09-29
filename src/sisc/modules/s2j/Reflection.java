@@ -247,35 +247,35 @@ public class Reflection extends Util {
             case JAVA_FIELD_TYPE:
                 return makeJObj(jfield(v1).getType(), Class.class);
             case JAVA_OBJECTQ:
-                return truth(v1 instanceof JavaObject);
+                return SchemeBoolean.get(v1 instanceof JavaObject);
             case JAVA_CLASSQ:
-                return truth(v1 instanceof JavaObject && jtype(v1) == JavaObject.JCLASS);
+                return SchemeBoolean.get(v1 instanceof JavaObject && jtype(v1) == JavaObject.JCLASS);
             case JAVA_FIELDQ:
-                return truth(v1 instanceof JavaObject && jtype(v1) == JavaObject.JFIELD);
+                return SchemeBoolean.get(v1 instanceof JavaObject && jtype(v1) == JavaObject.JFIELD);
             case JAVA_METHODQ:
-                return truth(v1 instanceof JavaObject && jtype(v1) == JavaObject.JMETHOD);
+                return SchemeBoolean.get(v1 instanceof JavaObject && jtype(v1) == JavaObject.JMETHOD);
             case JAVA_CONSTRUCTORQ:
-                return truth(v1 instanceof JavaObject && jtype(v1) == JavaObject.JCONSTR);
+                return SchemeBoolean.get(v1 instanceof JavaObject && jtype(v1) == JavaObject.JCONSTR);
             case JAVA_ARRAYQ:
-                return truth(v1 instanceof JavaObject && jtype(v1) == JavaObject.JARRAY);
+                return SchemeBoolean.get(v1 instanceof JavaObject && jtype(v1) == JavaObject.JARRAY);
             case JAVA_NULLQ:
-                return truth(v1 instanceof JavaObject && jtype(v1) == JavaObject.JNULL);
+                return SchemeBoolean.get(v1 instanceof JavaObject && jtype(v1) == JavaObject.JNULL);
             case JAVA_INTERFACEQ:
-                return truth(v1 instanceof JavaObject && jtype(v1) == JavaObject.JCLASS && jclass(v1).isInterface());
+                return SchemeBoolean.get(v1 instanceof JavaObject && jtype(v1) == JavaObject.JCLASS && jclass(v1).isInterface());
             case JAVA_PRIMITIVEQ:
-                return truth(v1 instanceof JavaObject && jtype(v1) == JavaObject.JCLASS && jclass(v1).isPrimitive());
+                return SchemeBoolean.get(v1 instanceof JavaObject && jtype(v1) == JavaObject.JCLASS && jclass(v1).isPrimitive());
             case JAVA_ARRAY_CLASSQ:
-                return truth(v1 instanceof JavaObject && jtype(v1) == JavaObject.JCLASS && jclass(v1).isArray());
+                return SchemeBoolean.get(v1 instanceof JavaObject && jtype(v1) == JavaObject.JCLASS && jclass(v1).isArray());
             case JAVA_CLASS_OF:
                 return makeJObj(sjobj(v1).classOf(), Class.class);
             case JAVA_NULL:
                 return makeJObj(null, jclass(v1));
             case JAVA_MANGLE_FIELD_NAME:
-                return Symbol.intern(mangleFieldName(symval(v1)));
+                return Symbol.intern(mangleFieldName(Symbol.toString(v1)));
             case JAVA_MANGLE_METHOD_NAME:
-                return Symbol.intern(mangleMethodName(symval(v1)));
+                return Symbol.intern(mangleMethodName(Symbol.toString(v1)));
             case JAVA_MANGLE_CLASS_NAME:
-                return Symbol.intern(mangleClassName(symval(v1)));
+                return Symbol.intern(mangleClassName(Symbol.toString(v1)));
             case JAVA_ARRAY_LENGTH:
                 Object ar = jobj(v1);
                 try {
@@ -291,18 +291,18 @@ public class Reflection extends Util {
         public Value apply(Value v1, Value v2) throws ContinuationException {
             switch(id) {
             case JAVA_INSTANCEQ:
-                return truth(((v2 instanceof JavaPrimitive) ?
+                return SchemeBoolean.get(((v2 instanceof JavaPrimitive) ?
                               fixClass(jclass(v1)) :
                               jclass(v1)).isInstance(jobj(v2)));
             case JAVA_ASSIGNABLEQ:
                 Class c1 = jclass(v2);
                 Class c1Fixed = fixClass(c1);
-                return truth(((c1 != c1Fixed) ?
+                return SchemeBoolean.get(((c1 != c1Fixed) ?
                               fixClass(jclass(v1)) :
                               jclass(v1)).isAssignableFrom(c1Fixed));
             case JAVA_ARRAY_CLASS:
                 try {
-                    return makeJObj(makeArrayClass(jclass(v1), num(v2).indexValue()), Class.class);
+                    return makeJObj(makeArrayClass(jclass(v1), ((Quantity) v2).indexValue()), Class.class);
                 } catch (NullPointerException e) {
                     throw new RuntimeException(liMessage(S2JB, "arraytypenull"));
                 } catch (IllegalArgumentException e) {
@@ -314,15 +314,15 @@ public class Reflection extends Util {
                 Value dims = v2;
                 Value[] dimensions;
                 if (dims instanceof Pair) {
-                    dimensions = pairToValues(pair(dims));
+                    dimensions = pairToValues((Pair) dims);
                 } else if (dims instanceof SchemeVector) {
-                    dimensions = vec(dims).vals;
+                    dimensions = ((SchemeVector) dims).vals;
                 } else {
                     dimensions = new Value[]{dims};
                 }
                 int[] intDims = new int[dimensions.length];
                 for (int i=0; i< dimensions.length; i++) {
-                    intDims[i] = num(dimensions[i]).indexValue();
+                    intDims[i] = ((Quantity) dimensions[i]).indexValue();
                 }
                 Class componentType = jclass(v1);
                 try {
@@ -340,7 +340,7 @@ public class Reflection extends Util {
                 return Util.makeJObj(getField(jf, jobj(v2)), jf.getType());
             case JAVA_ARRAY_REF:
                 Object ar = jobj(v1);
-                return Util.makeJObj(getArray(ar, num(v2).indexValue()), ar.getClass().getComponentType());
+                return Util.makeJObj(getArray(ar, ((Quantity) v2).indexValue()), ar.getClass().getComponentType());
             default: throwArgSizeException();
             }
             return VOID;
@@ -364,7 +364,7 @@ public class Reflection extends Util {
                 setField(jfield(v1), jobj(v2), jobj(v3));
                 return VOID;
             case JAVA_ARRAY_SET:
-                setArray(jobj(v1), num(v2).indexValue(), jobj(v3));
+                setArray(jobj(v1), ((Quantity) v2).indexValue(), jobj(v3));
                 return VOID;
             default: throwArgSizeException();
             }

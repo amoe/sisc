@@ -34,7 +34,7 @@ public class LetrecExp extends AppExp {
         for (int i=rands.length-1; i>=0; i--) {
             args=new Pair(((rands[i]==null) ? VOID : rands[i].express()), args);
         }
-        return list(sym("letrec"),
+        return list(Symbol.get("letrec"),
                     list(lccps, lxcps),
                     args,
                     exp.express(),

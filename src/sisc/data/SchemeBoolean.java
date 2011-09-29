@@ -12,6 +12,17 @@ public class SchemeBoolean extends Value implements Singleton {
     public static Boolean JTRUE=new Boolean(true), JFALSE=new Boolean(false);
     private boolean val;
 
+    public static SchemeBoolean get(boolean b) {
+        return b ? TRUE : FALSE;
+    }
+
+    /**
+     * Returns false if v is SchemeBoolean.FALSE, and true otherwise.
+     */
+    public static boolean toBoolean(Value v) {
+        return v != FALSE;
+    }
+
     protected SchemeBoolean(boolean v) {
         val=v;
     }

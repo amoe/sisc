@@ -110,7 +110,7 @@ public class REPL {
         if (func!=null) {
             Procedure fun=null;
             try {
-                fun=Util.proc(r.eval(func));
+                fun=(Procedure) r.eval(func);
             } catch (SchemeException se) {
                 se.printStackTrace();
                 returnCode = 1;

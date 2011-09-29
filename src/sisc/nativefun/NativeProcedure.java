@@ -25,12 +25,6 @@ public abstract class NativeProcedure extends Procedure implements NamedValue {
         try {
             r.acc = doApply(r);
             r.returnVLR();
-        } catch (ClassCastException cc) {
-            error(
-                r,
-                getName(),
-                liMessage(SISCB, "gotunexpectedvalue", cc.getMessage()),
-  cc);
         } catch (NestedPrimRuntimeException npr) {
             r.nxp = lxp; //for error location reporting
             error(r, getName(), npr);

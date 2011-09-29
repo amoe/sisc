@@ -102,7 +102,7 @@ public class Compiler extends CompilerConstants {
     static void setAnnotations(Expression e, Pair p) {
         while (p!=EMPTYLIST) {
             Pair kv=(Pair)p.car();
-            e.setAnnotation(symbol(kv.car()), kv.cdr());
+            e.setAnnotation((Symbol) kv.car(), kv.cdr());
             p=(Pair)p.cdr();
         }
     }
@@ -297,7 +297,7 @@ public class Compiler extends CompilerConstants {
             expr=(Pair)expr.cdr();
             Pair annot=null;
             if (expr.car() instanceof Pair)
-                annot=pair(expr.car());
+                annot=(Pair) expr.car();
             else
                 annot=list(new Pair(OTHER, expr.car()));
             rv=compile(r, aexpr, sets, rf, context, env, annot);

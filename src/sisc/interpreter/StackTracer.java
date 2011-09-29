@@ -202,7 +202,7 @@ public class StackTracer implements Cloneable, ExpressionVisitee {
 
     public Value toValue() {
         addAll();
-        return new Pair(Util.truth(overflown), deepListToValue(stack));
+        return new Pair(SchemeBoolean.get(overflown), deepListToValue(stack));
     }
 
 	public void serialize(Serializer s) throws IOException {

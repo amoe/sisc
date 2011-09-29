@@ -26,7 +26,7 @@ public class UnboxExp extends Expression implements Immediate {
     }
 
     public Value express() {
-        return list(sym("?"), ((Expression)ref).express());
+        return list(Symbol.get("?"), ((Expression)ref).express());
     }
 
     public void serialize(Serializer s) throws IOException {

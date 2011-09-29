@@ -50,7 +50,7 @@ public class CustomIO extends IndexedFixableProcedure {
     	case CUSTOMPORTPROCS:
     		return customport(v1).getProxy().getProcs();
     	case CUSTOMPORTQ:
-    		return truth(v1 instanceof CustomPort);
+    		return SchemeBoolean.get(v1 instanceof CustomPort);
     	default:
     		throwArgSizeException();
     	}

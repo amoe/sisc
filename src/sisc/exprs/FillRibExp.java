@@ -60,7 +60,7 @@ public class FillRibExp extends Expression implements OptimisticHost {
     }
 
     public Value express() {
-        return list(sym("arg"),
+        return list(Symbol.get("arg"),
                     Quantity.valueOf(pos),
                     exp.express(),
                     nxp.express());

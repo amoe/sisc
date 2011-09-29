@@ -52,8 +52,8 @@ public class LambdaExp extends Expression implements Immediate {
         Pair lccps = LexicalUtils.intArrayToList(localIndices);
         Pair lxcps = LexicalUtils.intArrayToList(lexicalIndices);
         Pair boxs  = LexicalUtils.intArrayToList(boxes);
-        return list(sym("lambda"),
-                    new Pair(truth(infiniteArity),
+        return list(Symbol.get("lambda"),
+                    new Pair(SchemeBoolean.get(infiniteArity),
                              new Pair(Quantity.valueOf(fcount),
                                       boxs)),
                     list(lccps, lxcps),

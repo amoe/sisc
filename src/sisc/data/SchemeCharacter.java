@@ -15,6 +15,21 @@ public class SchemeCharacter extends Value {
         this.c=c;
     }
 
+    /**
+     * Convenience method that casts v to a SchemeCharacter and
+     * calls charValue() on it.
+     *
+     * @return The value returned by charValue()
+     * @throws ClassCastException  If v is not a SchemeString.
+     */
+    public static char charValue(Value v) throws ClassCastException {
+        return ((SchemeCharacter) v).charValue();
+    }
+
+    public char charValue() {
+        return c;
+    }
+
     public void display(ValueWriter w) throws IOException {
         w.append(c);
     }

@@ -121,23 +121,23 @@ public class BinaryIO extends IndexedProcedure {
         case 1:
             switch (id) {
             case MAKEBUFFER:
-                return new Buffer(num(f.vlr[0]).indexValue());
+                return new Buffer(((Quantity) f.vlr[0]).indexValue());
             case BUFFERLENGTH:
                 return Quantity.valueOf(buffer(f.vlr[0]).buf.length);
             case BUFFERQ:
-                return truth(f.vlr[0] instanceof Buffer);
+                return SchemeBoolean.get(f.vlr[0] instanceof Buffer);
             case OPENBINARYINPUTFILE:
                 return openBinInFile(f, url(f.vlr[0]));
             case OPENBINARYOUTPUTFILE:
                 return openBinOutFile(f, url(f.vlr[0]));
             case BINARYINPUTPORTQ:
-                return truth(f.vlr[0] instanceof SchemeBinaryInputPort);
+                return SchemeBoolean.get(f.vlr[0] instanceof SchemeBinaryInputPort);
             case BINARYOUTPUTPORTQ:
-                return truth(f.vlr[0] instanceof SchemeBinaryOutputPort);
+                return SchemeBoolean.get(f.vlr[0] instanceof SchemeBinaryOutputPort);
             case OPENBUFFEREDBININPORT: 
-            	return new SchemeBinaryInputPort(new PushbackInputStream(new BufferedInputStream(bininport(f.vlr[0]).getInputStream())));
+            	return new SchemeBinaryInputPort(new PushbackInputStream(new BufferedInputStream(((SchemeBinaryInputPort) f.vlr[0]).getInputStream())));
             case OPENBUFFEREDBINOUTPORT: 
-            	return new SchemeBinaryOutputPort(new BufferedOutputStream(binoutport(f.vlr[0]).getOutputStream()));
+            	return new SchemeBinaryOutputPort(new BufferedOutputStream(((SchemeBinaryOutputPort) f.vlr[0]).getOutputStream()));
             default:
                 throwArgSizeException();
             }
@@ -155,10 +155,10 @@ public class BinaryIO extends IndexedProcedure {
                 }
                 return Quantity.valueOf(rv);
             case MAKEBUFFER:
-                return new Buffer(num(f.vlr[0]).indexValue(),
-                                  (byte)num(f.vlr[1]).indexValue());
+                return new Buffer(((Quantity) f.vlr[0]).indexValue(),
+                                  (byte)((Quantity) f.vlr[1]).indexValue());
             case BUFFERREF:
-                int index=num(f.vlr[1]).indexValue();
+                int index=((Quantity) f.vlr[1]).indexValue();
                 try {
                     return Quantity.valueOf(buffer(f.vlr[0]).ref(index)&0xff);
                 } catch (ArrayIndexOutOfBoundsException aib) {
@@ -170,21 +170,21 @@ public class BinaryIO extends IndexedProcedure {
             case OPENBINARYOUTPUTFILE:
                 return openBinOutFile(f, url(f.vlr[0]));
             case OPENBUFFEREDBININPORT: 
-            	return new SchemeBinaryInputPort(new BufferedInputStream(bininport(f.vlr[0]).getInputStream(),
-            			num(f.vlr[1]).indexValue()));
+            	return new SchemeBinaryInputPort(new BufferedInputStream(((SchemeBinaryInputPort) f.vlr[0]).getInputStream(),
+                            ((Quantity) f.vlr[1]).indexValue()));
             case OPENBUFFEREDBINOUTPORT: 
-            	return new SchemeBinaryOutputPort(new BufferedOutputStream(binoutport(f.vlr[0]).getOutputStream(),
-            			num(f.vlr[1]).indexValue()));
+            	return new SchemeBinaryOutputPort(new BufferedOutputStream(((SchemeBinaryOutputPort) f.vlr[0]).getOutputStream(),
+            			((Quantity) f.vlr[1]).indexValue()));
             default:
                 throwArgSizeException();
             }
         case 3:
             switch (id) {
             case BUFFERSET:
-                int index=num(f.vlr[1]).indexValue();
+                int index=((Quantity) f.vlr[1]).indexValue();
                 try {
                     buffer(f.vlr[0]).set(index,
-                                         (byte)num(f.vlr[2]).indexValue());
+                                         (byte)((Quantity) f.vlr[2]).indexValue());
                 } catch (ArrayIndexOutOfBoundsException aib) {
                     throwPrimException(liMessage(SISCB, "indexoob", 
                                                  new Object[] {
@@ -193,11 +193,11 @@ public class BinaryIO extends IndexedProcedure {
                 }
                 return VOID;
             case BLOCKREAD:
-                return readBlock(f,buffer(f.vlr[0]), num(f.vlr[1]).indexValue(),
-                        num(f.vlr[2]).indexValue(), bininport(f.dynenv.getCurrentInPort()));
+                return readBlock(f,buffer(f.vlr[0]), ((Quantity) f.vlr[1]).indexValue(),
+                        ((Quantity) f.vlr[2]).indexValue(), ((SchemeBinaryInputPort) f.dynenv.getCurrentInPort()));
             case BLOCKWRITE:
-                writeBlock(f,buffer(f.vlr[0]), num(f.vlr[1]).indexValue(),
-                        num(f.vlr[2]).indexValue(), binoutport(f.dynenv.getCurrentOutPort()));
+                writeBlock(f,buffer(f.vlr[0]), ((Quantity) f.vlr[1]).indexValue(),
+                        ((Quantity) f.vlr[2]).indexValue(), ((SchemeBinaryOutputPort) f.dynenv.getCurrentOutPort()));
                 return VOID;
             default:
                 throwArgSizeException();
@@ -205,18 +205,18 @@ public class BinaryIO extends IndexedProcedure {
         case 4:
             switch (id) {            
             case BLOCKREAD:
-                return readBlock(f,buffer(f.vlr[0]), num(f.vlr[1]).indexValue(),
-                        num(f.vlr[2]).indexValue(), bininport(f.vlr[3]));
+                return readBlock(f,buffer(f.vlr[0]), ((Quantity) f.vlr[1]).indexValue(),
+                        ((Quantity) f.vlr[2]).indexValue(), ((SchemeBinaryInputPort) f.vlr[3]));
             case BLOCKWRITE:
-                writeBlock(f,buffer(f.vlr[0]), num(f.vlr[1]).indexValue(),
-                        num(f.vlr[2]).indexValue(), binoutport(f.vlr[3]));
+                writeBlock(f,buffer(f.vlr[0]), ((Quantity) f.vlr[1]).indexValue(),
+                        ((Quantity) f.vlr[2]).indexValue(), ((SchemeBinaryOutputPort) f.vlr[3]));
                 return VOID;
             case BUFFERCOPY:
                 byte[] sbuf=buffer(f.vlr[0]).buf;
                 byte[] dbuf=buffer(f.vlr[2]).buf;
 
-                int soff=num(f.vlr[1]).indexValue();
-                int doff=num(f.vlr[3]).indexValue();
+                int soff=((Quantity) f.vlr[1]).indexValue();
+                int doff=((Quantity) f.vlr[3]).indexValue();
                 int count=sbuf.length;
 
                 try {
@@ -236,9 +236,9 @@ public class BinaryIO extends IndexedProcedure {
                 byte[] sbuf=buffer(f.vlr[0]).buf;
                 byte[] dbuf=buffer(f.vlr[2]).buf;
 
-                int soff=num(f.vlr[1]).indexValue();
-                int doff=num(f.vlr[3]).indexValue();
-                int count=num(f.vlr[4]).indexValue();
+                int soff=((Quantity) f.vlr[1]).indexValue();
+                int doff=((Quantity) f.vlr[3]).indexValue();
+                int count=((Quantity) f.vlr[4]).indexValue();
 
                 try {
                     System.arraycopy(sbuf, soff, dbuf, doff, count);

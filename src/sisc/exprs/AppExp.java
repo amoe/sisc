@@ -91,7 +91,7 @@ public class AppExp extends Expression implements OptimisticHost {
         for (int i=rands.length-1; i>=0; i--) {
             args=new Pair(((rands[i]==null) ? VOID : rands[i].express()), args);
         }
-        return list(sym("app"),
+        return list(Symbol.get("app"),
                     args,
                     exp.express(),
                     nxp.express());

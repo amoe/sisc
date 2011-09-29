@@ -69,7 +69,7 @@ public class Hashtable extends HashtableBase {
         }
 
         if (rv instanceof SchemeBoolean) {
-            return Util.truth((SchemeBoolean)rv);
+            return SchemeBoolean.toBoolean(rv);
         } else {
             Procedure.throwPrimException
                 (Util.liMessage(Primitives.SHASHB, "equalsreturn",
@@ -151,8 +151,8 @@ public class Hashtable extends HashtableBase {
     }
 
     private void addAList(Map m, Pair p) {
-        for (; p != EMPTYLIST; p = pair(p.cdr())) {
-            Pair entry = pair(p.car());
+        for (; p != EMPTYLIST; p = (Pair) p.cdr()) {
+            Pair entry = (Pair) p.car();
             m.put(makeKey(entry.car()), entry.cdr());
         }
     }

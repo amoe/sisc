@@ -6,7 +6,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.io.IOException;
 
-import sisc.data.Value;
+import sisc.data.*;
 import sisc.interpreter.Context;
 import sisc.interpreter.ContinuationException;
 import sisc.interpreter.Interpreter;
@@ -67,7 +67,7 @@ public class Operation extends IndexedProcedure {
         case 1:
             switch(id) {
             case JAVA_CLASS:
-                String cname = symval(f.vlr[0]);
+                String cname = Symbol.toString(f.vlr[0]);
                 try {
                     Class c = Util.resolveType(cname);
                     return Util.makeJObj(c, Class.class);
@@ -75,7 +75,7 @@ public class Operation extends IndexedProcedure {
                     throwPrimException(liMessage(Util.S2JB, "classnotfound", cname));
                 }
             case JAVA_INV_HANDLER:
-                return Util.makeJObj(new SchemeInvocation(f.dynenv.copy(), proc(f.vlr[0])), SchemeInvocation.class);
+                return Util.makeJObj(new SchemeInvocation(f.dynenv.copy(), (Procedure) f.vlr[0]), SchemeInvocation.class);
             default: break SIZESWITCH;
             }
         case 2:
@@ -84,7 +84,7 @@ public class Operation extends IndexedProcedure {
                 synchronized(Util.jobj(f.vlr[0])) {
                     Interpreter i=Context.enter(f.dynenv);
                     try {
-                        return i.eval(proc(f.vlr[1]), ZV);
+                        return i.eval((Procedure) f.vlr[1], ZV);
                     } catch (SchemeException se) {
                         throwNestedPrimException(se);
                     } finally {
@@ -95,7 +95,7 @@ public class Operation extends IndexedProcedure {
             case JAVA_INVOKE_CONSTRUCTOR:
                 Constructor jc = Util.jconstr(f.vlr[0]);
                 try {
-                    return Util.makeJObj(invokeConstructor(jc, Util.pairToObjects(pair(f.vlr[1]))),
+                    return Util.makeJObj(invokeConstructor(jc, Util.pairToObjects((Pair) f.vlr[1])),
                                          jc.getDeclaringClass());
                 } catch (InvocationTargetException e) {
                     processTargetException(f, e.getTargetException());
@@ -107,7 +107,7 @@ public class Operation extends IndexedProcedure {
             case JAVA_INVOKE_METHOD:
                 Method jm = Util.jmethod(f.vlr[0]);
                 try {
-                    return Util.makeJObj(invokeMethod(jm, Util.jobj(f.vlr[1]), Util.pairToObjects(pair(f.vlr[2]))),
+                    return Util.makeJObj(invokeMethod(jm, Util.jobj(f.vlr[1]), Util.pairToObjects((Pair) f.vlr[2])),
                                          jm.getReturnType());
                 } catch (InvocationTargetException e) {
                     processTargetException(f, e.getTargetException());

@@ -25,6 +25,17 @@ public class SchemeString extends Value {
         data_c=data;
     }
 
+    /**
+     * Convenience method that casts v to a SchemeString and calls
+     * asString() on it.
+     *
+     * @return The value returned by the call to asString()
+     * @throws ClassCastException  If v is not a SchemeString.
+     */
+    public static String asString(Value v) throws ClassCastException {
+        return ((SchemeString) v).asString();
+    }
+
     public String asString() {
         if (data_s == null) {
             data_s=new String(data_c);

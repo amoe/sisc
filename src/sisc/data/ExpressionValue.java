@@ -15,6 +15,21 @@ public class ExpressionValue extends Value {
         this.e=e;
     }
 
+    /**
+     * Convenience method that casts v to an ExpressionValue and
+     * calls toExpression() on it.
+     *
+     * @return The value returned by toExpression()
+     * @throws ClassCastException  If v is not an ExpressionValue.
+     */
+    public static Expression toExpression(Value v) throws ClassCastException {
+        return ((ExpressionValue) v).toExpression();
+    }
+
+    public Expression toExpression() {
+        return this.e;
+    }
+
     public Value setAnnotation(Symbol key, Value v) {
         return e.setAnnotation(key, v);
     }

@@ -62,19 +62,19 @@ public abstract class Annotations  {
                 return akl;
             }
             case ANNOTATIONSTRIPPED:
-                return annotated(v1).stripped;
+                return ((AnnotatedExpr) v1).stripped;
             case ANNOTATIONQ:
-                return truth(v1 instanceof AnnotatedExpr);
+                return SchemeBoolean.get(v1 instanceof AnnotatedExpr);
             case ANNOTATIONSRC:
                 Value rv;
                 if (v1 instanceof AnnotatedExpr) 
-                    rv=annotated(v1).annotation;
+                    rv=((AnnotatedExpr) v1).annotation;
                 else 
                     rv=FALSE;
                 return rv;
             case ANNOTATIONEXPR:
                 if (v1 instanceof AnnotatedExpr) 
-                    return (Value)annotated(v1).expr;
+                    return (Value)((AnnotatedExpr) v1).expr;
                 else return v1;
             default:
                 throwArgSizeException();
@@ -85,7 +85,7 @@ public abstract class Annotations  {
         public Value apply(Value v1, Value v2) throws ContinuationException {
             switch (id) {
             case ANNOTATION:
-                return v1.getAnnotation(symbol(v2));
+                return v1.getAnnotation((Symbol) v2);
             default:
                 throwArgSizeException();
             }
@@ -99,7 +99,7 @@ public abstract class Annotations  {
                 ae.stripped=v3;
                 return ae;
             case ANNOTATION:
-                return v1.getAnnotation(symbol(v2), v3);
+                return v1.getAnnotation((Symbol) v2, v3);
             default:
                 throwArgSizeException();
             }
@@ -121,7 +121,7 @@ public abstract class Annotations  {
         public Value apply(Value v1, Value v2) throws ContinuationException {
             switch (id) {
             case SETANNOTATIONSTRIPPED:
-                annotated(v1).stripped=v2;
+                ((AnnotatedExpr) v1).stripped=v2;
                 return VOID;
             default:
                 throwArgSizeException();
@@ -132,7 +132,7 @@ public abstract class Annotations  {
         public Value apply(Value v1, Value v2, Value v3) throws ContinuationException {
             switch (id) {
             case SETANNOTATION:
-                return v1.setAnnotation(symbol(v2), v3);
+                return v1.setAnnotation((Symbol) v2, v3);
             default:
                 throwArgSizeException();
             }
@@ -142,7 +142,7 @@ public abstract class Annotations  {
         public Value apply(Value[] vlr) throws ContinuationException {
             switch(id) {
             case SETANNOTATION:
-                return vlr[0].setAnnotation(symbol(vlr[1]),
+                return vlr[0].setAnnotation((Symbol) vlr[1],
                                               vlr[2],
                                               vlr[3]);
             default:

@@ -121,7 +121,7 @@ public abstract class Value extends Expression implements Immediate {
     }
 
     public Value express() {
-        return list(sym("val"), this);
+        return list(Symbol.get("val"), this);
     }
 
     /**

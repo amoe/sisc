@@ -63,31 +63,31 @@ public class Conversion extends Util {
     public Value apply(Value v1) throws ContinuationException {
         switch(id) {
         case CONV_JBOOLEAN:
-            return makeJObj((truth(v1) ? Boolean.TRUE : Boolean.FALSE), Boolean.TYPE);
+            return makeJObj((SchemeBoolean.toBoolean(v1) ? Boolean.TRUE : Boolean.FALSE), Boolean.TYPE);
         case CONV_JCHAR:
-            return makeJObj(new Character(character(v1)), Character.TYPE);
+            return makeJObj(new Character(SchemeCharacter.charValue(v1)), Character.TYPE);
         case CONV_JBYTE:
-            return makeJObj(new Byte((byte)num(v1).intValue()), Byte.TYPE);
+            return makeJObj(new Byte((byte)((Quantity) v1).intValue()), Byte.TYPE);
         case CONV_JSHORT:
-            return makeJObj(new Short((short)num(v1).intValue()), Short.TYPE);
+            return makeJObj(new Short((short)((Quantity) v1).intValue()), Short.TYPE);
         case CONV_JINT:
-            return makeJObj(new Integer(num(v1).intValue()), Integer.TYPE);
+            return makeJObj(new Integer(((Quantity) v1).intValue()), Integer.TYPE);
         case CONV_JLONG:
-            return makeJObj(new Long(num(v1).longValue()), Long.TYPE);
+            return makeJObj(new Long(((Quantity) v1).longValue()), Long.TYPE);
         case CONV_JFLOAT:
-            return makeJObj(new Float((float)num(v1).doubleValue()), Float.TYPE);
+            return makeJObj(new Float((float)((Quantity) v1).doubleValue()), Float.TYPE);
         case CONV_JDOUBLE:
-            return makeJObj(new Double(num(v1).doubleValue()), Double.TYPE);
+            return makeJObj(new Double(((Quantity) v1).doubleValue()), Double.TYPE);
         case CONV_JSTRING:
             Value v = v1;
             if (v instanceof Symbol)
-                return makeJObj(symval(v));
+                return makeJObj(((Symbol) v).toString());
             else if (v instanceof SchemeString)
-                return makeJObj(string(v));
+                return makeJObj(SchemeString.asString(v));
             else
                 typeError(S2JB, "stringorsymbol", v);
         case CONV_BOOLEAN:
-            return truth(((Boolean)jobj(v1)).booleanValue());
+            return SchemeBoolean.get(((Boolean)jobj(v1)).booleanValue());
         case CONV_CHARACTER:
             return new SchemeCharacter(((Character)jobj(v1)).charValue());
         case CONV_NUMBER:
@@ -152,9 +152,9 @@ public class Conversion extends Util {
             Value o = v1;
             Value[] vals = null;
             if (o instanceof Pair)
-                vals = pairToValues(pair(o));
+                vals = pairToValues((Pair) o);
             else if (o instanceof SchemeVector)
-                vals = vec(o).vals;
+                vals = ((SchemeVector) o).vals;
             else {
                 typeError(S2JB, "listorvector", o);
             }

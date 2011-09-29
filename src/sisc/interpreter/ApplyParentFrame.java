@@ -24,7 +24,7 @@ public class ApplyParentFrame extends Procedure {
     }
 
     public Value express() {
-        return list(sym("cont"), c);
+        return list(Symbol.get("cont"), c);
     }
 
     public void serialize(Serializer s) throws IOException {

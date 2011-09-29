@@ -30,7 +30,7 @@ public class IfEval extends Expression implements OptimisticHost {
         boolean retry;
         do {
             try {
-                r.next(truth(r.acc) ? conseq : altern);
+                r.next(SchemeBoolean.toBoolean(r.acc) ? conseq : altern);
                 retry = false;
             } catch (OptimismUnwarrantedException uwe) {
                 retry = true;
@@ -39,7 +39,7 @@ public class IfEval extends Expression implements OptimisticHost {
     }
 
     public Value express() {
-        return list(sym("if"), conseq.express(), altern.express());
+        return list(Symbol.get("if"), conseq.express(), altern.express());
     }
 
     public void serialize(Serializer s) throws IOException {

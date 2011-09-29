@@ -293,21 +293,21 @@ public class Threads extends Util {
         public Value apply(Value v1) throws ContinuationException {
             switch(id) {
             case THREADQ:
-                return truth(v1 instanceof SchemeThread);
+                return SchemeBoolean.get(v1 instanceof SchemeThread);
             case MUTEXQ:
-                return truth(v1 instanceof Mutex);
+                return SchemeBoolean.get(v1 instanceof Mutex);
             case CONDVARQ:
-                return truth(v1 instanceof CondVar);
+                return SchemeBoolean.get(v1 instanceof CondVar);
             case MUTEXOF:
                 return Mutex.of(v1);
             case THREADINTERRUPTEDQ:
-                return truth(sthread(v1).threadContext.interrupt);
+                return SchemeBoolean.get(sthread(v1).threadContext.interrupt);
             case THREADNAME:
                 return new SchemeString(sthread(v1).thread.getName());
             case THREADPRIORITY:
                 return Quantity.valueOf(sthread(v1).thread.getPriority());
             case THREADDAEMONQ:
-                return truth(sthread(v1).thread.isDaemon());
+                return SchemeBoolean.get(sthread(v1).thread.isDaemon());
             case THREADSTATE:
                 SchemeThread c=sthread(v1);
                 return stateOf(c);
@@ -320,7 +320,7 @@ public class Threads extends Util {
         public Value apply(Value v1, Value v2) throws ContinuationException {
             switch(id) {
             case THREADHOLDSLOCKQ:
-                return truth(mutex(v2).owner==sthread(v1).thread);
+                return SchemeBoolean.get(mutex(v2).owner==sthread(v1).thread);
             default:
                 throwArgSizeException();
             }
@@ -353,7 +353,7 @@ public class Threads extends Util {
         public Value apply(Interpreter f, Value v1) throws ContinuationException {
             switch(id) {
             case THREADNEW:
-                return new SchemeThread(f.dynenv, proc(f.vlr[0]));
+                return new SchemeThread(f.dynenv, (Procedure) f.vlr[0]);
             case THREADRESULT:
                 return sthread(f.vlr[0]).getResult(f);
             case THREADINTERRUPT:
@@ -407,14 +407,14 @@ public class Threads extends Util {
                 mutex(v1).unlock(condvar(v2));
                 return TRUE;
             case MUTEXLOCK:
-                long timeout=num(v2).longValue();
+                long timeout=((Quantity) v2).longValue();
                 return mutex(v1).lock(timeout);
             case THREADJOIN:
                 SchemeThread c=sthread(v1);
 
                 if (c.state>=SchemeThread.RUNNING) {
                     try {
-                        c.thread.join(num(v2).indexValue());
+                        c.thread.join(((Quantity) v2).indexValue());
                     } catch (InterruptedException ie) {}
                     if (c.state==SchemeThread.RUNNING) 
                         return FALSE;
@@ -426,14 +426,14 @@ public class Threads extends Util {
                 sthread(v1).rv=v2;
                 return VOID;
             case SETTHREADPRIORITY:
-                sthread(v1).thread.setPriority(num(v2).indexValue());
+                sthread(v1).thread.setPriority(((Quantity) v2).indexValue());
                 return VOID;
             case SETTHREADDAEMON:
-                sthread(v1).thread.setDaemon(truth(v2));
+                sthread(v1).thread.setDaemon(SchemeBoolean.toBoolean(v2));
                 return VOID;
             case SETTHREADNAME:
                 c=sthread(v1);
-                c.thread.setName(string(v2));
+                c.thread.setName(SchemeString.asString(v2));
                 return VOID;
             default:
                 throwArgSizeException();                    
@@ -444,7 +444,7 @@ public class Threads extends Util {
         public Value apply(Value v1, Value v2, Value v3) throws ContinuationException {
             switch(id) {
             case MUTEXUNLOCK:
-                return mutex(v1).unlock(condvar(v2), num(v3).longValue());
+                return mutex(v1).unlock(condvar(v2), ((Quantity) v3).longValue());
             default:
                 throwArgSizeException();                    
             }

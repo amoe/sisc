@@ -3,11 +3,7 @@ package sisc.io.custom;
 import java.io.IOException;
 import java.io.Reader;
 
-import sisc.data.Pair;
-import sisc.data.Procedure;
-import sisc.data.Quantity;
-import sisc.data.SchemeString;
-import sisc.data.Value;
+import sisc.data.*;
 import sisc.util.Util;
 
 public class SchemeReader extends Reader implements CustomPortProxy {
@@ -36,21 +32,21 @@ public class SchemeReader extends Reader implements CustomPortProxy {
     }
 
     public int read() throws IOException {
-        return Util.num(IOUtils.bridge(read, getHost())).intValue();
+        return ((Quantity) IOUtils.bridge(read, getHost())).intValue();
     }
     
     public int read(char[] buffer, int offset, int length) throws IOException {
-        return Util.num(IOUtils.bridge(readString,  
-                new Value[] {
-        			getHost(), 
-        			new SchemeString(buffer), 
-        			Quantity.valueOf(offset), 
-        			Quantity.valueOf(length)})) 
-                .intValue();        
+        Value[] args = new Value[] {
+            getHost(),
+            new SchemeString(buffer),
+            Quantity.valueOf(offset),
+            Quantity.valueOf(length)
+        };
+        return ((Quantity) IOUtils.bridge(readString, args)).intValue();
     }
     
     public boolean ready() throws IOException {
-        return Util.truth(IOUtils.bridge(ready, getHost()));        
+        return SchemeBoolean.toBoolean(IOUtils.bridge(ready, getHost()));        
     }
 
     public void close() throws IOException {

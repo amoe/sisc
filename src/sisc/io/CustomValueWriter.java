@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import sisc.data.Pair;
 import sisc.data.Procedure;
+import sisc.data.SchemeString;
 import sisc.data.Value;
 import sisc.env.DynamicEnvironment;
 import sisc.interpreter.Context;
@@ -26,7 +27,7 @@ public class CustomValueWriter implements ValueWriter {
 	
 	protected Procedure resolvePrinter(Pair typeMap, Value v) {
 		while (typeMap != Util.EMPTYLIST) {
-			Pair aentry=Util.pair(typeMap.car());
+                        Pair aentry=(Pair) typeMap.car();
 			Value type=aentry.car();
 			Class typeClass=null;
 			if (type instanceof JavaObject) {
@@ -35,7 +36,7 @@ public class CustomValueWriter implements ValueWriter {
 				typeClass=((SchemeType)type).getClassObject();
 			}
 			if (typeClass != null && v.getClass().isAssignableFrom(typeClass)) {
-				return Util.proc(aentry.cdr());
+                            return (Procedure) aentry.cdr();
 			}
 			typeMap=(Pair)typeMap.cdr();
 		}
@@ -46,7 +47,7 @@ public class CustomValueWriter implements ValueWriter {
 	protected String customPrint(Procedure proc, Value v) {
         Interpreter r=Context.enter();
         try {
-            return Util.string(r.eval(proc, new Value[] {v}));
+            return SchemeString.asString(r.eval(proc, new Value[] {v}));
         } catch (SchemeException e) {
         	Procedure.throwNestedPrimException(Util.liMessage(IO.IOB, "customporterror", e.getMessageText()), e);
         	return null;

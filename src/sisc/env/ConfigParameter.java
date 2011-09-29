@@ -25,7 +25,7 @@ public class ConfigParameter extends SchemeParameter {
         String val = r.dynenv.ctx.getProperty("sisc."+paramName);
         if (val == null) return def;
         if (def instanceof SchemeBoolean) {
-            res = truth(val.equals("true"));
+            res = SchemeBoolean.get(val.equals("true"));
         } else if (def instanceof SchemeString) {
             res = new SchemeString(val);
         } else if (def instanceof Symbol) {

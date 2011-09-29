@@ -26,7 +26,7 @@ public class LexicalReferenceExp extends Expression implements Immediate {
     }
 
     public Value express() {
-        return list(sym("env"), Quantity.valueOf(idx));
+        return list(Symbol.get("env"), Quantity.valueOf(idx));
     }
 
     public void serialize(Serializer s) throws IOException {

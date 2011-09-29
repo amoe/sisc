@@ -44,10 +44,10 @@ public class Interpreter extends Util {
             throws ContinuationException, SchemeRuntimeException {
             r.nxp=null;
             Values v=(Values)r.acc;
-            throw new SchemeRuntimeException(pair(v.values[0]), 
-                                             proc(v.values[1]), 
+            throw new SchemeRuntimeException((Pair) v.values[0], 
+                                             (Procedure) v.values[1], 
                                              v.values.length>2 ? 
-                                             proc(v.values[2]) :
+                                             ((Procedure) v.values[2]) :
                                              //If we are at the top of the
                                              //stack, use a default fk
                                              (r.fk == null ? top_fk : r.fk));

@@ -32,7 +32,7 @@ public class FixedAppExp_2 extends FixedAppExp_1 {
     }
 
     public Value express() {
-        return list(sym("fapp"), ref.express(),
+        return list(Symbol.get("fapp"), ref.express(),
                     ((Expression)op0).express(),
                     ((Expression)op1).express());
     }
