@@ -60,9 +60,27 @@
     <available classname="junit.framework.TestCase"
                property="junit.present"
                classpathref="classpath"/>
+    <available classname="org.objectweb.asm.ClassWriter"
+               property="asm.present" classpathref="classpath"/>
+    <available classname="org.objectweb.asm.commons.GeneratorAdapter"
+               property="asm-commons.present" classpathref="classpath"/>
+
+    <fail message="Dependencies not satisfied; see README">
+      <condition>
+        <not>
+          <and>
+            <isset property="junit.present"/>
+            <isset property="asm.present"/>
+            <isset property="asm-commons.present"/>
+          </and>
+        </not>
+      </condition>
+    </fail>
+
     <property name="xmldcl" value="/usr/share/sgml/declaration/xml.dcl"/>
     <property name="sss" value="sss"/>
   </target>
+
 
   <target name="prepare-install" depends="prepare">
     <condition property="instlibdir" value="${prefix}/lib/sisc">
