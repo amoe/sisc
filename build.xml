@@ -613,13 +613,7 @@
          includes="sisc/**"/>
   </target>
 
-  <target name="junitcheck" depends="prepare" unless="junit.present">
-    <echo>
-      The tests cannot be run because JUnit is not present on this system.
-    </echo>
-  </target>
-
-  <target name="check" depends="junitcheck" if="junit.present">
+  <target name="check" depends="prepare">
     <antcall target="heap"/>
     <junit fork="yes">
       <jvmarg value="-Xmx256M"/>
