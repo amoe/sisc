@@ -145,6 +145,18 @@
 	  </para>
 	</listitem>
 	<listitem>
+	  <para>4.2.2 - 
+	    In the case of <function>let</function> and <function>let*</function>,
+            &SISC; will not raise an error if bindings contain forward references
+            to other bindings in the same expression <emphasis>if</emphasis> those
+            bindings can be optimized away.  References to those expressions within
+            the body will still raise an error.  Note that this is not explicitly
+            specified to raise an error but it is strongly implied.  This is 
+            currently unaffected by the value of the
+            <envar>strictR5RSCompliance</envar> configuration parameter.
+	  </para>
+	</listitem>
+	<listitem>
 	  <para>6.2.3 - 
 	    The standard desires that that operations such as
 	    <function>sqrt</function> try to provide exact results
