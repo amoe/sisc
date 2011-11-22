@@ -63,9 +63,11 @@ public class TestR5RS
 
 
     protected void setUp()
-        throws ClassNotFoundException
+        throws ClassNotFoundException, IOException, SchemeException
     {
         interpreter = Context.enter();
+        // Required for test4_1_3b.
+        interpreter.eval(quote("(strict-r5rs-compliance #t)"));
     }
 
     protected void tearDown()
@@ -203,13 +205,14 @@ public class TestR5RS
         check("((if #f + *) 3 4)", "12");
     }
 
- public void failingtest4_1_3b()
+ 
+ public void test4_1_3b()
   throws Exception
  {
   try
   {
-   eval("()");
-   fail();
+      eval("()");
+      fail();
   }
   catch (SchemeException e)
   { }
