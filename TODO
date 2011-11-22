@@ -4,6 +4,7 @@ Bug Fixes
 * make let-syntax strictly r5rs compliant when strict compliance is
   demanded
 * Work to eliminate bottlenecks in generic-procedure calls.
+* Configuration parameters seem to not work with SRFI-39 'parameterize'
 
 General
 * Document weak hashtables
