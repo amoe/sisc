@@ -140,8 +140,8 @@
     <javac srcdir="${srcdir}"
            destdir="${classdir}"
            classpathref="classpath"
-           target="1.7"
-           source="1.7"
+           target="1.6"
+           source="1.6"
            debug="${debugging}"
            optimize="${optimization}"
            includeAntRuntime="false">
@@ -158,8 +158,8 @@
            destdir="${classdir}"
            classpathref="classpath"
            debug="${debugging}"
-           target="1.7"
-    	  source="1.7"
+           target="1.6"
+    	   source="1.6"
            optimize="${optimization}"
            includeAntRuntime="false">
       <include name="${packagename}/modules/io/IO.java"/>

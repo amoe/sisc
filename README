@@ -29,7 +29,7 @@ the Scheme level as well.
 Building
 ========
 
-JDK 7 is required both to build and run this branch of SISC.
+JDK 6 is required both to build and run this branch of SISC.
 
 You need Apache Ant installed.  When you have it, simply run "ant".
 
