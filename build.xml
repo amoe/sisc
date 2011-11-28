@@ -6,6 +6,22 @@
       <include name="*.jar"/>
     </fileset>
   </path>
+  
+  <target name="check-sisc-in-path">
+    <exec executable="sisc" outputproperty="sisc.output"
+          failifexecutionfails="false">
+      <arg value="-x"/>
+      <arg value="-e"/>
+      <arg value="42"/>
+    </exec>
+    <fail message="An active installation of SISC is required to bootstrap">
+      <condition>
+        <not>
+          <equals arg1="${sisc.output}" arg2="42" trim="true"/>
+        </not>
+      </condition>
+    </fail>
+  </target>
 
   <target name="prepare">
     <property name="specver" value="1.17.0-alpha"/>
