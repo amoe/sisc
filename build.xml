@@ -6,6 +6,35 @@
       <include name="*.jar"/>
     </fileset>
   </path>
+
+  <target name="nonesuch" depends="prepare">
+    <uptodate property="amoe.whut">
+      <srcfiles dir="${bootdir}">
+        <include name="init.scm"/>
+        <include name="compat.scm"/>
+        <include name="psyntax.scm"/>
+        <include name="analyzer.scm"/>
+        <include name="eval.scm"/>
+      </srcfiles>
+      <mapper type="glob" from="*.scm" to="*.sce"/>
+    </uptodate>
+  </target>
+
+  <target name="check-psyntax-expanded" depends="prepare">
+    <fail message="psyntax files not found">
+      <condition>
+        <not>
+          <and>
+            <available file="${bootdir}/init.sce"/>
+            <available file="${bootdir}/compat.sce"/>
+            <available file="${bootdir}/psyntax.sce"/>
+            <available file="${bootdir}/analyzer.sce"/>
+            <available file="${bootdir}/eval.sce"/>
+          </and>
+        </not>
+      </condition>
+    </fail>
+  </target>
   
   <target name="check-sisc-in-path">
     <exec executable="sisc" outputproperty="sisc.output"
