@@ -47,7 +47,7 @@ fi
 
 #If the rlwrap readline wrapper is in the path, enable it for SISC, 
 #unless the -x or --no-repl switches were used
-checkIfNonInteractive $@;
+checkIfNonInteractive "$@";
 if [ "$?" -eq "0" ] && [ -z "$RLWRAPPED" ] && [ -x "`which rlwrap`" ]
 then
   if [ ! -f $RLWRAP_FILE ]
@@ -55,7 +55,7 @@ then
     touch $RLWRAP_FILE 
   fi
   RLWRAP="rlwrap -b '(){}[],+=&^%$#@\;|' -f $RLWRAP_FILE -l $RLWRAP_FILE "
-  RLWRAPPED=yes rlwrap $0 $@
+  RLWRAPPED=yes rlwrap "$0" "$@"
 else
     EXTENSIONS=""
     if [ -z "$JAVA" ] || ! which $JAVA 
