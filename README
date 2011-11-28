@@ -29,6 +29,20 @@ the Scheme level as well.
 Building
 ========
 
+This version of SISC needs to bootstrap itself.  You have two options:
+
+  1.  Use an existing installation of SISC.  If you use this method, Ant expects
+  to find an executable called 'sisc' in your PATH.  This method is preferred.
+
+  2.  You can download a distribution of pre-expanded files.  You need to extract
+  it under the 'src/sisc/boot' directory.  On Unix, the procedure looks like this:
+
+    wget https://github.com/downloads/amoe/sisc/sisc-psyntax-expanded.zip
+    unzip -d src/sisc/boot sisc-psyntax-expanded.zip
+    ant -Dbuild.disableExpand=true
+
+  (Defining build.disableExpand is not necessary, but avoids a spurious warning.)
+
 JDK 6 is required both to build and run this branch of SISC.
 
 You need Apache Ant installed.  When you have it, simply run "ant".

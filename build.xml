@@ -79,6 +79,24 @@
 
     <property name="xmldcl" value="/usr/share/sgml/declaration/xml.dcl"/>
     <property name="sss" value="sss"/>
+
+    <uptodate property="psyntax.uptodate">
+      <srcfiles dir="${bootdir}">
+        <include name="init.scm"/>
+        <include name="compat.scm"/>
+        <include name="psyntax.scm"/>
+        <include name="analyzer.scm"/>
+        <include name="eval.scm"/>
+      </srcfiles>
+      <mapper type="glob" from="*.scm" to="*.sce"/>
+    </uptodate>
+
+    <condition property="build.psyntax">
+      <and>
+        <not><isset property="psyntax.uptodate"/></not>
+        <not><isset property="build.disableExpand"/></not>
+      </and>
+    </condition>
   </target>
 
 
@@ -112,6 +130,10 @@
     <delete>
       <fileset dir="${quantitydir}"
                includes=".Quantity-*"/>
+    </delete>
+    <delete>
+      <fileset dir="${bootdir}"
+               includes="*.sce"/>
     </delete>
   </target> 
 
@@ -332,7 +354,8 @@
     </condition>
   </target>
 
-  <target name="full-heap" depends="jars,build-full-heap" if="buildFullHeap">
+  <target name="full-heap" depends="jars,build-full-heap,bootstrap"
+          if="buildFullHeap">
     <java classname="sisc.boot.GenerateHeap"
           dir="${bootdir}"
           fork="yes">
@@ -354,7 +377,8 @@
     </java>
   </target>
 
-  <target name="lite-heap" depends="jars,build-lite-heap" if="buildLiteHeap">
+  <target name="lite-heap" depends="jars,build-lite-heap,bootstrap"
+          if="buildLiteHeap">
     <java classname="sisc.boot.GenerateHeap"
           classpath="${classdir}"
           dir="${bootdir}"
@@ -374,24 +398,29 @@
     </java>
   </target>
 
-  <target name="bootstrap" depends="prepare">
-    <antcall target="full-heap"/>
-    <java classname="sisc.REPL"
-          classpath="${classdir}"
-          dir="${bootdir}"
-          fork="yes">
-      <jvmarg value="-Dsisc.emitAnnotations=${siscDebugging}"/>
-      <jvmarg value="-Dsisc.emitDebuggingSymbols=${siscDebugging}"/>
-      <!--
-      the -server stops jdk1.4.2 on windows from throwing an
-      StackOverflowError.
-      <jvmarg value="-server"/>
-      -->
-      <arg value="-h"/>
-      <arg value="${heap}"/>
+  <target name="bootstrap"
+          depends="prepare"
+          if="build.psyntax">
+    <!-- Check for SISC in PATH, so we can give an informative error. -->
+    <exec executable="sisc" outputproperty="sisc.output"
+          failifexecutionfails="false">
       <arg value="-x"/>
-      <arg value="bootstrap.scm"/>
-    </java>
+      <arg value="-e"/>
+      <arg value="42"/>
+    </exec>
+    <fail message="An active installation of SISC is required to bootstrap">
+      <condition>
+        <not>
+          <equals arg1="${sisc.output}" arg2="42" trim="true"/>
+        </not>
+      </condition>
+    </fail>
+
+    <exec executable="sisc"
+          dir="${bootdir}">
+      <arg value="-x"/>
+      <arg file="${bootdir}/bootstrap.scm"/>
+    </exec>
   </target>
     
   <target name="heap">
