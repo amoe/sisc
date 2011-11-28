@@ -7,8 +7,8 @@
     </fileset>
   </path>
 
-  <target name="nonesuch" depends="prepare">
-    <uptodate property="amoe.whut">
+  <target name="check-build-psyntax" depends="prepare">
+    <uptodate property="psyntax.uptodate">
       <srcfiles dir="${bootdir}">
         <include name="init.scm"/>
         <include name="compat.scm"/>
@@ -18,38 +18,14 @@
       </srcfiles>
       <mapper type="glob" from="*.scm" to="*.sce"/>
     </uptodate>
-  </target>
 
-  <target name="check-psyntax-expanded" depends="prepare">
-    <fail message="psyntax files not found">
-      <condition>
-        <not>
-          <and>
-            <available file="${bootdir}/init.sce"/>
-            <available file="${bootdir}/compat.sce"/>
-            <available file="${bootdir}/psyntax.sce"/>
-            <available file="${bootdir}/analyzer.sce"/>
-            <available file="${bootdir}/eval.sce"/>
-          </and>
-        </not>
-      </condition>
-    </fail>
-  </target>
-  
-  <target name="check-sisc-in-path">
-    <exec executable="sisc" outputproperty="sisc.output"
-          failifexecutionfails="false">
-      <arg value="-x"/>
-      <arg value="-e"/>
-      <arg value="42"/>
-    </exec>
-    <fail message="An active installation of SISC is required to bootstrap">
-      <condition>
-        <not>
-          <equals arg1="${sisc.output}" arg2="42" trim="true"/>
-        </not>
-      </condition>
-    </fail>
+    <condition property="build.psyntax">
+      <and>
+        <not><isset property="psyntax.uptodate"/></not>
+        <not><isset property="build.disableExpand"/></not>
+      </and>
+    </condition>
+    <echoproperties prefix="build"/>
   </target>
 
   <target name="prepare">
@@ -425,7 +401,24 @@
     </java>
   </target>
 
-  <target name="bootstrap" depends="prepare,check-sisc-in-path">
+  <target name="bootstrap"
+          depends="prepare,check-build-psyntax"
+          if="build.psyntax">
+    <!-- Check for SISC in PATH, so we can give an informative error. -->
+    <exec executable="sisc" outputproperty="sisc.output"
+          failifexecutionfails="false">
+      <arg value="-x"/>
+      <arg value="-e"/>
+      <arg value="42"/>
+    </exec>
+    <fail message="An active installation of SISC is required to bootstrap">
+      <condition>
+        <not>
+          <equals arg1="${sisc.output}" arg2="42" trim="true"/>
+        </not>
+      </condition>
+    </fail>
+
     <exec executable="sisc"
           dir="${bootdir}">
       <arg value="-x"/>
