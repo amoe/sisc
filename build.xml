@@ -7,27 +7,6 @@
     </fileset>
   </path>
 
-  <target name="check-build-psyntax" depends="prepare">
-    <uptodate property="psyntax.uptodate">
-      <srcfiles dir="${bootdir}">
-        <include name="init.scm"/>
-        <include name="compat.scm"/>
-        <include name="psyntax.scm"/>
-        <include name="analyzer.scm"/>
-        <include name="eval.scm"/>
-      </srcfiles>
-      <mapper type="glob" from="*.scm" to="*.sce"/>
-    </uptodate>
-
-    <condition property="build.psyntax">
-      <and>
-        <not><isset property="psyntax.uptodate"/></not>
-        <not><isset property="build.disableExpand"/></not>
-      </and>
-    </condition>
-    <echoproperties prefix="build"/>
-  </target>
-
   <target name="prepare">
     <property name="specver" value="1.17.0-alpha"/>
     <property name="version" value="1.17.0-alpha"/>
@@ -100,6 +79,24 @@
 
     <property name="xmldcl" value="/usr/share/sgml/declaration/xml.dcl"/>
     <property name="sss" value="sss"/>
+
+    <uptodate property="psyntax.uptodate">
+      <srcfiles dir="${bootdir}">
+        <include name="init.scm"/>
+        <include name="compat.scm"/>
+        <include name="psyntax.scm"/>
+        <include name="analyzer.scm"/>
+        <include name="eval.scm"/>
+      </srcfiles>
+      <mapper type="glob" from="*.scm" to="*.sce"/>
+    </uptodate>
+
+    <condition property="build.psyntax">
+      <and>
+        <not><isset property="psyntax.uptodate"/></not>
+        <not><isset property="build.disableExpand"/></not>
+      </and>
+    </condition>
   </target>
 
 
@@ -402,7 +399,7 @@
   </target>
 
   <target name="bootstrap"
-          depends="prepare,check-build-psyntax"
+          depends="prepare"
           if="build.psyntax">
     <!-- Check for SISC in PATH, so we can give an informative error. -->
     <exec executable="sisc" outputproperty="sisc.output"
