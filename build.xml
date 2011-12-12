@@ -314,9 +314,7 @@
     </condition>
   </target>
 
-  <target name="sisc-lib" depends="build-sisclib" if="buildSisclib">
-    <antcall target="heap"/>
-    <antcall target="srfi-scc"/>
+  <target name="sisc-lib" depends="build-sisclib,heap,srfi-scc" if="buildSisclib">
     <copy file="${libsrcdir}/slib.scm" tofile="${tmpdir}/sisc/libs/slib.scm"/>
     <jar jarfile="${basedir}/${libjar}">
       <fileset dir="${tmpdir}">
