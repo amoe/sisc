@@ -420,9 +420,7 @@
     </exec>
   </target>
     
-  <target name="heap">
-    <antcall target="full-heap"/>
-    <antcall target="lite-heap"/>
+  <target name="heap" depends="full-heap,lite-heap">
   </target>
 
   <target name="heap-jar"
