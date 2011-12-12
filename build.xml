@@ -633,8 +633,7 @@
          includes="sisc/**"/>
   </target>
 
-  <target name="check" depends="prepare">
-    <antcall target="heap"/>
+  <target name="check" depends="prepare,heap">
     <junit fork="yes">
       <jvmarg value="-Xmx256M"/>
       <sysproperty key="HEAP" value="${heap}"/>
