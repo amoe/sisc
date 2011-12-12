@@ -424,9 +424,8 @@
   </target>
 
   <target name="heap-jar"
-    depends="prepare"
+    depends="prepare,heap"
     description="Package the built heap into a JAR, accessible by sisc.boot.HeapAnchor">
-    <antcall target="heap"/>
     <jar jarfile="${basedir}/${heapjar}">
       <fileset dir="${classdir}" includes="sisc/boot/HeapAnchor.class"/>
       <zipfileset dir="${basedir}"
