@@ -640,6 +640,7 @@
       <classpath>
         <pathelement location="${classdir}" />
         <pathelement path="${java.class.path}" />
+        <path refid="classpath"/> 
       </classpath>
       <formatter type="brief" usefile="false"/>
       <test name="sisc.tests.AllTests"/>
