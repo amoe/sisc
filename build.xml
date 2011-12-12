@@ -156,8 +156,7 @@
     <touch file="${quantitydir}/.Quantity-${quantity-type}"/>
   </target>
 
-  <target name="compile" depends="prepare">
-    <antcall target="quantity"/>
+  <target name="compile" depends="prepare,quantity">
     <mkdir dir="${classdir}"/>
     <javac srcdir="${srcdir}"
            destdir="${classdir}"
