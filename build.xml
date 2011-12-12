@@ -491,11 +491,8 @@
   <target name="docs" depends="javadocs,manual"
           description="Generate Documentation" unless="lite"/>
 
-  <target name="all" depends="prepare"
+  <target name="all" depends="prepare,heap-jar,sisc-lib,docs"
     description="Build SISC, its heap, docs, and the standard library">
-    <antcall target="heap-jar"/>
-    <antcall target="sisc-lib"/>
-    <antcall target="docs"/>
   </target>
 
   <target name="lite-dist" depends="all" if="lite">
