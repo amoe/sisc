@@ -1,3 +1,7 @@
+2011-XX-XX  David Banks <amoebae@gmail.com>
+      
+    * Rip out various uses of antcall to fix incremental build issues
+	
 2007-11-08  Scott G. Miller <sgmiller@gmail.com>
 
 	* Made character sets proper SISC values, fixing bug 1687759.
