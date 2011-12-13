@@ -171,6 +171,7 @@ public class REPL {
             returnCode=1;
         }
 
+        dynenv.getCurrentOutWriter().flush();
         System.exit(returnCode);
     }
 
