@@ -631,10 +631,10 @@
 
   <target name="source-dist" depends="prepare">
     <delete dir="${dist}/sisc"/>
-    <cvs command="export" dest="${dist}" tag="${cvsversion}" package="sisc"/>
-    <jar jarfile="${dist}/sisc-${version}.jar" 
-         basedir="${dist}"  
-         includes="sisc/**"/>
+    <tar destfile="${dist}/sisc-${version}.tar" basedir="."/>
+    <gzip src="${dist}/sisc-${version}.tar"
+          destfile="${dist}/sisc-${version}.tar.gz"/>
+    <delete file="${dist}/sisc-${version}.tar"/>
   </target>
 
   <target name="check" depends="prepare,heap">
