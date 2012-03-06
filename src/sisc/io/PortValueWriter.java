@@ -16,6 +16,7 @@ public class PortValueWriter extends Util
     private boolean display;
 
     private boolean vectorLengthPrefixing, caseSensitive;
+    private String lineSeparator;
 
     public PortValueWriter(Writer port,
                            boolean vectorLengthPrefixing,
@@ -23,6 +24,7 @@ public class PortValueWriter extends Util
         this.port = port;
         this.vectorLengthPrefixing = vectorLengthPrefixing;
         this.caseSensitive = caseSensitive;
+        this.lineSeparator = System.getProperty("line.separator");
     }
 
     protected void displayOrWrite(Value v, boolean display)
@@ -53,12 +55,15 @@ public class PortValueWriter extends Util
     }
 
     public ValueWriter append(char c) throws IOException {
+        char nl = this.lineSeparator.charAt(this.lineSeparator.length() - 1);
         port.write(c);
+        if (c == nl)  port.flush();
         return this;
     }
 
     public ValueWriter append(String s) throws IOException {
         port.write(s);
+        if (s.contains(this.lineSeparator)) port.flush();
         return this;
     }
 
