@@ -54,7 +54,8 @@
     </condition>
     <property name="optimization" value="on"/>
     <property name="dist" value="${basedir}/dist"/>
-    <property name="doc.style" value="/usr/share/xml/docbook/stylesheet/nwalsh/html/chunk.xsl"/>
+    <property name="doc.style"
+              value="/usr/share/xml/docbook/stylesheet/nwalsh/html/chunk.xsl"/>
     <available file="${doc.style}" property="docstyle.present"/>
     <mkdir dir="${libdir}"/>
     <available classname="junit.framework.TestCase"
@@ -468,16 +469,19 @@
              token="@@@doc.style@@@"
              value="${doc.style}"/>
     <mkdir dir="${gendocdir}/sss"/>
-<!--
-    The Java XSLT processors seem incapable of handling the docbook
-    stylesheets
 
-    <style basedir="${docdir}/sss"
-           includes="${sss}.xml"
-           destdir="${gendocdir}/sss"
-           style="${docdir}/sss/style.xsl">
-    </style>
--->
+    <!-- The built-in Java XSLT processor XSLTC can't handle the docbook
+         stylesheets due to bugs.  The below will only work if we introduce a
+         dependency on a real XSLT processor like Xalan. -->
+
+    <!--
+    <xslt basedir="${docdir}/sss"
+          includes="${sss}.xml"
+          destdir="${gendocdir}/sss"
+          style="${docdir}/sss/style.xsl">
+    </xslt>
+    -->
+
     <exec dir="${docdir}/sss" executable="xsltproc">
       <arg value="-o"/>
       <arg file="${gendocdir}/sss/${sss}.html"/>

@@ -5,13 +5,13 @@ Bug Fixes
   demanded
 * Work to eliminate bottlenecks in generic-procedure calls.
 * Configuration parameters seem to not work with SRFI-39 'parameterize'
-* change build system to attempt to use java XSLT classes rather than 'xsltproc'
 
 General
 * Document weak hashtables
 * do a code walk to weed out anything that breaks thread-safety
 * produce a validation testing framework that is invokable from ant
 * produce a performance testing framework that is invokable from ant
+* possibly introduce a dependency on xalan to build the docs on windows
 
 Features
 * Support for composable IO.
