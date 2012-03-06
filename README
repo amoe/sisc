@@ -57,6 +57,10 @@ jar and the 'commons' jar.  This is distributed by upstream in a single
 'asm-VERSION-bin.zip' file.  This version should be compatible with ASM versions
 3 and 4, and possibly older versions.
 
+To build the manual, you need the DocBook XSL stylesheets installed.  On a
+Debian system you can find them in the package 'docbook-xsl'.  You also need the
+command line XSLT processor 'xsltproc'.
+
 On Debian, you can install and symlink in the relevant jars like this:
 
   sudo aptitude install junit libasm3-java

@@ -5,6 +5,7 @@ Bug Fixes
   demanded
 * Work to eliminate bottlenecks in generic-procedure calls.
 * Configuration parameters seem to not work with SRFI-39 'parameterize'
+* change build system to attempt to use java XSLT classes rather than 'xsltproc'
 
 General
 * Document weak hashtables
