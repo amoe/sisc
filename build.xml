@@ -747,8 +747,6 @@
         <include name="COPYING"/>
       </fileset>
     </copy>
-    <copy todir="${instbindir}" 
-          file="${basedir}/sisc.bat"/>
     <chmod file="${instbindir}/sisc" perm="0755"/>
   </target>
 
