@@ -630,13 +630,22 @@
   </target>
 
   <target name="source-dist" depends="prepare">
-    <delete dir="${dist}/sisc"/>
+    <delete dir="${dist}"/>
+    <copy todir="${dist}/sisc-${version}">
+      <fileset dir=".">
+        <exclude name=".git"/>
+        <exclude name="lib"/>
+        <exclude name="lib/*"/>
+        <exclude name="dist"/>
+      </fileset>
+    </copy>
+
     <tar destfile="${dist}/sisc-${version}.tar"
-         basedir="."
-         excludes="dist lib lib/*"/>
+         basedir="${dist}"/>
     <gzip src="${dist}/sisc-${version}.tar"
           destfile="${dist}/sisc-${version}.tar.gz"/>
     <delete file="${dist}/sisc-${version}.tar"/>
+    <delete dir="${dist}/sisc-${version}"/>
   </target>
 
   <target name="check" depends="prepare,heap">
