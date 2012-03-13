@@ -28,7 +28,6 @@
     <property name="tmpdir" value="${basedir}/tmp"/>
     <property name="packagename" value="sisc"/>
     <property name="basejar" value="sisc.jar"/>
-<!--    <property name="classopt" value="yes"/>-->
     <property name="optjar" value="sisc-opt.jar"/>
     <property name="libjar" value="sisc-lib.jar"/>
     <property name="heapjar" value="sisc-heap.jar"/>
@@ -197,33 +196,6 @@
     </javac>      
   </target>
   
-  <!-- XXX: Is this still used at all? -->
-  <target name="class-opt" depends="compile" if="classopt">
-    <delete>
-      <fileset dir="${classdir}">
-        <include name="**/*_o.class"/>
-      </fileset>
-    </delete>
-    
-    <fileset dir="${classdir}" id="allclasses">
-      <include name="**/*.class"/>
-    </fileset>
-  
-    <pathconvert pathsep=" " property="allclassfiles" refid="allclasses"/>
-
-    <property name="allclasses" value="${classdir}/**/*.class"/>
-    <java jar="/home/scgmille/lib/jopt.jar" fork="true">
-      <arg line="${allclassfiles}"/>
-    </java>   
-
-    <move todir="${classdir}"> 
-      <fileset dir="${classdir}">
-        <include name="**/*_o.class"/>
-      </fileset>
-      <mapper type="glob" from="*_o.class" to="*.class"/>
-    </move>   
-  </target>
-
   <target name="i18n" depends="prepare">
     <mkdir dir="${classdir}/sisc"/>
     <copy todir="${classdir}">
@@ -233,7 +205,7 @@
     </copy>
   </target>
 
-  <target name="jars" depends="compile,class-opt,i18n"> 
+  <target name="jars" depends="compile,i18n"> 
     <jar jarfile="${basedir}/${basejar}"
          manifest="${srcdir}/Manifest">
       <fileset dir="${classdir}">
