@@ -2,7 +2,7 @@
 
 public interface Version {
 
-    String VERSION = "1.17.0-alpha";
+    String VERSION = "1.17.0";
 
 }
 

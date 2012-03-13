@@ -8,8 +8,8 @@
   </path>
 
   <target name="prepare">
-    <property name="specver" value="1.17.0-alpha"/>
-    <property name="version" value="1.17.0-alpha"/>
+    <property name="specver" value="1.17.0"/>
+    <property name="version" value="1.17.0"/>
     <property name="cvsversion" value="a1_17_0"/> 
     <property name="spectitle" value="Second Interpreter of Scheme Code"/>
     <!-- Got a better idea?: -->
