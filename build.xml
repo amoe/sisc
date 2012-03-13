@@ -631,7 +631,9 @@
 
   <target name="source-dist" depends="prepare">
     <delete dir="${dist}/sisc"/>
-    <tar destfile="${dist}/sisc-${version}.tar" basedir="."/>
+    <tar destfile="${dist}/sisc-${version}.tar"
+         basedir="."
+         excludes="dist lib lib/*"/>
     <gzip src="${dist}/sisc-${version}.tar"
           destfile="${dist}/sisc-${version}.tar.gz"/>
     <delete file="${dist}/sisc-${version}.tar"/>
