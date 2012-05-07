@@ -109,6 +109,9 @@
     <condition property="instlibdir" value="${prefix}/lib/sisc">
       <not><isset property="instlibdir"/></not>
     </condition>
+    <condition property="instsharedir" value="${prefix}/share/sisc">
+      <not><isset property="instsharedir"/></not>
+    </condition>
     <condition property="instdocdir" value="${prefix}/share/doc/sisc">
       <not><isset property="instdocdir"/></not>
     </condition>
@@ -695,6 +698,7 @@
   <!-- Installation target -->
   <target name="install" depends="prepare-install">
     <mkdir dir="${instlibdir}"/>
+    <mkdir dir="${instsharedir}"/>
     <mkdir dir="${instdocdir}"/>
     <mkdir dir="${instmandir}"/>
     <mkdir dir="${instmandir}/man1"/>
@@ -704,6 +708,8 @@
         <include name="*.shp"/>
       </fileset>
     </copy>
+    <copy todir="${instsharedir}" 
+          file="${srcdir}/sisc/boot/build-heapjar.scm"/>
     <copy todir="${instdocdir}">
       <fileset dir="${basedir}">
         <include name="ChangeLog"/>
@@ -719,8 +725,6 @@
           file="${basedir}/sisc.sh"/>
     <copy todir="${instbindir}" 
           file="${srfidir}/srfi-22/srfi-22.sh"/>
-    <copy todir="${instbindir}" 
-          file="${srcdir}/sisc/boot/build-heapjar.scm"/>
     <copy todir="${instmandir}/man1"
           file="${docdir}/man/sisc.1"/>
     <exec executable="bash">
