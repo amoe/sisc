@@ -10,9 +10,9 @@ sisc \- Second Interpreter of Scheme Code
 ] [
 .I argument ... 
 [
--- 
+\-\- 
 [
-program-option ...
+program\(hyoption ...
 ]
 ]
 .SH DESCRIPTION
@@ -29,41 +29,41 @@ and adds numerous extensions including Java integration.
 .TP
 .BI \-c \ name
 .TP
-.BI \--call-with-args \ name
-Calls the top-level procedure
+.BI \-\-call\-with\-args \ name
+Calls the top\(hylevel procedure
 .I name
-with the remaining command-line arguments after the 
-.I --
+with the remaining command\(hyline arguments after the 
+.I \-\-
 delimiter.
 .TP
 .BI \-e \ expr
 .TP
-.BI \--eval \ expr
+.BI \-\-eval \ expr
 Evaluates the provided expression.
 .TP
 .BI \-x
 .TP
-.BI \--no-repl
+.BI \-\-no\-repl
 Instructs 
 .I SISC
 to run the command line and then exit without entering the REPL.
 .TP
-.BI \-h \ heap-file
+.BI \-h \ heap\(hyfile
 .TP
-.BI \--heap \ heap-file
+.BI \-\-heap \ heap\(hyfile
 Specifies that 
-.I heap-file
+.I heap\-file
 should be used as the initial heap image.
 .TP
-.BI \-p \ config-file
+.BI \-p \ config\(hyfile
 .TP
-.BI \--properties \ config-file
+.BI \-\-properties \ config\(hyfile
 Specifies a Java property file that contains application 
 properties.
 .TP
 .BI \-l \ [<host>:]<port>
 .TP
-.BI \--listen \ [<host>:]<port>
+.BI \-\-listen \ [<host>:]<port>
 Server Mode.  Listen on <host>/<port> for REPL connections.
 .PP
 .SH COMMAND LINE BEHAVIOR
@@ -79,14 +79,14 @@ Second, the heap file is loaded.
 Third, each Scheme source file is loaded in the order they
 occured on the command line. Errors are noted.
 
-Fourth, if present, the expression in an --eval switch is
+Fourth, if present, the expression in an \-\-eval switch is
 evaluated. Errors are noted.
 
-Fifth, if present, named function in a --call-with-args switch is
+Fifth, if present, named function in a \-\-call\-with\-args switch is
 applied to the arguments after the end of options sequence. 
 Its return value is noted.
 
-Sixth, --no-repl was not specified, the REPL is invoked.
+Sixth, \-\-no\-repl was not specified, the REPL is invoked.
 
 Finally, if the REPL was run if its return value is an integer, that
 integer is returned as SISC's overall return code. If the REPL was not
@@ -96,8 +96,9 @@ but a success/failure step was performed, 1 is returned if any
 failures occured, 0 otherwise. 
 
 .SH EXECUTABLE SCRIPTS
-SISC supports all the required SRFI-22 bootstraps, consult the body of SRFI-22 for 
-more information about using it to write executable Scheme programs.
+SISC supports all the required SRFI\(hy22 bootstraps, consult the body of
+SRFI\(hy22 for more information about using it to write executable Scheme
+programs.
 
 .PD
 
