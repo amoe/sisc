@@ -112,9 +112,6 @@
     <condition property="instsharedir" value="${prefix}/share/sisc">
       <not><isset property="instsharedir"/></not>
     </condition>
-    <condition property="instdocdir" value="${prefix}/share/doc/sisc">
-      <not><isset property="instdocdir"/></not>
-    </condition>
     <condition property="instmandir" value="${prefix}/share/man">
       <not><isset property="instmandir"/></not>
     </condition>
@@ -699,7 +696,6 @@
   <target name="install" depends="prepare-install">
     <mkdir dir="${instlibdir}"/>
     <mkdir dir="${instsharedir}"/>
-    <mkdir dir="${instdocdir}"/>
     <mkdir dir="${instmandir}"/>
     <mkdir dir="${instmandir}/man1"/>
     <copy todir="${instlibdir}">
@@ -712,17 +708,6 @@
           file="${srcdir}/sisc/boot/build-heapjar.scm"/>
     <copy todir="${instsharedir}" 
           file="${srfidir}/srfi-22/srfi-22.sh"/>
-    <copy todir="${instdocdir}">
-      <fileset dir="${basedir}">
-        <include name="ChangeLog"/>
-        <include name="README"/>
-        <include name="GOALS"/>
-        <include name="TODO"/>
-      </fileset>
-      <fileset dir="${gendocdir}">
-        <include name="sss/**"/>
-      </fileset>
-    </copy>
     <copy tofile="${instbindir}/sisc" 
           file="${basedir}/sisc.sh"/>
     <copy todir="${instmandir}/man1"
@@ -736,11 +721,6 @@
     <chmod file="${instsharedir}/srfi-22.sh" perm="0755"/>
     <chmod file="${instsharedir}/build-heapjar.scm" perm="0755"/>
 
-    <copy todir="${instdocdir}">
-      <fileset dir="${basedir}">
-        <include name="COPYING"/>
-      </fileset>
-    </copy>
     <chmod file="${instbindir}/sisc" perm="0755"/>
   </target>
 
