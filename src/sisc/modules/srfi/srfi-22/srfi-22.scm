@@ -6,11 +6,6 @@
      (eval '(import srfi-7))))
   (call-with-input-file source-file
     (lambda (in)
-      (let loop ()
-        (let ((c (read-char in)))
-          (when (not (or (eqv? c #\newline)
-                         (eof-object? c)))
-            (loop))))
       (let loop ((e (read-code in)))
         (unless (eof-object? e)
           (eval e)
