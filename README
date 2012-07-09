@@ -7,7 +7,7 @@ handily outperforms all existing JVM interpreters (often by more than
 an order of magnitude).
 
 In addition, SISC is a complete implementation of the language. The
-entire R5RS Scheme standard is supported, no exceptions. This includes
+entire R5RS Scheme standard is supported, no exceptions.  This includes
 a full number tower including complex number support, arbitrary
 precision integers and floating point numbers, as well as hygenic R5RS
 macros, proper tail recursion, and first-class continuations (not just
