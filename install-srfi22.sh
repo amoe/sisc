@@ -36,11 +36,11 @@ test -d "$SRCDIR"      || { echo "No source directory $SRCDIR">&2; exit 1; }
 test -d "$INSTALL_DIR" || { echo "No install dir $INSTALL_DIR">&2; exit 1; }
 
 cd "$INSTALL_DIR"
-ln -s "$SHAREDIR/srfi-22.sh" scheme-r4rs
-ln -s "$SHAREDIR/srfi-22.sh" scheme-r5rs
-ln -s "$SHAREDIR/srfi-22.sh" scheme-srfi-0
-ln -s "$SHAREDIR/srfi-22.sh" scheme-srfi-7
-ln -s "$SHAREDIR/srfi-22.sh" scheme-srfi-55
-ln -s "$SHAREDIR/srfi-22.sh" scheme-ieee-1178-1900
+ln -sf "$SHAREDIR/srfi-22.sh" scheme-r4rs
+ln -sf "$SHAREDIR/srfi-22.sh" scheme-r5rs
+ln -sf "$SHAREDIR/srfi-22.sh" scheme-srfi-0
+ln -sf "$SHAREDIR/srfi-22.sh" scheme-srfi-7
+ln -sf "$SHAREDIR/srfi-22.sh" scheme-srfi-55
+ln -sf "$SHAREDIR/srfi-22.sh" scheme-ieee-1178-1900
 
 exit 0
