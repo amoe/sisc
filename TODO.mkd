@@ -8,3 +8,4 @@ TODO
 * Fix all use of raw types, replace with generic types
 * Transition JUnit use in maven build to test scope
 * We deleted src/Manifest from the source tree -- for what was it used?
+* Replace command line parsing with Apache Commons CLI
