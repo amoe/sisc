@@ -1,25 +1,4 @@
-Bug Fixes
-* revisit the lazy dynamic-wind code
-* make implementations of srfis 12 and 34 fully compliant with spec
-* make let-syntax strictly r5rs compliant when strict compliance is
-  demanded
-* Work to eliminate bottlenecks in generic-procedure calls.
-* Configuration parameters seem to not work with SRFI-39 'parameterize'
+TODO
+====
 
-General
-* Document weak hashtables
-* do a code walk to weed out anything that breaks thread-safety
-* produce a validation testing framework that is invokable from ant
-* produce a performance testing framework that is invokable from ant
-* possibly introduce a dependency on xalan to build the docs on windows
-
-Features
-* Support for composable IO.
-* rationalize/integrate modules, libraries, slib
-* implement random-access files
-* write a debugger
-* port scsh's SREs
-* mechanism to construct immutable objects other than literals
-* direct implementation of shift and reset
-   http://citeseer.nj.nec.com/gasbichler02final.html
-  but make sure it plays nicely with dynamic-wind
+* Remove the option of choosing size of Quantity, use 64-bit floats everywhere
