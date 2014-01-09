@@ -2,3 +2,4 @@ TODO
 ====
 
 * Remove the option of choosing size of Quantity, use 64-bit floats everywhere
+* Convert the project.xml file to Maven 2.0, or remove it
