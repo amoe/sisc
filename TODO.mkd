@@ -6,3 +6,5 @@ TODO
 * Fix "bootstrap class path not set in conjunction with -source 1.6"
 * Add Java-level test coverage
 * Fix all use of raw types, replace with generic types
+* Transition JUnit use in maven build to test scope
+* We deleted src/Manifest from the source tree -- for what was it used?
