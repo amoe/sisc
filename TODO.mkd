@@ -3,3 +3,6 @@ TODO
 
 * Remove the option of choosing size of Quantity, use 64-bit floats everywhere
 * Convert the project.xml file to Maven 2.0, or remove it
+* Fix "bootstrap class path not set in conjunction with -source 1.6"
+* Add Java-level test coverage
+* Fix all use of raw types, replace with generic types
